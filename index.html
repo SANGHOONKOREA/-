@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S&SYS 고객지원팀 AI챗봇</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-image: url('http://www.snsys.net/uploads/main/20180716/TpKrqkZxMavSmdUQ_20180716.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        .btn-gradient {
+            background: linear-gradient(45deg, #4a90e2, #63b3ed);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .title {
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            background: linear-gradient(45deg, #3494E6, #EC6EAD);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            font-size: 4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 30px;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+            font-size: 0.84rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4">
+    <div class="overlay"></div>
+    
+    <h2 class="header mt-10 z-10">비상[非常]하게 비상[飛上]하라!</h2>
+    
+    <div class="flex-grow flex flex-col items-center justify-center z-10">
+        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 max-w-6xl w-full">
+            <h1 class="title text-5xl font-bold text-center mb-10">S&SYS 고객지원팀 AI챗봇</h1>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+                <button onclick="startChatbot(1)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">영문 이메일<br>회신 자동 작성기</button>
+                <button onclick="startChatbot(2)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">클레임/서비스<br>리포트 요약</button>
+                <button onclick="startChatbot(3)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS ERP<br>접수 도우미</button>
+                <button onclick="startChatbot(4)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">정산 업무<br>전문가</button>
+                <button onclick="startChatbot(5)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">호선 AS 업무<br>전문가</button>
+                <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS 호선<br>정보 제공</button>
+                <button onclick="startChatbot(7)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS 기술<br>전문가</button>
+                <button onclick="startChatbot(8)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">SSAS-PRO<br>전문가</button>
+                <button onclick="startChatbot(9)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">SSAS-MASTER<br>전문가</button>
+                <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">선박 정보<br>검색기</button>
+                <button onclick="startChatbot(11)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">AS 처리율<br>계산기</button>
+                <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">채권 분석<br>마스터</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer z-10">
+        <p>문의 사항 및 개선 제안</p>
+        <p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
+        <p>서상훈 차장 (내선번호: 1432)</p>
+    </div>
+
+    <script>
+        function startChatbot(number) {
+            const urls = [
+                'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
+                'https://chatgpt.com/g/g-ImTkITw81-ripoteu-keulreim-seobiseu-yoyag-caesbos',
+                'https://chatgpt.com/g/g-LTRKbnMHd-erp-as-jeobsu-doumi',
+                'https://chatgpt.com/g/g-r0NH3Lj64-jeongsan-damdangja-doumi',
+                'https://chatgpt.com/g/g-8N7fFj0Q5-as-damdangja-eobmu-doumi',
+                'https://chatgpt.com/g/g-7euadfbOI-bwms-damdangja',
+                'https://chatgpt.com/g/g-7RyMheeLE-bwms-gisuljiweon-caesbos',
+                'https://chatgpt.com/g/g-H0VpozoKd-ssas-pro-jeonmunga',
+                'https://chatgpt.com/g/g-nHEYKW3EB-ssas-master-jeonmunga',
+                'https://chatgpt.com/g/g-5UZhQS9f5-seonbag-jeongbo-geomsaeg',
+                'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
+                'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo'
+            ];
+            
+            if (number >= 1 && number <= urls.length) {
+                window.open(urls[number - 1], '_blank');
+            } else {
+                alert('잘못된 챗봇 번호입니다.');
+            }
+        }
+    </script>
+</body>
+</html>
