@@ -13,9 +13,17 @@
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
+            min-height: 100vh;
+            margin: 0;
         }
         .overlay {
             background-color: rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
         }
         .btn-gradient {
             background: linear-gradient(45deg, #4a90e2, #63b3ed);
@@ -45,17 +53,17 @@
             margin-top: 40px;
             text-align: center;
             color: white;
-            font-size: 0.84rem; /* 70% of 1.2rem */
+            font-size: 0.84rem;
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
-    <div class="overlay absolute inset-0 z-0"></div>
+    <div class="overlay"></div>
     
-    <h2 class="header mt-10">비상[非常]하게 비상[飛上]하라!</h2>
+    <h2 class="header mt-10 z-10">비상[非常]하게 비상[飛上]하라!</h2>
     
-    <div class="flex-grow flex flex-col items-center justify-center">
-        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 max-w-6xl w-full z-10">
+    <div class="flex-grow flex flex-col items-center justify-center z-10">
+        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 max-w-6xl w-full">
             <h1 class="title text-5xl font-bold text-center mb-10">S&SYS 고객지원팀 AI챗봇</h1>
             
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
@@ -75,7 +83,7 @@
         </div>
     </div>
     
-    <div class="footer">
+    <div class="footer z-10">
         <p>문의 사항 및 개선 제안</p>
         <p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
         <p>서상훈 차장 (내선번호: 1432)</p>
