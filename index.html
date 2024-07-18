@@ -18,7 +18,7 @@
         }
         .overlay {
             background-color: rgba(0, 0, 0, 0.5);
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -26,12 +26,39 @@
             z-index: 0;
         }
         .btn-gradient {
-            background: linear-gradient(45deg, #4a90e2, #63b3ed);
+            background: linear-gradient(45deg, #3498db, #5dade2);
             transition: all 0.3s ease;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.3;
+            font-size: 1.1rem;
+            word-break: keep-all;
+            width: 90%;
+            height: 0;
+            padding-bottom: 90%;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .btn-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
         }
         .btn-gradient:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
         }
         .title {
             font-weight: 700;
@@ -40,46 +67,136 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-size: 3rem;
+            padding: 0.5rem 0;
         }
         .header {
-            font-size: 4rem;
+            font-size: 3.5rem; /* 폰트 크기 증가 */
             font-weight: 700;
             text-align: center;
-            margin-top: 30px;
+            margin-top: 20px;
             color: white;
             text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+            line-height: 1.2; /* 줄 간격 조정 */
+            padding: 0.5rem 0; /* 위아래 여백 추가 */
         }
         .footer {
-            margin-top: 40px;
+            margin-top: 20px;
             text-align: center;
             color: white;
             font-size: 0.84rem;
+        }
+        .section-title {
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #3494E6, #EC6EAD);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            letter-spacing: -0.05em;
+            padding-left: 15px;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 70%;
+            background: linear-gradient(to bottom, #3494E6, #EC6EAD);
+            border-radius: 2px;
+        }
+        .section-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
     <div class="overlay"></div>
     
-    <h2 class="header mt-10 z-10">비상[非常]하게 비상[飛上]하라!</h2>
+    <h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
     
-    <div class="flex-grow flex flex-col items-center justify-center z-10">
-        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 max-w-6xl w-full">
-            <h1 class="title text-5xl font-bold text-center mb-10">S&SYS 고객지원팀 AI챗봇</h1>
+    <div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
+        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 w-full">
+            <h1 class="title text-center mb-8">S&SYS 고객지원팀 AI챗봇</h1>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-                <button onclick="startChatbot(1)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">영문 이메일<br>회신 자동 작성기</button>
-                <button onclick="startChatbot(2)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">클레임/서비스<br>리포트 요약</button>
-                <button onclick="startChatbot(3)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS ERP<br>접수 도우미</button>
-                <button onclick="startChatbot(4)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">정산 업무<br>전문가</button>
-                <button onclick="startChatbot(5)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">호선 AS 업무<br>전문가</button>
-                <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS 호선<br>정보 제공</button>
-                <button onclick="startChatbot(7)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">BWMS 기술<br>전문가</button>
-                <button onclick="startChatbot(8)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">SSAS-PRO<br>전문가</button>
-                <button onclick="startChatbot(9)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">SSAS-MASTER<br>전문가</button>
-                <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">선박 정보<br>검색기</button>
-                <button onclick="startChatbot(11)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">AS 처리율<br>계산기</button>
-                <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">채권 분석<br>마스터</button>
-                <button onclick="startChatbot(13)" class="btn-gradient text-white font-semibold py-10 px-4 rounded-lg text-lg">인사 정보<br>도우미</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- AS 업무 자동화 섹션 -->
+                <div class="section-container">
+                    <h3 class="section-title">AS 업무 자동화</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <button onclick="startChatbot(1)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">영문 이메일<br>회신 자동 작성기</div>
+                        </button>
+                        <button onclick="startChatbot(2)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">클레임/서비스<br>리포트 요약</div>
+                        </button>
+                        <button onclick="startChatbot(3)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">BWMS ERP<br>접수 도우미</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 업무 지식 섹션 -->
+                <div class="section-container">
+                    <h3 class="section-title">업무 지식</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <button onclick="startChatbot(4)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">정산 업무<br>전문가</div>
+                        </button>
+                        <button onclick="startChatbot(5)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">호선 AS 업무<br>전문가</div>
+                        </button>
+                        <button onclick="startChatbot(7)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">BWMS 기술<br>전문가</div>
+                        </button>
+                        <button onclick="startChatbot(8)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">SSAS-PRO<br>전문가</div>
+                        </button>
+                        <button onclick="startChatbot(9)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">SSAS-MASTER<br>전문가</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 정보 조회 섹션 -->
+                <div class="section-container">
+                    <h3 class="section-title">정보 조회</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">BWMS 호선<br>정보 제공</div>
+                        </button>
+                        <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">선박 정보<br>검색기</div>
+                        </button>
+                        <button class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">인사 정보<br>도우미</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AS 관리 섹션 -->
+                <div class="section-container">
+                    <h3 class="section-title">AS 관리</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <button onclick="startChatbot(11)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">AS 처리율<br>계산기</div>
+                        </button>
+                        <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">채권 분석<br>마스터</div>
+                        </button>
+                        <div class="hidden sm:block"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -104,8 +221,7 @@
                 'https://chatgpt.com/g/g-nHEYKW3EB-ssas-master-jeonmunga',
                 'https://chatgpt.com/g/g-5UZhQS9f5-seonbag-jeongbo-geomsaeg',
                 'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
-                'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo',
-                'https://chatgpt.com/g/g-6FZ9Tf0RX-eseuensiseu-insa-doumi'
+                'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo'
             ];
             
             if (number >= 1 && number <= urls.length) {
