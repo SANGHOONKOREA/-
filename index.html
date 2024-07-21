@@ -6,7 +6,9 @@
     <title>S&SYS 고객지원팀 AI챗봇</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* 기존 스타일 유지 */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-image: url('https://sanghoonkorea.github.io/-/snsys%20image.jpg');
@@ -118,6 +120,11 @@
             margin-bottom: 2rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+        /* 아이콘 스타일 추가 */
+        .btn-content i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
@@ -135,13 +142,22 @@
                     <h3 class="section-title">AS 업무 자동화</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <button onclick="startChatbot(1)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">영문 이메일<br>회신 자동 작성기</div>
+                            <div class="btn-content">
+                                <i class="fas fa-envelope"></i>
+                                영문 이메일<br>회신 자동 작성기
+                            </div>
                         </button>
                         <button onclick="startChatbot(2)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">클레임/서비스<br>리포트 요약</div>
+                            <div class="btn-content">
+                                <i class="fas fa-file-alt"></i>
+                                클레임/서비스<br>리포트 요약
+                            </div>
                         </button>
                         <button onclick="startChatbot(3)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">BWMS ERP<br>접수 도우미</div>
+                            <div class="btn-content">
+                                <i class="fas fa-database"></i>
+                                BWMS ERP<br>접수 도우미
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -151,19 +167,34 @@
                     <h3 class="section-title">업무 지식</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <button onclick="startChatbot(5)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">호선 AS 업무<br>전문가</div>
+                            <div class="btn-content">
+                                <i class="fas fa-anchor"></i>
+                                호선 AS 업무<br>전문가
+                            </div>
                         </button>
                         <button onclick="startChatbot(7)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">BWMS 기술<br>전문가</div>
+                            <div class="btn-content">
+                                <i class="fas fa-tools"></i>
+                                BWMS 기술<br>전문가
+                            </div>
                         </button>
                         <button onclick="startChatbot(8)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">SSAS-PRO<br>전문가</div>
+                            <div class="btn-content">
+                                <i class="fas fa-bolt"></i>
+                                SSAS-PRO<br>전문가
+                            </div>
                         </button>
                         <button onclick="startChatbot(9)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">SSAS-MASTER<br>전문가</div>
+                            <div class="btn-content">
+                                <i class="fas fa-award"></i>
+                                SSAS-MASTER<br>전문가
+                            </div>
                         </button>
                         <button onclick="startChatbot(4)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">정산 업무<br>전문가</div>
+                            <div class="btn-content">
+                                <i class="fas fa-calculator"></i>
+                                정산 업무<br>전문가
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -173,13 +204,22 @@
                     <h3 class="section-title">정보 조회</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">BWMS 호선<br>정보 제공</div>
+                            <div class="btn-content">
+                                <i class="fas fa-ship"></i>
+                                BWMS 호선<br>정보 제공
+                            </div>
                         </button>
                         <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">선박 정보<br>검색기</div>
+                            <div class="btn-content">
+                                <i class="fas fa-search"></i>
+                                선박 정보<br>검색기
+                            </div>
                         </button>
                         <button class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">인사 정보<br>도우미</div>
+                            <div class="btn-content">
+                                <i class="fas fa-users"></i>
+                                인사 정보<br>도우미
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -189,10 +229,16 @@
                     <h3 class="section-title">AS 관리</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <button onclick="startChatbot(11)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">AS 처리율<br>계산기</div>
+                            <div class="btn-content">
+                                <i class="fas fa-percent"></i>
+                                AS 처리율<br>계산기
+                            </div>
                         </button>
                         <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">채권 분석<br>마스터</div>
+                            <div class="btn-content">
+                                <i class="fas fa-chart-line"></i>
+                                채권 분석<br>마스터
+                            </div>
                         </button>
                         <div class="hidden sm:block"></div>
                     </div>
