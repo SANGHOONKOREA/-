@@ -120,15 +120,43 @@
             margin-bottom: 2rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        /* 아이콘 스타일 추가 */
         .btn-content i {
             font-size: 24px;
             margin-bottom: 8px;
-                       
+        }
+        /* AI 도구 링크 버튼 스타일 */
+        .ai-tool-links {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 20;
+        }
+        .ai-tool-link {
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .ai-tool-link:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
     <div class="overlay"></div>
+    
+    <div class="ai-tool-links">
+        <a href="https://gemini.google.com" target="_blank" class="ai-tool-link">Gemini</a>
+        <a href="https://chat.openai.com" target="_blank" class="ai-tool-link">ChatGPT</a>
+        <a href="https://claude.ai" target="_blank" class="ai-tool-link">Claude</a>
+        <a href="https://www.perplexity.ai" target="_blank" class="ai-tool-link">Perplexity</a>
+    </div>
     
     <h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
     
