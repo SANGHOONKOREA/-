@@ -193,6 +193,12 @@
                                 제어 ERP<br>접수 도우미
                             </div>
                         </button>
+                        <button onclick="startChatbot(15)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-bolt"></i>
+                                배전 ERP<br>접수 도우미
+                            </div>
+                        </button>
                     </div>
                 </div>
 
@@ -287,7 +293,7 @@
         <p>서상훈 차장 (내선번호: 1432)</p>
     </div>
 
-   <script>
+  <script>
         function startChatbot(number) {
             const urls = [
                 'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
@@ -303,7 +309,8 @@
                 'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
                 'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo',
                 'https://chatgpt.com/g/g-6FZ9Tf0RX-eseuensiseu-insa-doumi',
-                'https://chatgpt.com/g/g-vDHZI6j0c-jeeo-erp-as-jeobsu-doumi'
+                'https://chatgpt.com/g/g-vDHZI6j0c-jeeo-erp-as-jeobsu-doumi',
+                'https://chatgpt.com/g/g-hBaPLzaid-baejeon-erp-as-jeobsu-doumi'
             ];
             
             if (number >= 1 && number <= urls.length) {
