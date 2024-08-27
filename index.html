@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* 기존 스타일 유지 */
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-image: url('https://sanghoonkorea.github.io/-/snsys%20image.jpg');
@@ -124,46 +123,81 @@
             font-size: 24px;
             margin-bottom: 8px;
         }
-        /* AI 도구 링크 버튼 스타일 */
-        .ai-tool-links {
-            position: absolute;
-            top: 1rem;
+        .ai-tool-container {
+            position: fixed;
+            bottom: 1rem;
             right: 1rem;
-            display: flex;
-            gap: 0.5rem;
             z-index: 20;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* AI TOOL 그룹 제목 스타일 */
+        .ai-tool-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 수정된 AI 도구 링크 버튼 스타일 */
+        .ai-tool-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            max-height: calc(100vh - 8rem);
+            overflow-y: auto;
+            padding-right: 0.5rem;
         }
         .ai-tool-link {
-            background: rgba(255, 255, 255, 0.8);
-            color: #333;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.8rem;
+            background: linear-gradient(45deg, #3498db, #5dade2);
+            color: #fff;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.5rem;
+            font-size: 0.72rem;
             text-decoration: none;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         .ai-tool-link:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
+            transform: translateX(-5px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+            background: linear-gradient(45deg, #5dade2, #3498db);
         }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
     <div class="overlay"></div>
     
-    <div class="ai-tool-links">
-        <a href="https://chat.openai.com" target="_blank" class="ai-tool-link">ChatGPT(대표AI)</a>
-        <a href="https://claude.ai" target="_blank" class="ai-tool-link">Claude(코딩,글쓰기)</a>
-        <a href="https://gemini.google.com" target="_blank" class="ai-tool-link">Gemini(다양한정보)</a>
-        <a href="https://www.perplexity.ai" target="_blank" class="ai-tool-link">Perplexity(최신검색)</a>
-        <a href="https://copilot.microsoft.com/" target="_blank" class="ai-tool-link">코파일럿(소스제공)</a>
-        <a href="https://chatgpt.com/g/g-NDMXJfqHq-gpt-peurompeuteu-saengseonggi" target="_blank" class="ai-tool-link">프롬프트생성도우미</a>
-        <a href="https://glif.app/glifs" target="_blank" class="ai-tool-link">고품질이미지(GLIFS)</a>
-        <a href="https://ideogram.ai/" target="_blank" class="ai-tool-link">고품질이미지(IDEOGRAM)</a>
-        <a href="https://lumalabs.ai/dream-machine" target="_blank" class="ai-tool-link">영상제작(LUMA)</a>
-        <a href="https://hourone.ai/" target="_blank" class="ai-tool-link">AI아나운서(HOUR ONE)</a>
-        <a href="https://lilys.ai/" target="_blank" class="ai-tool-link">영상요약(LILYS)</a>
+    <div class="ai-tool-container">
+        <div class="ai-tool-title">AI TOOL</div>
+        <div class="ai-tool-links">
+         <a href="https://chat.openai.com" target="_blank" class="ai-tool-link">ChatGPT(대표AI)</a>
+         <a href="https://claude.ai" target="_blank" class="ai-tool-link">Claude(코딩,글쓰기)</a>
+         <a href="https://gemini.google.com" target="_blank" class="ai-tool-link">Gemini(다양한정보)</a>
+         <a href="https://www.perplexity.ai" target="_blank" class="ai-tool-link">Perplexity(최신검색)</a>
+         <a href="https://copilot.microsoft.com/" target="_blank" class="ai-tool-link">코파일럿(소스제공)</a>
+         <a href="https://chatgpt.com/g/g-NDMXJfqHq-gpt-peurompeuteu-saengseonggi" target="_blank" class="ai-tool-link">프롬프트생성도우미</a>
+         <a href="https://glif.app/glifs" target="_blank" class="ai-tool-link">고품질이미지(GLIFS)</a>
+         <a href="https://ideogram.ai/" target="_blank" class="ai-tool-link">고품질이미지(IDEOGRAM)</a>
+         <a href="https://lumalabs.ai/dream-machine" target="_blank" class="ai-tool-link">영상제작(LUMA)</a>
+         <a href="https://hourone.ai/" target="_blank" class="ai-tool-link">AI아나운서(HOUR ONE)</a>
+         <a href="https://lilys.ai/" target="_blank" class="ai-tool-link">영상요약(LILYS)</a>
+        </div>
     </div>
+    
     <h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
     
     <div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
@@ -208,7 +242,7 @@
                         <button onclick="startChatbot(19)" class="btn-gradient text-white font-semibold rounded-lg">
                             <div class="btn-content">
                                 <i class="fas fa-pen"></i>
-                                영문 비지니스<br>이메일 작성기
+                                영문 비즈니스<br>이메일 작성기
                             </div>
                         </button>
                     </div>
@@ -269,7 +303,7 @@
                         </button>
                         <button onclick="startChatbot(13)" class="btn-gradient text-white font-semibold rounded-lg">
                             <div class="btn-content">
-                                <i class="fas fa-users"></i>
+                            <i class="fas fa-users"></i>
                                 인사 정보<br>도우미
                             </div>
                         </button>
@@ -299,7 +333,7 @@
                             </div>
                         </button>
                         <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold rounded-lg">
-               <div class="btn-content">
+                            <div class="btn-content">
                                 <i class="fas fa-chart-line"></i>
                                 채권 분석<br>마스터
                             </div>
@@ -316,7 +350,7 @@
         </div>
     </div>
     
- <div class="footer z-10">
+    <div class="footer z-10">
         <p>문의 사항 및 개선 제안</p>
         <p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
         <p>서상훈 차장 (내선번호: 1432)</p>
