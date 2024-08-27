@@ -194,17 +194,25 @@
                 right: 0;
                 border-bottom-left-radius: 0;
                 border-bottom-right-radius: 0;
+                padding: 0.5rem;
+            }
+            .ai-tool-title {
+                font-size: 0.8rem;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.3rem;
             }
             .ai-tool-links {
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: center;
-                max-height: 30vh;
+                max-height: 20vh;
                 overflow-x: auto;
+                gap: 0.3rem;
             }
             .ai-tool-link {
-                font-size: 0.7rem;
-                padding: 0.3rem 0.6rem;
+                font-size: 0.6rem;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.3rem;
             }
             .ai-tool-link:hover {
                 transform: translateY(-2px);
@@ -214,7 +222,7 @@
         /* 푸터 여백 조정 */
         @media (max-width: 767px) {
             .footer {
-                margin-bottom: calc(30vh + 3rem); /* AI TOOL 컨테이너 높이 + 여유 공간 */
+                margin-bottom: calc(20vh + 2rem); /* AI TOOL 컨테이너 높이 + 여유 공간 */
             }
         }
     </style>
