@@ -218,7 +218,67 @@
                 transform: translateY(-2px);
             }
         }
+        /* 데스크톱 뷰 */
+        @media (min-width: 768px) {
+            .ai-tool-container {
+                bottom: 1rem;
+                right: 1rem;
+                max-width: 300px;
+            }
+        }
 
+        /* 모바일 뷰 */
+        @media (max-width: 767px) {
+            .ai-tool-container {
+                bottom: 0;
+                left: 0;
+                right: 0;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+                padding: 0.5rem;
+            }
+            .ai-tool-title {
+                font-size: 0.8rem;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.3rem;
+            }
+            .ai-tool-links {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                max-height: 20vh;
+                overflow-x: auto;
+                gap: 0.3rem;
+            }
+            .ai-tool-link {
+                font-size: 0.6rem;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.3rem;
+            }
+            .ai-tool-link:hover {
+                transform: translateY(-2px);
+            }
+            .btn-gradient {
+                font-size: 0.9rem;
+            }
+            .btn-content {
+                padding: 5px;
+            }
+            .btn-content i {
+                font-size: 20px;
+                margin-bottom: 4px;
+            }
+        }
+
+        /* 더 작은 화면에서의 추가 조정 */
+        @media (max-width: 480px) {
+            .btn-gradient {
+                font-size: 0.8rem;
+            }
+            .btn-content i {
+                font-size: 18px;
+            }
+        }
         /* 푸터 여백 조정 */
         @media (max-width: 767px) {
             .footer {
