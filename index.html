@@ -185,7 +185,17 @@
                 max-width: 300px;
             }
         }
-
+        /* 태블릿 뷰 (768px 이상 1023px 이하) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+             .ai-tool-container {
+                top: 1rem;
+                max-height: calc(100vh - 2rem);
+                overflow-y: auto;
+                 }
+             .footer {
+                margin-bottom: 1rem;
+                 }
+        }
         /* 모바일 뷰 */
         @media (max-width: 767px) {
             .ai-tool-container {
