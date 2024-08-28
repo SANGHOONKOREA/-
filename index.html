@@ -266,7 +266,25 @@
                 margin-bottom: 4px;
             }
         }
+/* 태블릿 및 모바일 뷰 (1200px 이하) */
+@media (max-width: 1200px) {
+    .ai-tool-container {
+        padding: 0.5rem 0.5rem 1rem; /* 하단 패딩 증가 */
+    }
+    .ai-tool-links {
+        max-height: 25vh; /* 최대 높이 증가 */
+        overflow-y: auto;
+        padding-bottom: env(safe-area-inset-bottom); /* iOS 안전 영역 고려 */
+    }
+    .footer {
+        margin-bottom: calc(25vh + 2rem); /* 여백 조정 */
+    }
+}
 
+/* 추가: 본문 컨텐츠에 하단 여백 추가 */
+.flex-grow {
+    padding-bottom: calc(25vh + 2rem);
+}
         /* 더 작은 화면에서의 추가 조정 */
         @media (max-width: 480px) {
             .btn-gradient {
