@@ -304,6 +304,18 @@
         font-size: 2.1rem; /* 3rem의 70%로 조정 */
     }
 }
+        .title-break {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .title {
+        font-size: 2.5rem;
+    }
+    .title-break {
+        display: block;
+    }
+}
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
@@ -331,7 +343,8 @@
     
     <div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
         <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 w-full">
-            <h1 class="title text-center mb-8">S&SYS 고객지원팀 AI챗봇</h1>
+            <h1 class="title text-center mb-8">
+              S&SYS<span class="title-break"></span> 고객지원팀 AI챗봇 </h1>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- AS 업무 자동화 섹션 -->
