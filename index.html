@@ -285,6 +285,19 @@
                 margin-bottom: calc(20vh + 2rem); /* AI TOOL 컨테이너 높이 + 여유 공간 */
             }
         }
+        /* 모바일 뷰에서 헤더 텍스트 크기 조정 */
+@media (max-width: 767px) {
+    .header {
+        font-size: 2rem; /* 모바일에서 더 작은 크기로 조정 */
+    }
+}
+
+/* 매우 작은 화면에서 추가 조정 */
+@media (max-width: 480px) {
+    .header {
+        font-size: 1.5rem; /* 더 작은 화면에서 더욱 축소 */
+    }
+}
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
