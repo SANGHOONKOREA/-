@@ -326,7 +326,7 @@
         /* 모바일 뷰에서 타이틀 텍스트 크기 조정 */
         @media (max-width: 767px) {
             .title {
-                font-size: 2.1rem; /* 3rem의 70%로 조정 */
+                 font-size: 2.1rem; /* 3rem의 70%로 조정 */
             }
         }
         .title-break {
@@ -455,47 +455,47 @@
                 </div>
 
                 <!-- 정보 조회 섹션 -->
-<div class="section-container">
-    <h3 class="section-title">정보 조회</h3>
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-                <i class="fas fa-ship"></i>
-                BWMS 호선<br>정보 제공
-            </div>
-        </button>
-        <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-                <i class="fas fa-search"></i>
-                선박 정보<br>검색기
-            </div>
-        </button>
-        <button onclick="startChatbot(25)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-                <i class="fas fa-barcode"></i>
-                BWMS 자재코드<br>검색기
-            </div>
-        </button>
-        <button onclick="startChatbot(13)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-            <i class="fas fa-users"></i>
-                인사 정보<br>도우미
-            </div>
-        </button>
-        <button onclick="startChatbot(16)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-                <i class="fas fa-book"></i>
-                선급 규정<br>전문가
-            </div>
-        </button>
-        <button onclick="startChatbot(17)" class="btn-gradient text-white font-semibold rounded-lg">
-            <div class="btn-content">
-                <i class="fas fa-newspaper"></i>
-                최신 조선<br>정보 제공
-            </div>
-        </button>
-    </div>
-</div>
+                <div class="section-container">
+                    <h3 class="section-title">정보 조회</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-ship"></i>
+                                BWMS 호선<br>정보 제공
+                            </div>
+                        </button>
+                        <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-search"></i>
+                                선박 정보<br>검색기
+                            </div>
+                        </button>
+                        <button onclick="startChatbot(25)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-barcode"></i>
+                                BWMS 자재코드<br>검색기
+                            </div>
+                        </button>
+                        <button onclick="window.open('https://www.perplexity.ai/', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-search-plus"></i>
+                                자재 사양<br>검색
+                            </div>
+                        </button>
+                        <button onclick="startChatbot(16)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-book"></i>
+                                선급 규정<br>전문가
+                            </div>
+                        </button>
+                        <button onclick="startChatbot(17)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-newspaper"></i>
+                                최신 조선<br>정보 제공
+                            </div>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- AS 관리 섹션 -->
                 <div class="section-container">
@@ -556,6 +556,12 @@
                                 중대재해처벌법<br>도우미
                             </div>
                         </button>
+                        <button onclick="startChatbot(13)" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                            <i class="fas fa-users"></i>
+                                인사 정보<br>도우미
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -568,7 +574,7 @@
         <p>서상훈 차장 (내선번호: 1432)</p>
     </div>
 
-    <script>
+  <script>
         function startChatbot(number) {
             const urls = [
     'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
