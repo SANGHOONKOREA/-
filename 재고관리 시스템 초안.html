@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지역별 해외 창고 자재 재고 관리</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+            --border-color: #bdc3c7;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: var(--secondary-color);
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+        }
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sidebar button:hover {
+            background-color: #2980b9;
+        }
+        .container {
+            flex-grow: 1;
+            margin-left: 200px;
+            padding: 20px;
+        }
+        .content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1200px;
+        }
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        input[type="text"], input[type="number"] {
+            width: 90%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .button-group button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button-group button:hover {
+            background-color: #2980b9;
+        }
+        #errorLog {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #connectionStatus {
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        #historyModal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .quantity-input {
+            width: 60px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <button onclick="changeRegion('asia')">아시아</button>
+        <button onclick="changeRegion('middleEast')">중동</button>
+        <button onclick="changeRegion('usa')">미국</button>
+        <button onclick="changeRegion('europe')">유럽</button>
+    </div>
+    <div class="container">
+        <div class="content">
+            <h1 id="regionTitle">해외 창고 자재 재고 관리</h1>
+            <div id="connectionStatus">연결 상태: 확인 중...</div>
+            <div id="errorLog"></div>
+            <div class="table-container">
+                <table id="inventoryTable">
+                    <thead>
+                        <tr>
+                            <th>자재코드</th>
+                            <th>자재명</th>
+                            <th>상세사양</th>
+                            <th>입고 수량</th>
+                            <th>사용 수량</th>
+                            <th>반납 수량</th>
+                            <th>재고 수량</th>
+                            <th>사용처</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="button-group">
+                <button onclick="addRow()">행 추가</button>
+                <button onclick="saveToFirebase()">저장</button>
+                <button onclick="loadFromFirebase()">불러오기</button>
+                <button onclick="downloadExcel()">엑셀 다운로드</button>
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
+                <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
+                <button onclick="showHistory()">히스토리</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHistory()">&times;</span>
+            <h2>변경 히스토리</h2>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase 구성
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+            authDomain: "sanghoon-d8f1c.firebaseapp.com",
+            databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+            projectId: "sanghoon-d8f1c",
+            storageBucket: "sanghoon-d8f1c.appspot.com",
+            messagingSenderId: "495391900753",
+            appId: "1:495391900753:web:b0d708eeca64fafe562470",
+            measurementId: "G-J2E22BW61H"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let currentRegion = 'asia'; // 기본 지역을 아시아로 변경
+        let previousData = [];
+
+        function testConnection() {
+            const testRef = database.ref('test');
+            testRef.set({ connectionTest: true })
+                .then(() => {
+                    console.log("Firebase 연결 성공");
+                    updateConnectionStatus(true);
+                })
+                .catch((error) => {
+                    console.error("Firebase 연결 실패:", error);
+                    updateConnectionStatus(false, error.message);
+                });
+        }
+
+        function updateConnectionStatus(isConnected, errorMessage = '') {
+            const statusElement = document.getElementById('connectionStatus');
+            const errorLog = document.getElementById('errorLog');
+            
+            if (isConnected) {
+                statusElement.textContent = "연결 상태: Firebase에 연결되었습니다.";
+                statusElement.style.color = "green";
+                errorLog.textContent = "";
+            } else {
+                statusElement.textContent = "연결 상태: Firebase에 연결되지 않았습니다.";
+                statusElement.style.color = "red";
+                errorLog.textContent = "연결 오류: " + errorMessage;
+            }
+        }
+
+        function changeRegion(region) {
+            currentRegion = region;
+            document.getElementById('regionTitle').textContent = `해외 창고 자재 재고 관리 - ${region.toUpperCase()}`;
+            loadFromFirebase();
+        }
+
+        function addRow() {
+            const tbody = document.getElementById('inventoryBody');
+            const rowCount = tbody.rows.length;
+            if (rowCount >= 200) {
+                alert('최대 200개의 자재만 입력할 수 있습니다.');
+                return;
+            }
+            const row = tbody.insertRow();
+            for (let i = 0; i < 9; i++) {
+                const cell = row.insertCell(i);
+                if (i !== 6) {
+                    const input = document.createElement('input');
+                    input.type = (i === 3 || i === 4 || i === 5) ? 'number' : 'text';
+                    input.min = (i === 3 || i === 4 || i === 5) ? '0' : '';
+                    input.className = (i === 3 || i === 4 || i === 5) ? 'quantity-input' : '';
+                    if (i === 3 || i === 4 || i === 5) {
+                        input.addEventListener('input', calculateStock);
+                    }
+                    cell.appendChild(input);
+                } else {
+                    cell.textContent = '0'; // 재고 수량 초기값
+                }
+            }
+        }
+
+        function calculateStock(event) {
+            const row = event.target.closest('tr');
+            const inStock = parseInt(row.cells[3].querySelector('input').value) || 0;
+            const used = parseInt(row.cells[4].querySelector('input').value) || 0;
+            const returned = parseInt(row.cells[5].querySelector('input').value) || 0;
+            const stock = inStock - used + returned;
+            row.cells[6].textContent = stock;
+        }
+
+        function saveToFirebase() {
+            const name = prompt("저장하는 사람의 이름을 입력하세요:");
+            if (!name) {
+                alert("이름을 입력하지 않아 저장이 취소되었습니다.");
+                return;
+            }
+
+            const password = prompt("저장하려면 패스워드를 입력하세요:");
+            if (password !== "SNSYS") {
+                alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
+                return;
+            }
+
+            const rows = Array.from(document.querySelectorAll('#inventoryBody tr')).map(row => {
+                const inputs = Array.from(row.querySelectorAll('input, td:nth-child(7)'));
+                return inputs.map(el => el.value || el.textContent);
+            });
+
+            const timestamp = new Date().toISOString();
+            const changes = getChanges(previousData, rows);
+            const historyEntry = {
+                name: name,
+                timestamp: timestamp,
+                action: "데이터 저장",
+                changes: changes
+            };
+
+            database.ref(`inventory/${currentRegion}`).set(rows)
+                .then(() => {
+                    return database.ref(`history/${currentRegion}`).push(historyEntry);
+                })
+                .then(() => {
+                    return database.ref(`history/${currentRegion}`).once('value');
+                })
+                .then((snapshot) => {
+                    const historyData = snapshot.val();
+                    const historyEntries = Object.values(historyData || {});
+                    if (historyEntries.length > 100) {
+                        const entriesToRemove = historyEntries.slice(0, historyEntries.length - 100);
+                        entriesToRemove.forEach(entry => {
+                            database.ref(`history/${currentRegion}/${entry.key}`).remove();
+                        });
+                    }
+                    alert('데이터가 성공적으로 저장되었습니다.');
+                    previousData = rows; // 저장 후 이전 데이터 업데이트
+                })
+                .catch((error) => {
+                    console.error("저장 중 오류 발생:", error);
+                    document.getElementById('errorLog').textContent = '저장 중 오류가 발생했습니다: ' + error.message;
+                });
+        }
+
+        function getChanges(oldData, newData) {
+            const changes = [];
+            for (let i = 0; i < Math.max(oldData.length, newData.length); i++) {
+                if (i >= oldData.length) {
+                    changes.push(`새로운 자재 추가: ${newData[i][0]} (${newData[i][1]})`);
+                } else if (i >= newData.length) {
+                    changes.push(`자재 삭제: ${oldData[i][0]} (${oldData[i][1]})`);
+                } else {
+                    for (let j = 0; j < oldData[i].length; j++) {
+if (oldData[i][j] !== newData[i][j]) {
+                            const fieldNames = ['자재코드', '자재명', '상세사양', '입고 수량', '사용 수량', '반납 수량', '재고 수량', '사용처', '비고'];
+                            changes.push(`${newData[i][0]} (${newData[i][1]})의 ${fieldNames[j]} 변경: ${oldData[i][j] || '없음'} → ${newData[i][j] || '없음'}`);
+                        }
+                    }
+                }
+            }
+            return changes;
+        }
+
+        function loadFromFirebase() {
+            database.ref(`inventory/${currentRegion}`).once('value')
+                .then((snapshot) => {
+                    const data = snapshot.val();
+                    const tbody = document.getElementById('inventoryBody');
+                    tbody.innerHTML = '';
+                    if (data && Array.isArray(data)) {
+                        data.forEach((row, index) => {
+                            if (index < 200) {
+                                const newRow = tbody.insertRow();
+                                row.forEach((cell, cellIndex) => {
+                                    const newCell = newRow.insertCell();
+                                    if (cellIndex !== 6) {
+                                        const input = document.createElement('input');
+                                        input.type = (cellIndex === 3 || cellIndex === 4 || cellIndex === 5) ? 'number' : 'text';
+                                        input.min = (cellIndex === 3 || cellIndex === 4 || cellIndex === 5) ? '0' : '';
+                                        input.className = (cellIndex === 3 || cellIndex === 4 || cellIndex === 5) ? 'quantity-input' : '';
+                                        input.value = cell || '';
+                                        if (cellIndex === 3 || cellIndex === 4 || cellIndex === 5) {
+                                            input.addEventListener('input', calculateStock);
+                                        }
+                                        newCell.appendChild(input);
+                                    } else {
+                                        newCell.textContent = cell || '0';
+                                    }
+                                });
+                                calculateStock({ target: newRow.cells[3].querySelector('input') });
+                            }
+                        });
+                        previousData = data; // 로드 후 이전 데이터 업데이트
+                    } else {
+                        // 데이터가 없거나 배열이 아닌 경우 빈 행 10개 추가
+                        for (let i = 0; i < 10; i++) {
+                            addRow();
+                        }
+                        previousData = []; // 빈 데이터로 초기화
+                    }
+                })
+                .catch((error) => {
+                    console.error("데이터 로드 중 오류 발생:", error);
+                    document.getElementById('errorLog').textContent = '데이터 로드 중 오류가 발생했습니다: ' + error.message;
+                });
+        }
+
+        function downloadExcel() {
+            const rows = Array.from(document.querySelectorAll('#inventoryBody tr')).map(row => 
+                Array.from(row.querySelectorAll('input, td:nth-child(7)')).map(el => el.value || el.textContent)
+            );
+            const ws = XLSX.utils.aoa_to_sheet([['자재코드', '자재명', '상세사양', '입고 수량', '사용 수량', '반납 수량', '재고 수량', '사용처', '비고'], ...rows]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "재고 현황");
+            XLSX.writeFile(wb, `inventory_${currentRegion}.xlsx`);
+        }
+
+        function uploadExcel(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                const tbody = document.getElementById('inventoryBody');
+                tbody.innerHTML = '';
+                
+                // 헤더 행을 제외하고 데이터 행만 처리
+                json.slice(1).forEach((row, index) => {
+                    if (index < 200) {  // 최대 200행까지만 처리
+                        const newRow = tbody.insertRow();
+                        for (let i = 0; i < 9; i++) {  // 9개 열에 대해 처리
+                            const newCell = newRow.insertCell();
+                            if (i !== 6) {  // 재고 수량(6번째 열)을 제외한 모든 열
+                                const input = document.createElement('input');
+                                input.type = (i === 3 || i === 4 || i === 5) ? 'number' : 'text';
+                                input.min = (i === 3 || i === 4 || i === 5) ? '0' : '';
+                                input.className = (i === 3 || i === 4 || i === 5) ? 'quantity-input' : '';
+                                input.value = row[i] || '';  // 엑셀 데이터 값 설정
+                                if (i === 3 || i === 4 || i === 5) {
+                                    input.addEventListener('input', calculateStock);
+                                }
+                                newCell.appendChild(input);
+                            } else {  // 재고 수량 열
+                                newCell.textContent = row[i] || '0';  // 엑셀 데이터 값 설정 또는 초기값 '0'
+                            }
+                        }
+                        calculateStock({target: newRow.cells[3].querySelector('input')});  // 재고 수량 계산
+                    }
+                });
+                
+                alert(`총 ${Math.min(json.length - 1, 200)}개의 행이 업로드되었습니다.`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showHistory() {
+            database.ref(`history/${currentRegion}`).once('value')
+                .then((snapshot) => {
+                    const historyData = snapshot.val();
+                    const historyContent = document.getElementById('historyContent');
+                    historyContent.innerHTML = '';
+
+                    if (historyData) {
+                        const historyEntries = Object.values(historyData);
+                        historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                        historyEntries.forEach(entry => {
+                            const entryDiv = document.createElement('div');
+                            entryDiv.innerHTML = `
+                                <p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
+                                <p>${entry.action}</p>
+                                <ul>
+                                    ${entry.changes && Array.isArray(entry.changes) ? entry.changes.map(change => `<li>${change}</li>`).join('') : '변경 사항 없음'}
+                                </ul>
+                                <hr>
+                            `;
+                            historyContent.appendChild(entryDiv);
+                        });
+                    } else {
+                        historyContent.innerHTML = '<p>변경 히스토리가 없습니다.</p>';
+                    }
+
+                    document.getElementById('historyModal').style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error("히스토리 로드 중 오류 발생:", error);
+                    document.getElementById('errorLog').textContent = '히스토리 로드 중 오류가 발생했습니다: ' + error.message;
+                });
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            testConnection();
+            loadFromFirebase();
+        };
+    </script>
+</body>
+</html>
