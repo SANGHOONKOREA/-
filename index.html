@@ -519,6 +519,12 @@
                                 BWMS AS<br>현황 분석기
                             </div>
                         </button>
+                        <button onclick="window.open('https://sanghoonkorea.github.io/', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
+                            <div class="btn-content">
+                                <i class="fas fa-warehouse"></i>
+                                해외 재고<br>관리 시스템
+                            </div>
+                        </button>
                     </div>
                 </div>
 
@@ -574,34 +580,34 @@
         <p>서상훈 차장 (내선번호: 1432)</p>
     </div>
 
-  <script>
+    <script>
         function startChatbot(number) {
             const urls = [
-    'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
-    'https://chatgpt.com/g/g-SUGRFtRj5-jocigyeolgwa-ibryeog-doumi',
-    'https://chatgpt.com/g/g-LTRKbnMHd-erp-as-jeobsu-doumi',
-    'https://chatgpt.com/g/g-r0NH3Lj64-jeongsan-damdangja-doumi',
-    'https://chatgpt.com/g/g-8N7fFj0Q5-as-damdangja-eobmu-doumi',
-    'https://chatgpt.com/g/g-7euadfbOI-bwms-damdangja',
-    'https://chatgpt.com/g/g-7RyMheeLE-bwms-gisuljiweon-caesbos',
-    'https://chatgpt.com/g/g-H0VpozoKd-ssas-pro-jeonmunga',
-    'https://chatgpt.com/g/g-nHEYKW3EB-ssas-master-jeonmunga',
-    'https://chatgpt.com/g/g-5UZhQS9f5-seonbag-jeongbo-geomsaeg',
-    'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
-    'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo',
-    'https://chatgpt.com/g/g-6FZ9Tf0RX-eseuensiseu-insa-doumi',
-    'https://chatgpt.com/g/g-vDHZI6j0c-jeeo-erp-as-jeobsu-doumi',
-    'https://chatgpt.com/g/g-hBaPLzaid-baejeon-erp-as-jeobsu-doumi',
-    'https://chatgpt.com/g/g-8hErnt9Ns-seongeub-gyujeong-jeonmunga',
-    'https://chatgpt.com/g/g-RNuBKFzoW-coesin-joseon-nyuseu-yoyag-jegong',
-    'https://chatgpt.com/g/g-ELYNFNuH4',
-    'https://chatgpt.com/g/g-qB0orNUXu-bijiniseu-imeil-jagseonggi',
-    'https://chatgpt.com/g/g-vNcqmCi2l-gieob-bunseog-bogoseo',
-    'https://chatgpt.com/g/g-7V7pHu1Zm-egsel-munseo-cwihab',
-    'https://chatgpt.com/g/g-VO3SyHjli-bogoseo-jejaggi',
-    'https://chatgpt.com/g/g-08jUXjUfJ-jaemujepyo-giban-gieob-jindan-bogoseo-jagseong',
-    'https://chatgpt.com/g/g-vWyVaZ26Q-jungdaejaehaeceobeolbeob-daeeung-maenyueol',
-    'https://chatgpt.com/g/g-30h6ekxqi-bwms-jajaekodeu-geomsaeggi'
+                'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
+                'https://chatgpt.com/g/g-SUGRFtRj5-jocigyeolgwa-ibryeog-doumi',
+                'https://chatgpt.com/g/g-LTRKbnMHd-erp-as-jeobsu-doumi',
+                'https://chatgpt.com/g/g-r0NH3Lj64-jeongsan-damdangja-doumi',
+                'https://chatgpt.com/g/g-8N7fFj0Q5-as-damdangja-eobmu-doumi',
+                'https://chatgpt.com/g/g-7euadfbOI-bwms-damdangja',
+                'https://chatgpt.com/g/g-7RyMheeLE-bwms-gisuljiweon-caesbos',
+                'https://chatgpt.com/g/g-H0VpozoKd-ssas-pro-jeonmunga',
+                'https://chatgpt.com/g/g-nHEYKW3EB-ssas-master-jeonmunga',
+                'https://chatgpt.com/g/g-5UZhQS9f5-seonbag-jeongbo-geomsaeg',
+                'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
+                'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo',
+                'https://chatgpt.com/g/g-6FZ9Tf0RX-eseuensiseu-insa-doumi',
+                'https://chatgpt.com/g/g-vDHZI6j0c-jeeo-erp-as-jeobsu-doumi',
+                'https://chatgpt.com/g/g-hBaPLzaid-baejeon-erp-as-jeobsu-doumi',
+                'https://chatgpt.com/g/g-8hErnt9Ns-seongeub-gyujeong-jeonmunga',
+                'https://chatgpt.com/g/g-RNuBKFzoW-coesin-joseon-nyuseu-yoyag-jegong',
+                'https://chatgpt.com/g/g-ELYNFNuH4',
+                'https://chatgpt.com/g/g-qB0orNUXu-bijiniseu-imeil-jagseonggi',
+                'https://chatgpt.com/g/g-vNcqmCi2l-gieob-bunseog-bogoseo',
+                'https://chatgpt.com/g/g-7V7pHu1Zm-egsel-munseo-cwihab',
+                'https://chatgpt.com/g/g-VO3SyHjli-bogoseo-jejaggi',
+                'https://chatgpt.com/g/g-08jUXjUfJ-jaemujepyo-giban-gieob-jindan-bogoseo-jagseong',
+                'https://chatgpt.com/g/g-vWyVaZ26Q-jungdaejaehaeceobeolbeob-daeeung-maenyueol',
+                'https://chatgpt.com/g/g-30h6ekxqi-bwms-jajaekodeu-geomsaeggi'
             ];
             
             if (number >= 1 && number <= urls.length) {
