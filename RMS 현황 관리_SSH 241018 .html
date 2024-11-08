@@ -211,7 +211,6 @@
         .resizing {
             border-right: 2px solid var(--primary-color);
         }
-        /* Adjust column widths */
         th:nth-child(1), td:nth-child(1) { width: 30px; min-width: 30px; max-width: 30px; }
         th:nth-child(2), td:nth-child(2) { width: 100px; min-width: 100px; }
         th:nth-child(3), td:nth-child(3),
@@ -223,7 +222,7 @@
         th:nth-child(9), td:nth-child(9),
         th:nth-child(10), td:nth-child(10) { width: 100px; min-width: 100px; }
         th:nth-child(11), td:nth-child(11),
-        th:nth-child(12), td:nth-child(12) { width: 400px; min-width: 400px; max-width: 400px; } /* 너비를 250px에서 300px로 증가 */
+        th:nth-child(12), td:nth-child(12) { width: 400px; min-width: 400px; max-width: 400px; }
         th:nth-child(13), td:nth-child(13) { width: 150px; min-width: 150px; }
     </style>
 </head>
@@ -249,7 +248,6 @@
             <div id="errorLog"></div>
             <div class="table-container">
                 <div class="scrollbar-container">
-                    <!-- This div will display the scrollbar above the table -->
                 </div>
                 <div class="table-wrapper">
                     <table id="rmsTable">
@@ -295,8 +293,7 @@
             <div id="historyContent"></div>
         </div>
     </div>
-
-    <script>
+<script>
         // Firebase 구성
         const firebaseConfig = {
             apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
@@ -309,7 +306,6 @@
             measurementId: "G-J2E22BW61H"
         };
 
-        // Firebase 초기화
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -347,7 +343,7 @@
 
         function changeCategory(category, year) {
             currentCategory = category;
-currentYear = year;
+            currentYear = year;
             document.getElementById('categoryTitle').textContent = `RMS 현황 관리 - ${category} ${year}년`;
             loadFromFirebase();
         }
@@ -424,12 +420,28 @@ currentYear = year;
                 return;
             }
 
+            // Get all rows and convert to array of objects with date for sorting
             const rows = Array.from(document.querySelectorAll('#rmsBody tr')).map(row => {
-                return Array.from(row.querySelectorAll('input, textarea')).slice(1).map(input => input.value);
+                const inputs = Array.from(row.querySelectorAll('input, textarea')).slice(1);
+                const values = inputs.map(input => input.value);
+                return {
+                    date: values[0], // 일자
+                    values: values
+                };
             });
 
+            // Sort rows by date in descending order
+            rows.sort((a, b) => {
+                if (!a.date) return 1;  // Empty dates go to the end
+                if (!b.date) return -1;
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            // Extract just the values for saving
+            const sortedRows = rows.map(row => row.values);
+
             const timestamp = new Date().toISOString();
-            const changes = getChanges(previousData, rows);
+            const changes = getChanges(previousData, sortedRows);
             const historyEntry = {
                 name: name,
                 timestamp: timestamp,
@@ -437,7 +449,7 @@ currentYear = year;
                 changes: changes
             };
 
-            database.ref(`rms/${currentCategory}/${currentYear}`).set(rows)
+            database.ref(`rms/${currentCategory}/${currentYear}`).set(sortedRows)
                 .then(() => {
                     return database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry);
                 })
@@ -454,7 +466,8 @@ currentYear = year;
                         });
                     }
                     alert('데이터가 성공적으로 저장되었습니다.');
-                    previousData = rows; // 저장 후 이전 데이터 업데이트
+                    previousData = sortedRows;
+                    loadFromFirebase(); // Reload the data to show the sorted order
                 })
                 .catch((error) => {
                     console.error("저장 중 오류 발생:", error);
@@ -462,7 +475,7 @@ currentYear = year;
                 });
         }
 
-        function getChanges(oldData, newData) {
+function getChanges(oldData, newData) {
             const changes = [];
             const fields = ['일자', '시작 시간', '종료 시간', '총 작업 시간', 'Ship name', 'Hull No.', 'AS공번', '호선 담당자', '기술 담당자', '클레임 내용', '조치 결과', '비고'];
             for (let i = 0; i < Math.max(oldData.length, newData.length); i++) {
@@ -523,13 +536,12 @@ currentYear = year;
                                 });
                             }
                         });
-                        previousData = data; // 로드 후 이전 데이터 업데이트
+                        previousData = data;
                     } else {
-                        // 데이터가 없거나 배열이 아닌 경우 빈 행 10개 추가
                         for (let i = 0; i < 10; i++) {
                             addRow();
                         }
-                        previousData = []; // 빈 데이터로 초기화
+                        previousData = [];
                     }
                 })
                 .catch((error) => {
@@ -561,21 +573,19 @@ currentYear = year;
                 const tbody = document.getElementById('rmsBody');
                 tbody.innerHTML = '';
                 
-                // 헤더 행을 제외하고 데이터 행만 처리
                 json.slice(1).forEach((row, index) => {
-                    if (index < 2000) {  // 최대 2000행까지만 처리
+                    if (index < 2000) {
                         const newRow = tbody.insertRow();
                         
-                        // Checkbox cell
                         const checkboxCell = newRow.insertCell(0);
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkboxCell.appendChild(checkbox);
 
-                        for (let i = 0; i < 12; i++) {  // 12개 열에 대해 처리
+                        for (let i = 0; i < 12; i++) {
                             const newCell = newRow.insertCell(i + 1);
                             let input;
-                            if (i === 9 || i === 10) { // 클레임 내용과 조치 결과
+                            if (i === 9 || i === 10) {
                                 input = document.createElement('textarea');
                                 input.className = 'large-input';
                             } else {
@@ -591,11 +601,11 @@ currentYear = year;
                                     input.type = 'text';
                                 }
                             }
-                            input.value = row[i] || '';  // 엑셀 데이터 값 설정
+                            input.value = row[i] || '';
                             input.addEventListener('input', calculateTotalTime);
                             newCell.appendChild(input);
                         }
-                        calculateTotalTime({target: newRow.cells[2].querySelector('input')});  // 총 작업 시간 계산
+                        calculateTotalTime({target: newRow.cells[2].querySelector('input')});
                     }
                 });
                 
@@ -643,49 +653,6 @@ currentYear = year;
             document.getElementById('historyModal').style.display = 'none';
         }
 
-        // 열 크기 조절 기능
-        const table = document.getElementById('rmsTable');
-        let resizingCol;
-        let startX;
-        let startWidth;
-
-        table.addEventListener('mousedown', function(e) {
-            if (e.target.classList.contains('resizer')) {
-                resizingCol = e.target.parentElement;
-                startX = e.pageX;
-                startWidth = resizingCol.offsetWidth;
-                document.addEventListener('mousemove', resizeColumn);
-                document.addEventListener('mouseup', stopResize);
-                e.preventDefault();
-            }
-        });
-
-function resizeColumn(e) {
-            if (resizingCol) {
-                const dx = e.pageX - startX;
-                resizingCol.style.width = `${startWidth + dx}px`;
-            }
-        }
-
-        function stopResize() {
-            document.removeEventListener('mousemove', resizeColumn);
-            document.removeEventListener('mouseup', stopResize);
-            resizingCol = null;
-        }
-
-        // 스크롤바 동기화
-        const scrollbarContainer = document.querySelector('.scrollbar-container');
-        const tableWrapper = document.querySelector('.table-wrapper');
-
-        scrollbarContainer.addEventListener('scroll', () => {
-            tableWrapper.scrollLeft = scrollbarContainer.scrollLeft;
-        });
-
-        tableWrapper.addEventListener('scroll', () => {
-            scrollbarContainer.scrollLeft = tableWrapper.scrollLeft;
-        });
-
-        // 체크박스 관련 함수들
         function toggleAllCheckboxes() {
             const selectAllCheckbox = document.getElementById('selectAll');
             const checkboxes = document.querySelectorAll('#rmsBody input[type="checkbox"]');
@@ -712,16 +679,42 @@ function resizeColumn(e) {
             } else {
                 alert('선택된 행이 없습니다.');
             }
-
-            // 전체 선택 체크박스 해제
             document.getElementById('selectAll').checked = false;
         }
 
-        // 페이지 로드 시 초기화
+        // Column resize functionality
+        const table = document.getElementById('rmsTable');
+        let resizingCol;
+        let startX;
+        let startWidth;
+
+        table.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('resizer')) {
+                resizingCol = e.target.parentElement;
+                startX = e.pageX;
+                startWidth = resizingCol.offsetWidth;
+                document.addEventListener('mousemove', resizeColumn);
+                document.addEventListener('mouseup', stopResize);
+                e.preventDefault();
+            }
+        });
+
+        function resizeColumn(e) {
+            if (resizingCol) {
+                const dx = e.pageX - startX;
+                resizingCol.style.width = `${startWidth + dx}px`;
+            }
+        }
+
+        function stopResize() {
+            document.removeEventListener('mousemove', resizeColumn);
+            document.removeEventListener('mouseup', stopResize);
+            resizingCol = null;
+        }
+
         window.onload = function() {
             testConnection();
             loadFromFirebase();
-            // 스크롤바 동기화를 위해 가짜 스크롤바 생성
             const scrollbarContent = document.createElement('div');
             scrollbarContent.style.width = table.scrollWidth + 'px';
             scrollbarContainer.appendChild(scrollbarContent);
