@@ -925,7 +925,21 @@ async function uploadPDF() {
         showError('Please select a PDF file');
         return;
     }
-
+    try {
+        console.log('Starting PDF upload...'); // 디버깅 로그
+        const timestamp = Date.now();
+        const storageRef = storage.ref();
+        const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`);
+        
+        // Upload file
+        console.log('Uploading to Firebase Storage...'); // 디버깅 로그
+        await pdfRef.put(file).then(snapshot => {
+            console.log('Upload progress:', snapshot.state); // 업로드 진행상태 확인
+        });
+        
+        console.log('Getting download URL...'); // 디버깅 로그
+        const pdfUrl = await pdfRef.getDownloadURL();
+        console.log('PDF URL:', pdfUrl); // 디버깅 로그
     try {
         const timestamp = Date.now();
         const storageRef = storage.ref();
@@ -968,6 +982,7 @@ async function uploadPDF() {
         alert('PDF uploaded successfully');
         
     } catch (error) {
+        console.error('Detailed error:', error); // 자세한 에러 정보
         showError('Error uploading PDF: ' + error.message);
     }
 }
