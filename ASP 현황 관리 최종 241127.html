@@ -719,11 +719,20 @@ function changeCompany(company) {    // company, type 에서 company만 남김
     loadFromFirebase();
 }
 function loadFromFirebase() {
-    database.ref(`bwms-service/${currentCompany}/VESSEL`).once('value')    // /${currentType} 를 /VESSEL로 고정
+    database.ref(`bwms-service/${currentCompany}/VESSEL`).once('value')
         .then((snapshot) => {
             const data = snapshot.val() || [];
-            displayData(Array.isArray(data) ? data : []);
-            previousData = [...data];
+            // Contract Status에 따른 정렬 추가
+            const sortedData = Array.isArray(data) ? [...data].sort((a, b) => {
+                // In Service를 최상위로
+                if (a.contractStatus === 'In Service' && b.contractStatus !== 'In Service') return -1;
+                if (a.contractStatus !== 'In Service' && b.contractStatus === 'In Service') return 1;
+                // 나머지는 원래 순서 유지
+                return 0;
+            }) : [];
+            
+            displayData(sortedData);
+            previousData = [...sortedData];
             updateStatistics();
         })
         .catch((error) => {
