@@ -724,11 +724,15 @@ function loadFromFirebase() {
             const data = snapshot.val() || [];
             // Contract Status에 따른 정렬 추가
             const sortedData = Array.isArray(data) ? [...data].sort((a, b) => {
-                // In Service를 최상위로
-                if (a.contractStatus === 'In Service' && b.contractStatus !== 'In Service') return -1;
-                if (a.contractStatus !== 'In Service' && b.contractStatus === 'In Service') return 1;
-                // 나머지는 원래 순서 유지
-                return 0;
+                // 정렬 우선순위 설정
+                const priority = {
+                    'In Service': 1,
+                    'Contract Completed': 2,
+                    'Contract Terminated': 3
+                };
+                
+                // 우선순위에 따라 정렬
+                return priority[a.contractStatus] - priority[b.contractStatus];
             }) : [];
             
             displayData(sortedData);
