@@ -917,52 +917,60 @@ function saveServiceEntry() {
             document.getElementById('pdfModal').style.display = 'block';
         }
 
-        async function uploadPDF() {
-            const fileInput = document.getElementById('pdfFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showError('Please select a PDF file');
-                return;
-            }
+async function uploadPDF() {
+    const fileInput = document.getElementById('pdfFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showError('Please select a PDF file');
+        return;
+    }
 
-            try {
-                const storageRef = storage.ref();
-const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${currentImoNo}_${Date.now()}.pdf`);    // /${currentType} 를 /VESSEL로 변경
-                
-                // Upload file
-                await pdfRef.put(file);
-                
-                // Get download URL
-                const pdfUrl = await pdfRef.getDownloadURL();
-                
-                // Update Firebase Realtime Database
-                const data = [...previousData];
-                const index = data.findIndex(row => row.imoNo === currentImoNo);
-                
-                if (index !== -1) {
-                    data[index].pdfUrl = pdfUrl;
-                    await database.ref(`bwms-service/${currentCompany}/${currentType}`).set(data);
-                    
-                    // Add PDF upload to history
-                    const historyEntry = {
-                        name: prompt("Enter your name:") || 'Unknown',
-                        timestamp: new Date().toISOString(),
-                        action: "PDF Upload",
-                        changes: [`Uploaded service report PDF for IMO: ${currentImoNo}`]
-                    };
-                    
-                    await database.ref(`history/${currentCompany}/${currentType}`).push(historyEntry);
-                }
-                
-                closeModal('pdfModal');
-                loadFromFirebase();
-                alert('PDF uploaded successfully');
-                
-            } catch (error) {
-                showError('Error uploading PDF: ' + error.message);
+    try {
+        const timestamp = Date.now();
+        const storageRef = storage.ref();
+        const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`);
+        
+        // Upload file
+        await pdfRef.put(file);
+        
+        // Get download URL
+        const pdfUrl = await pdfRef.getDownloadURL();
+        
+        // Update Firebase Realtime Database
+        const data = [...previousData];
+        const index = data.findIndex(row => row.imoNo === currentImoNo);
+        
+        if (index !== -1) {
+            // Initialize pdfs object if it doesn't exist
+            if (!data[index].pdfs) {
+                data[index].pdfs = {};
             }
+            
+            // Add new PDF to the pdfs object
+            data[index].pdfs[`pdf_${timestamp}`] = pdfUrl;
+            
+            await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data);
+            
+            // Add to history
+            const historyEntry = {
+                name: prompt("Enter your name:") || 'Unknown',
+                timestamp: new Date().toISOString(),
+                action: "PDF Upload",
+                changes: [`Uploaded service report PDF for IMO: ${currentImoNo}`]
+            };
+            
+            await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
         }
+        
+        closeModal('pdfModal');
+        loadFromFirebase();
+        alert('PDF uploaded successfully');
+        
+    } catch (error) {
+        showError('Error uploading PDF: ' + error.message);
+    }
+}
 async function deletePDF(imoNo, pdfKey) {
     if (!confirm('Are you sure you want to delete this PDF?')) {
         return;
