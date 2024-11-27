@@ -576,7 +576,7 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                 </div>
                 <div class="form-group">
                     <label>ASP Start Date</label>
-                    <input type="date" id="contractDate" required>
+                    <input type="date" id="contractDate">
                 </div>
                 <div class="form-group">
                     <label>ASP Finish Date</label>
@@ -835,8 +835,8 @@ function saveServiceEntry() {
                 imoNo: document.getElementById('imoNo').value,
                 shipName: document.getElementById('shipName').value,
                 deliveryDate: document.getElementById('deliveryDate').value,
-                contractDate: document.getElementById('contractDate').value,
-                finishedDate: document.getElementById('finishedDate').value,
+                contractDate: document.getElementById('contractDate').value || '',  // 빈 값 허용
+                finishedDate: document.getElementById('finishedDate').value || '',
                 onboardingContract: parseInt(document.getElementById('onboardingContract').value),
                 onboardingCompleted: parseInt(document.getElementById('onboardingCompleted').value),
                 rmsContract: parseInt(document.getElementById('rmsContract').value),
@@ -1185,24 +1185,28 @@ function showAddModal() {
             return true;
         }
 
-        function validateDates() {
-            const deliveryDate = new Date(document.getElementById('deliveryDate').value);
-            const contractDate = new Date(document.getElementById('contractDate').value);
-            const finishedDate = document.getElementById('finishedDate').value ? 
-                new Date(document.getElementById('finishedDate').value) : null;
+function validateDates() {
+    const deliveryDate = new Date(document.getElementById('deliveryDate').value);
+    const contractDate = document.getElementById('contractDate').value ? 
+        new Date(document.getElementById('contractDate').value) : null;
+    const finishedDate = document.getElementById('finishedDate').value ? 
+        new Date(document.getElementById('finishedDate').value) : null;
 
-            if (contractDate < deliveryDate) {
-                showError('ASP Start Date cannot be earlier than delivery date');
-                return false;
-            }
-
-            if (finishedDate && finishedDate < contractDate) {
-                showError('ASP Finish Date cannot be earlier than ASP Start Date');
-                return false;
-            }
-
-            return true;
+    // ASP Start Date가 있는 경우에만 검증
+    if (contractDate) {
+        if (contractDate < deliveryDate) {
+            showError('ASP Start Date cannot be earlier than delivery date');
+            return false;
         }
+
+        if (finishedDate && finishedDate < contractDate) {
+            showError('ASP Finish Date cannot be earlier than ASP Start Date');
+            return false;
+        }
+    }
+
+    return true;
+}
 
         function validateForm() {
             return validateServiceNumbers() && validateDates();
