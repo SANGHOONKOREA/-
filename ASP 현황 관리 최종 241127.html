@@ -923,11 +923,11 @@ const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${curr
                 return;
             }
 
-            const password = prompt("Enter password to save:");
-            if (password !== "SNSYS") {
-                showError("Incorrect password. Save cancelled.");
-                return;
-            }
+    const password = prompt("Enter password to save:");
+    if (password.toUpperCase() !== "SNSYS") {  // 대문자로 변환하여 비교
+        showError("Incorrect password. Save cancelled.");
+        return;
+    }
 
             const timestamp = new Date().toISOString();
             const changes = getChanges(previousData, data);
