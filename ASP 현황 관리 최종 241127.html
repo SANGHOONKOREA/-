@@ -925,6 +925,7 @@ async function uploadPDF() {
         showError('Please select a PDF file');
         return;
     }
+
     try {
         console.log('Starting PDF upload...'); // 디버깅 로그
         const timestamp = Date.now();
@@ -940,16 +941,6 @@ async function uploadPDF() {
         console.log('Getting download URL...'); // 디버깅 로그
         const pdfUrl = await pdfRef.getDownloadURL();
         console.log('PDF URL:', pdfUrl); // 디버깅 로그
-    try {
-        const timestamp = Date.now();
-        const storageRef = storage.ref();
-        const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`);
-        
-        // Upload file
-        await pdfRef.put(file);
-        
-        // Get download URL
-        const pdfUrl = await pdfRef.getDownloadURL();
         
         // Update Firebase Realtime Database
         const data = [...previousData];
