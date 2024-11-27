@@ -1007,33 +1007,34 @@ changes.push(`Added new ship: ${newData[i].shipName} (IMO: ${newData[i].imoNo})`
             );
         }
 
-        function uploadExcel(event) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
+function uploadExcel(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                    const formattedData = jsonData.map(row => ({
-                        imoNo: row['IMO No.'].toString(),
-                        shipName: row['Ship Name'],
-                        deliveryDate: row['Delivery Date'],
-                        contractDate: row['ASP Start Date'],
-                        finishedDate: row['ASP Finish Date'] || '',
-                        onboardingContract: parseInt(row['Onboarding Contract']),
-                        onboardingCompleted: parseInt(row['Onboarding Completed']),
-                        rmsContract: parseInt(row['RMS Contract']),
-                        rmsCompleted: parseInt(row['RMS Completed']),
-                        currentStatus: row['Current Status'],
-                        serviceRemarks: row['Service Remarks'] || '',
-                        contractStatus: row['Contract Status'],
-                        pdfUrl: row['Service Report URL'] || ''
-                    }));
+            const formattedData = jsonData.map(row => ({
+                imoNo: row['IMO No.'].toString(),
+                shipName: row['Ship Name'],
+                deliveryDate: row['Delivery Date'],
+                contractDate: row['ASP Start Date'] || '',  // 빈 값 허용
+                finishedDate: row['ASP Finish Date'] || '',
+                onboardingContract: parseInt(row['Onboarding Contract']),
+                onboardingCompleted: parseInt(row['Onboarding Completed']),
+                rmsContract: parseInt(row['RMS Contract']),
+                rmsCompleted: parseInt(row['RMS Completed']),
+                currentStatus: row['Current Status'],
+                serviceRemarks: row['Service Remarks'] || '',
+                nextPlan: row['Next Plan'] || '',          // Next Plan 필드 추가
+                contractStatus: row['Contract Status'],
+                pdfUrl: row['Service Report URL'] || ''
+            }));
 
                     saveToFirebase(formattedData);
                 } catch (error) {
