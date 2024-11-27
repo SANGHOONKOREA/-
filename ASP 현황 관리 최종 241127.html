@@ -575,11 +575,11 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                     <input type="date" id="deliveryDate" required>
                 </div>
                 <div class="form-group">
-                    <label>Contract Date</label>
+                    <label>ASP Start Date</label>
                     <input type="date" id="contractDate" required>
                 </div>
                 <div class="form-group">
-                    <label>Finished Date</label>
+                    <label>ASP Finish Date</label>
                     <input type="date" id="finishedDate">
                 </div>
                 <div class="form-group">
@@ -954,8 +954,8 @@ const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${curr
 function getChanges(oldData, newData) {
             const changes = [];
             const fields = [
-                'IMO No', 'Ship Name', 'Delivery Date', 'Contract Date', 
-                'Finished Date', 'Onboarding Contract', 'Onboarding Completed',
+                'IMO No', 'Ship Name', 'Delivery Date', 'ASP Start Date', 
+                'ASP Finish Date', 'Onboarding Contract', 'Onboarding Completed',
                 'RMS Contract', 'RMS Completed', 'Current Status', 
                 'Service Remarks', 'Contract Status', 'Service Report'
             ];
@@ -985,8 +985,8 @@ changes.push(`Added new ship: ${newData[i].shipName} (IMO: ${newData[i].imoNo})`
                 'IMO No.': row.imoNo,
                 'Ship Name': row.shipName,
                 'Delivery Date': row.deliveryDate,
-                'Contract Date': row.contractDate,
-                'Finished Date': row.finishedDate || '',
+                'ASP Start Date': row.contractDate,
+                'ASP Finish Date': row.finishedDate || '',
                 'Onboarding Contract': row.onboardingContract,
                 'Onboarding Completed': row.onboardingCompleted,
                 'Onboarding Remaining': row.onboardingContract - row.onboardingCompleted,
@@ -1023,8 +1023,8 @@ changes.push(`Added new ship: ${newData[i].shipName} (IMO: ${newData[i].imoNo})`
                         imoNo: row['IMO No.'].toString(),
                         shipName: row['Ship Name'],
                         deliveryDate: row['Delivery Date'],
-                        contractDate: row['Contract Date'],
-                        finishedDate: row['Finished Date'] || '',
+                        contractDate: row['ASP Start Date'],
+                        finishedDate: row['ASP Finish Date'] || '',
                         onboardingContract: parseInt(row['Onboarding Contract']),
                         onboardingCompleted: parseInt(row['Onboarding Completed']),
                         rmsContract: parseInt(row['RMS Contract']),
@@ -1192,12 +1192,12 @@ function showAddModal() {
                 new Date(document.getElementById('finishedDate').value) : null;
 
             if (contractDate < deliveryDate) {
-                showError('Contract date cannot be earlier than delivery date');
+                showError('ASP Start Date cannot be earlier than delivery date');
                 return false;
             }
 
             if (finishedDate && finishedDate < contractDate) {
-                showError('Finished date cannot be earlier than contract date');
+                showError('ASP Finish Date cannot be earlier than ASP Start Date');
                 return false;
             }
 
