@@ -703,7 +703,7 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
 
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const storage = firebase.storage();
+        const storage = firebase.storage().ref();
 
         let currentCompany = 'PAN OCEAN';
         let currentType = 'VESSEL';  // 'LNG'에서 'VESSEL'로 변경
@@ -729,10 +729,16 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
         }
 
         // 페이지 로드 시 실행
-        window.onload = function() {
-            testConnection();
-            loadFromFirebase();
-        };
+window.onload = function() {
+    testConnection();
+    loadFromFirebase();
+    
+    // PDF 업로드 버튼에 이벤트 리스너 추가
+    document.querySelector('#pdfModal .btn-primary').addEventListener('click', function(e) {
+        e.preventDefault();
+        uploadPDF();
+    });
+};
 
 function changeCompany(company) {    // company, type 에서 company만 남김
     currentCompany = company;
@@ -915,9 +921,14 @@ function saveServiceEntry() {
         function showPdfModal(imoNo) {
             currentImoNo = imoNo;
             document.getElementById('pdfModal').style.display = 'block';
+                // 파일 입력 필드 초기화
+            document.getElementById('pdfFile').value = '';
         }
 
 async function uploadPDF() {
+    // 디버깅을 위한 콘솔 로그 추가
+    console.log('uploadPDF function called');
+    
     const fileInput = document.getElementById('pdfFile');
     const file = fileInput.files[0];
     
@@ -927,54 +938,52 @@ async function uploadPDF() {
     }
 
     try {
-        console.log('Starting PDF upload...'); // 디버깅 로그
+        // 파일 업로드 경로 설정
         const timestamp = Date.now();
-        const storageRef = storage.ref();
-        const pdfRef = storageRef.child(`service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`);
-        
-        // Upload file
-        console.log('Uploading to Firebase Storage...'); // 디버깅 로그
-        await pdfRef.put(file).then(snapshot => {
-            console.log('Upload progress:', snapshot.state); // 업로드 진행상태 확인
-        });
-        
-        console.log('Getting download URL...'); // 디버깅 로그
-        const pdfUrl = await pdfRef.getDownloadURL();
-        console.log('PDF URL:', pdfUrl); // 디버깅 로그
-        
-        // Update Firebase Realtime Database
+        const filePath = `service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`;
+        const fileRef = storage.child(filePath);
+
+        // 파일 업로드 시작
+        console.log('Starting file upload...');
+        const snapshot = await fileRef.put(file);
+        console.log('File uploaded successfully');
+
+        // 다운로드 URL 가져오기
+        const downloadURL = await fileRef.getDownloadURL();
+        console.log('Download URL obtained:', downloadURL);
+
+        // 데이터베이스 업데이트
         const data = [...previousData];
         const index = data.findIndex(row => row.imoNo === currentImoNo);
-        
+
         if (index !== -1) {
-            // Initialize pdfs object if it doesn't exist
             if (!data[index].pdfs) {
                 data[index].pdfs = {};
             }
-            
-            // Add new PDF to the pdfs object
-            data[index].pdfs[`pdf_${timestamp}`] = pdfUrl;
-            
+            data[index].pdfs[`pdf_${timestamp}`] = downloadURL;
+
+            // 데이터베이스 업데이트
             await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data);
-            
-            // Add to history
+            console.log('Database updated successfully');
+
+            // 히스토리 추가
             const historyEntry = {
-                name: prompt("Enter your name:") || 'Unknown',
+                name: prompt("Enter your name for the record:") || 'Unknown',
                 timestamp: new Date().toISOString(),
                 action: "PDF Upload",
                 changes: [`Uploaded service report PDF for IMO: ${currentImoNo}`]
             };
-            
+
             await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
+            console.log('History updated successfully');
+
+            closeModal('pdfModal');
+            loadFromFirebase();
+            alert('PDF uploaded successfully');
         }
-        
-        closeModal('pdfModal');
-        loadFromFirebase();
-        alert('PDF uploaded successfully');
-        
     } catch (error) {
-        console.error('Detailed error:', error); // 자세한 에러 정보
-        showError('Error uploading PDF: ' + error.message);
+        console.error('Error during PDF upload:', error);
+        showError(`Error uploading PDF: ${error.message}`);
     }
 }
 async function deletePDF(imoNo, pdfKey) {
