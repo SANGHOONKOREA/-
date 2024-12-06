@@ -45,40 +45,67 @@
             overflow: hidden;
         }
 
-.sidebar {
-    width: 250px;
-    background-color: var(--secondary-color);
-    padding: 20px;
-    height: 100vh;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-.menu-buttons {
-    flex-grow: 1;
-}
+        .sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
 
-.bottom-content {
-    margin-top: auto;
-}
-.brand-logo {
-    margin: 20px auto;
-    width: 100%;
-    padding: 10px;
-}
+        .menu-buttons {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
 
-.brand-image {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-        .sidebar h3 {
-            color: white;
-            margin-top: 20px;
-            margin-bottom: 10px;
+        .bottom-content {
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        .brand-logo {
+            margin: 20px auto;
+            width: 100%;
             padding: 10px;
-            background-color: var(--primary-color);
+        }
+
+        .brand-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .add-owner-btn, .del-owner-btn {
+            color: white;
+            border: none;
+            padding: 12px;
             border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            width: 100%;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .add-owner-btn {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        .add-owner-btn:hover {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            transform: translateY(-2px);
+        }
+
+        .del-owner-btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .del-owner-btn:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+            transform: translateY(-2px);
         }
 
         .sidebar button {
@@ -104,73 +131,33 @@
             background-color: #2980b9;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-.ai-button-container {
-    position: absolute;
-    bottom: 140px;  /* SNSYS 로고 위 여백 */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-}
 
-.ai-button {
-    display: block;
-    background: linear-gradient(45deg, #2b3a67, #1a2b4b);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    padding: 12px;
-    margin-bottom: 20px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
+        .owner-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
 
-.ai-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    background: linear-gradient(45deg, #1a2b4b, #2b3a67);
-}
+        .owner-select-btn {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-.ai-button-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    position: relative;
-}
+        .owner-select-btn:hover {
+            background: #f5f5f5;
+        }
 
-.ai-text {
-    color: white;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    letter-spacing: 0.5px;
-}
+        .owner-select-btn.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
 
-.ai-pulse {
-    width: 10px;
-    height: 10px;
-    background-color: #4CAF50;
-    border-radius: 50%;
-    position: relative;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-    }
-}
-
-/* 호버 효과에서 텍스트 색상 유지 */
-.ai-button:hover .ai-text {
-    color: white;
-}
         .container {
             flex-grow: 1;
             display: flex;
@@ -197,8 +184,7 @@
             border-radius: 4px;
             font-size: 14px;
         }
-</style>
-<style>
+
         .statistics {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -234,34 +220,17 @@
             min-width: 1800px;
         }
 
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--table-border);
-    border-right: 1px solid var(--table-border);
-    font-size: 13px;
-    max-width: 150px;  /* 기본 최대 너비 설정 */
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.remarks-cell {
-    width: 200px;
-    height: 80px;
-    max-height: 80px;
-    overflow-y: auto;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    display: block;
-    padding: 5px;
-    border-radius: 4px;
-    background-color: #fff;
-}
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--table-border);
+            border-right: 1px solid var(--table-border);
+            font-size: 13px;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-table td {
-    vertical-align: top;
-    height: 100px;  /* 모든 셀의 높이를 통일 */
-}
         th {
             background-color: var(--table-header-bg);
             color: white;
@@ -269,26 +238,38 @@ table td {
             top: 0;
             z-index: 10;
             font-weight: 600;
-            text-align: left;  /* 모든 헤더 텍스트 좌측 정렬 */
-            padding-left: 12px;  /* 왼쪽 패딩 추가 */
+            text-align: left;
+            padding-left: 12px;
         }
 
-td:nth-child(10),
-td:nth-child(11) {
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
-    padding: 5px;
-    vertical-align: top;
-}
-td:nth-child(7),
-td:nth-child(8) {
-    width: 200px;
-    max-width: 200px;
-}
-td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
-    white-space: nowrap;
-}
+        .remarks-cell {
+            width: 200px;
+            height: 80px;
+            max-height: 80px;
+            overflow-y: auto;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: block;
+            padding: 5px;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        table td {
+            vertical-align: top;
+            height: 100px;
+        }
+
+        td:nth-child(10),
+        td:nth-child(11) {
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            padding: 5px;
+            vertical-align: top;
+        }
+
         .status-normal {
             color: var(--success-color);
             font-weight: bold;
@@ -310,40 +291,38 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
             cursor: pointer;
             margin-right: 10px;
         }
-        
-        .pdf-upload {
-            display: none;
-        }
+
         .pdf-container {
-    min-width: 150px;
-}
+            min-width: 150px;
+        }
 
-.pdf-list {
-    margin-bottom: 8px;
-    max-height: 60px;
-    overflow-y: auto;
-}
+        .pdf-list {
+            margin-bottom: 8px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
 
-.pdf-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px;
-}
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
 
-.delete-pdf-btn {
-    padding: 0 6px;
-    margin-left: 5px;
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-}
+        .delete-pdf-btn {
+            padding: 0 6px;
+            margin-left: 5px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
 
-.delete-pdf-btn:hover {
-    background-color: #c0392b;
-}
+        .delete-pdf-btn:hover {
+            background-color: #c0392b;
+        }
+
         .upload-btn {
             padding: 4px 8px;
             background-color: #3498db;
@@ -353,30 +332,20 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
             cursor: pointer;
             font-size: 12px;
         }
-        
+
         .upload-btn:hover {
             background-color: #2980b9;
         }
 
-        .contract-completed, .contract-service, .contract-terminated {
+        .contract-completed,
+        .contract-service,
+        .contract-terminated {
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
         }
-.edit-btn {
-    padding: 4px 8px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-}
 
-.edit-btn:hover {
-    background-color: #2980b9;
-}
         .contract-completed {
             background-color: #d4edda;
             color: var(--success-color);
@@ -403,9 +372,9 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
             justify-content: space-between;
             font-size: 12px;
             padding: 2px 0;
+            cursor: pointer;
         }
-</style>
-<style>
+
         .btn {
             padding: 10px 20px;
             border: none;
@@ -465,16 +434,16 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
 
         .form-group input,
         .form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 14px;
-    max-height: 100px;      /* 최대 높이 설정 */
-    overflow-y: auto;       /* 세로 스크롤바 추가 */
-    resize: vertical;       /* 수직으로만 크기 조절 가능 */
-}
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            max-height: 100px;
+            overflow-y: auto;
+            resize: vertical;
+        }
 
         .button-group {
             display: flex;
@@ -501,27 +470,72 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 1000;
         }
+
+        .highlight-overdue {
+            background-color: yellow;
+        }
+
+        /* 날짜 보기 모달 스타일 */
+        #dateViewModal .modal-content {
+            max-width: 600px;
+        }
+
+        .date-list {
+            margin: 10px 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .date-list li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div id="connectionStatus">Checking Firebase Connection...</div>
-    
-<div class="sidebar">
-    <div class="brand-logo">
-        <img src="https://pds.saramin.co.kr/company/logo/202002/24/q676t0_a5ak-ya4cjo_logo.jpg" alt="Brand Logo" class="brand-image">
-    </div>
-    <button onclick="changeCompany('PAN OCEAN')" class="active">PAN OCEAN</button>
-    <button onclick="changeCompany('CHEVRON')">CHEVRON</button>
-  <div class="bottom-content">
-        <a href="https://snsys-qa.neoali.com" target="_blank" class="ai-button">
-            <div class="ai-button-content">
-                <div class="ai-pulse"></div>
-                <span class="ai-text">S&SYS AI CUSTOMER SERVICE</span>
+    <div class="sidebar">
+        <div class="brand-logo">
+            <img src="https://pds.saramin.co.kr/company/logo/202002/24/q676t0_a5ak-ya4cjo_logo.jpg" alt="Brand Logo" class="brand-image">
+        </div>
+        <div class="menu-buttons">
+            <button onclick="changeCompany('PAN OCEAN')" class="active">PAN OCEAN</button>
+            <button onclick="changeCompany('NAVIGARE CAPITAL')">NAVIGARE CAPITAL</button>
+            <button onclick="changeCompany('K-LINE')">K-LINE</button>
+            <div id="customCompanyButtons"></div>
+        </div>
+        <div class="bottom-content">
+            <button onclick="showAddOwnerModal()" class="add-owner-btn">ADD OWNER</button>
+            <button onclick="showDelOwnerModal()" class="del-owner-btn">DEL OWNER</button>
+            <a href="https://snsys-qa.neoali.com" target="_blank" style="text-decoration:none;">
+                <div style="background: linear-gradient(45deg, #2b3a67, #1a2b4b); padding:12px; border-radius:4px; color:white; text-align:center; margin-bottom:20px;">
+                    S&SYS AI CUSTOMER SERVICE
+                </div>
+            </a>
+        </div>
+        <div id="delOwnerModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close" onclick="closeModal('delOwnerModal')">&times;</span>
+                <h2>Delete Owner</h2>
+                <div class="form-group">
+                    <label>Select Owner to Delete:</label>
+                    <div id="ownerButtonsContainer" class="owner-buttons-container">
+                        <!-- 버튼들이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+                <div id="deleteConfirmSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="deletePassword" required>
+                    </div>
+                    <div class="button-group">
+                        <button onclick="confirmOwnerDeletion()" class="btn btn-danger">Delete</button>
+                        <button onclick="cancelDeletion()" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
             </div>
-        </a>
+        </div>
     </div>
-</div>
-
     <div class="container">
         <div class="header">
             <h1 id="categoryTitle">BWMS Annual Service Management - PAN OCEAN </h1>
@@ -531,47 +545,48 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                 <button onclick="searchTable()" class="btn btn-primary">Search</button>
             </div>
 
-<div class="statistics">
-    <div class="stat-card">
-        <h3>Total Ships</h3>
-        <div class="stat-value" id="totalShips">0</div>
-    </div>
-    <div class="stat-card">
-        <h3>Normal Operation</h3>
-        <div class="stat-value" id="normalOps">0</div>
-    </div>
-    <div class="stat-card">
-        <h3>Services Needed</h3>
-        <div class="stat-value" id="servicesNeeded">0</div>
-    </div>
-    <div class="stat-card">
-        <h3>Active Contracts</h3>
-        <div class="stat-value" id="activeContracts">0</div>
-    </div>
-</div>
+            <div class="statistics">
+                <div class="stat-card">
+                    <h3>Total Ships</h3>
+                    <div class="stat-value" id="totalShips">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Normal Operation</h3>
+                    <div class="stat-value" id="normalOps">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Services Needed</h3>
+                    <div class="stat-value" id="servicesNeeded">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Contracts</h3>
+                    <div class="stat-value" id="activeContracts">0</div>
+                </div>
+            </div>
         </div>
-<div class="table-container">
-<table id="serviceTable">
-<thead>
-    <tr>
-        <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()"></th>
-        <th>IMO No.</th>
-        <th>Ship Name</th>
-        <th>Delivery Date</th>
-        <th>ASP Start Date</th>
-        <th>ASP Finish Date</th>
-        <th style="min-width: 150px;">Onboarding Service</th>
-        <th style="min-width: 150px;">RMS Service</th>
-        <th>Current Status</th>
-        <th>Service Remarks</th>
-        <th>Next Plan</th>
-        <th>Contract Status</th>
-        <th>Service Report</th>
-        <th>Edit</th>
-    </tr>
-</thead>
-    <tbody id="serviceBody"></tbody>
-</table>
+        
+        <div class="table-container">
+            <table id="serviceTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()"></th>
+                        <th>IMO No.</th>
+                        <th>Ship Name</th>
+                        <th>Delivery Date</th>
+                        <th>ASP Start Date</th>
+                        <th>ASP Finish Date</th>
+                        <th style="min-width: 150px;">Onboarding Service</th>
+                        <th style="min-width: 150px;">RMS Service</th>
+                        <th>Current Status</th>
+                        <th>Service Remarks</th>
+                        <th>Next Plan</th>
+                        <th>Contract Status</th>
+                        <th>Service Report</th>
+                        <th>Edit</th>
+                    </tr>
+                </thead>
+                <tbody id="serviceBody"></tbody>
+            </table>
         </div>
 
         <div class="button-group">
@@ -619,6 +634,8 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                     <label>Onboarding Service Completed</label>
                     <input type="number" id="onboardingCompleted" min="0" required>
                 </div>
+                <div class="form-group" id="onboardingDatesContainer"></div>
+
                 <div class="form-group">
                     <label>RMS Service Contract</label>
                     <input type="number" id="rmsContract" min="0" required>
@@ -627,6 +644,8 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                     <label>RMS Service Completed</label>
                     <input type="number" id="rmsCompleted" min="0" required>
                 </div>
+                <div class="form-group" id="rmsDatesContainer"></div>
+
                 <div class="form-group">
                     <label>Current Status</label>
                     <select id="currentStatus" required>
@@ -635,14 +654,14 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
                         <option value="Not Operation">Not Operation</option>
                     </select>
                 </div>
-<div class="form-group">
-    <label>Service Remarks</label>
-    <textarea id="serviceRemarks" rows="5" style="height: 100px;"></textarea>
-</div>
-<div class="form-group">
-    <label>Next Plan</label>
-    <textarea id="nextPlan" rows="3"></textarea>
-</div>
+                <div class="form-group">
+                    <label>Service Remarks</label>
+                    <textarea id="serviceRemarks" rows="5" style="height: 100px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Next Plan</label>
+                    <textarea id="nextPlan" rows="3"></textarea>
+                </div>
                 <div class="form-group">
                     <label>Contract Status</label>
                     <select id="contractStatus" required>
@@ -668,6 +687,22 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
         </div>
     </div>
 
+    <!-- Add Owner Modal -->
+    <div id="addOwnerModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="close" onclick="closeModal('addOwnerModal')">&times;</span>
+            <h2>Add New Owner</h2>
+            <div class="form-group">
+                <label>Owner Name:</label>
+                <input type="text" id="newOwnerName" required>
+            </div>
+            <div class="button-group">
+                <button onclick="addNewOwner()" class="btn btn-primary">Add</button>
+                <button onclick="closeModal('addOwnerModal')" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PDF Upload Modal -->
     <div id="pdfModal" class="modal">
         <div class="modal-content">
@@ -686,89 +721,165 @@ td:not(:nth-child(7)):not(:nth-child(8)):not(:nth-child(10)) {
         </div>
     </div>
 
+    <!-- Date View Modal -->
+    <div id="dateViewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('dateViewModal')">&times;</span>
+            <h2 id="dateViewTitle"></h2>
+            <ul class="date-list" id="dateList"></ul>
+        </div>
+    </div>
+
     <div id="errorLog" class="error-message"></div>
 
-    <script>
-        // Firebase 초기화
-        const firebaseConfig = {
-            apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
-            authDomain: "sanghoon-d8f1c.firebaseapp.com",
-            databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
-            projectId: "sanghoon-d8f1c",
-            storageBucket: "sanghoon-d8f1c.appspot.com",
-            messagingSenderId: "495391900753",
-            appId: "1:495391900753:web:b0d708eeca64fafe562470",
-            measurementId: "G-J2E22BW61H"
-        };
+<script>
+// Firebase 초기화 (자신의 Firebase 설정값으로 변경 필요)
+const firebaseConfig = {
+    apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+    authDomain: "sanghoon-d8f1c.firebaseapp.com",
+    databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+    projectId: "sanghoon-d8f1c",
+    storageBucket: "sanghoon-d8f1c.appspot.com",
+    messagingSenderId: "495391900753",
+    appId: "1:495391900753:web:b0d708eeca64fafe562470",
+    measurementId: "G-J2E22BW61H"
+};
 
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const storage = firebase.storage().ref();
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const storage = firebase.storage().ref();
 
-        let currentCompany = 'PAN OCEAN';
-        let currentType = 'VESSEL';  // 'LNG'에서 'VESSEL'로 변경
-        let previousData = [];
-        let currentImoNo = '';
+let currentCompany = 'PAN OCEAN';
+let currentType = 'VESSEL';
+let previousData = [];
+let currentImoNo = '';
+let selectedOwner = null;
+
 // Firebase 연결 테스트
-        function testConnection() {
-            const testRef = database.ref('test');
-            testRef.set({
-                timestamp: Date.now(),
-                test: true
-            })
-            .then(() => {
-                console.log("Firebase 연결 성공");
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<span style="color: green;">Connected to Firebase ✓</span>';
-            })
-            .catch((error) => {
-                console.error("Firebase 연결 실패:", error);
-                document.getElementById('connectionStatus').innerHTML = 
-                    '<span style="color: red;">Firebase Connection Failed ✗</span>';
-            });
-        }
+function testConnection() {
+    const testRef = database.ref('test');
+    testRef.set({
+        timestamp: Date.now(),
+        test: true
+    })
+    .then(() => {
+        document.getElementById('connectionStatus').innerHTML = 
+            '<span style="color: green;">Connected to Firebase ✓</span>';
+    })
+    .catch((error) => {
+        console.error("Firebase 연결 실패:", error);
+        document.getElementById('connectionStatus').innerHTML = 
+            '<span style="color: red;">Firebase Connection Failed ✗</span>';
+    });
+}
 
-        // 페이지 로드 시 실행
 window.onload = function() {
     testConnection();
     loadFromFirebase();
-    
-    // PDF 업로드 버튼에 이벤트 리스너 추가
-    document.querySelector('#pdfModal .btn-primary').addEventListener('click', function(e) {
-        e.preventDefault();
-        uploadPDF();
-    });
+    loadCustomCompanies();
+    addServiceFormListeners();
 };
 
-function changeCompany(company) {    // company, type 에서 company만 남김
+function addServiceFormListeners() {
+    const onboardingContractInput = document.getElementById('onboardingContract');
+    const onboardingCompletedInput = document.getElementById('onboardingCompleted');
+    const rmsContractInput = document.getElementById('rmsContract');
+    const rmsCompletedInput = document.getElementById('rmsCompleted');
+
+    onboardingContractInput.addEventListener('input', generateDateFields);
+    onboardingCompletedInput.addEventListener('input', generateDateFields);
+    rmsContractInput.addEventListener('input', generateDateFields);
+    rmsCompletedInput.addEventListener('input', generateDateFields);
+}
+
+function generateDateFields() {
+    const onboardingContract = parseInt(document.getElementById('onboardingContract').value) || 0;
+    const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value) || 0;
+    const rmsContract = parseInt(document.getElementById('rmsContract').value) || 0;
+    const rmsCompleted = parseInt(document.getElementById('rmsCompleted').value) || 0;
+
+    const onboardingDatesContainer = document.getElementById('onboardingDatesContainer');
+    const rmsDatesContainer = document.getElementById('rmsDatesContainer');
+    onboardingDatesContainer.innerHTML = '';
+    rmsDatesContainer.innerHTML = '';
+
+    // Onboarding Dates
+    if (onboardingContract > 0) {
+        let html = '<label>Onboarding Predicted Dates (total '+ onboardingContract +'):</label>';
+        for (let i = 0; i < onboardingContract; i++) {
+            html += `<input type="date" class="onboardingPredictedDates" required>`;
+        }
+        html += `<label>Onboarding Completed Dates (total ${onboardingCompleted}):</label>`;
+        for (let i = 0; i < onboardingCompleted; i++) {
+            html += `<input type="date" class="onboardingCompletedDates" required>`;
+        }
+        onboardingDatesContainer.innerHTML = html;
+    }
+
+    // RMS Dates
+    if (rmsContract > 0) {
+        let html = '<label>RMS Predicted Dates (total '+ rmsContract +'):</label>';
+        for (let i = 0; i < rmsContract; i++) {
+            html += `<input type="date" class="rmsPredictedDates" required>`;
+        }
+        html += `<label>RMS Completed Dates (total ${rmsCompleted}):</label>`;
+        for (let i = 0; i < rmsCompleted; i++) {
+            html += `<input type="date" class="rmsCompletedDates" required>`;
+        }
+        rmsDatesContainer.innerHTML = html;
+    }
+}
+
+// 회사 변경
+function changeCompany(company) {
     currentCompany = company;
-    
     document.querySelectorAll('.sidebar button').forEach(btn => {
-        btn.classList.remove('active');
+        if (btn.textContent.trim() === company) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     });
-    event.target.classList.add('active');
-    
     document.getElementById('categoryTitle').textContent = 
-        `BWMS Annual Service Management - ${company}`;    // ${company} ${type} 에서 ${type} 제거
+        `BWMS Annual Service Management - ${company}`;
     
     loadFromFirebase();
 }
+
+function loadCustomCompanies() {
+    const customCompaniesRef = database.ref('custom-companies');
+    customCompaniesRef.once('value')
+        .then(snapshot => {
+            const container = document.getElementById('customCompanyButtons');
+            container.innerHTML = '';
+            
+            snapshot.forEach(child => {
+                const companyName = child.val();
+                const button = document.createElement('button');
+                button.textContent = companyName;
+                button.onclick = () => changeCompany(companyName);
+                container.appendChild(button);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading custom companies:', error);
+        });
+}
+
 function loadFromFirebase() {
     database.ref(`bwms-service/${currentCompany}/VESSEL`).once('value')
         .then((snapshot) => {
-            const data = snapshot.val() || [];
-            // Contract Status에 따른 정렬 추가
-            const sortedData = Array.isArray(data) ? [...data].sort((a, b) => {
-                // 정렬 우선순위 설정
+            let data = snapshot.val() || {};
+            const dataArray = Array.isArray(data) ? data : Object.values(data);
+
+            const sortedData = dataArray.sort((a, b) => {
                 const priority = {
                     'In Service': 1,
                     'Contract Completed': 2,
                     'Contract Terminated': 3
                 };
-                
-                // 우선순위에 따라 정렬
                 return priority[a.contractStatus] - priority[b.contractStatus];
-            }) : [];
+            });
             
             displayData(sortedData);
             previousData = [...sortedData];
@@ -779,11 +890,46 @@ function loadFromFirebase() {
         });
 }
 
+function isOverdue(row) {
+    const today = new Date().setHours(0,0,0,0);
+
+    // Onboarding 남은 서비스 중 예측 날짜를 넘어선 경우
+    for (let i = 0; i < (row.onboardingContract || 0); i++) {
+        const predDate = row.onboardingPredictedDates && row.onboardingPredictedDates[i] ? new Date(row.onboardingPredictedDates[i]).setHours(0,0,0,0) : null;
+        if (predDate && predDate < today) {
+            // 해당 i번째가 완료되지 않았다면
+            if (!row.onboardingCompletedDates || !row.onboardingCompletedDates[i]) {
+                return true;
+            }
+        }
+    }
+
+    // RMS 남은 서비스 중 예측 날짜를 넘어선 경우
+    for (let i = 0; i < (row.rmsContract || 0); i++) {
+        const predDate = row.rmsPredictedDates && row.rmsPredictedDates[i] ? new Date(row.rmsPredictedDates[i]).setHours(0,0,0,0) : null;
+        if (predDate && predDate < today) {
+            if (!row.rmsCompletedDates || !row.rmsCompletedDates[i]) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 function displayData(data) {
     const tbody = document.getElementById('serviceBody');
     tbody.innerHTML = '';
 
-    data.forEach((row, index) => {
+    data.forEach((row) => {
+        const remainingOnboarding = row.onboardingContract - row.onboardingCompleted;
+        const remainingRms = row.rmsContract - row.rmsCompleted;
+
+        const overdue = isOverdue(row);
+        
+        const onboardingRemainingClass = overdue && remainingOnboarding > 0 ? 'highlight-overdue' : '';
+        const rmsRemainingClass = overdue && remainingRms > 0 ? 'highlight-overdue' : '';
+
         const tr = document.createElement('tr');
         
         tr.innerHTML = `
@@ -791,31 +937,31 @@ function displayData(data) {
             <td>${row.imoNo}</td>
             <td>${row.shipName}</td>
             <td>${row.deliveryDate}</td>
-            <td>${row.contractDate}</td>
+            <td>${row.contractDate || ''}</td>
             <td>${row.finishedDate || ''}</td>
             <td>
                 <div class="service-details">
-                    <div class="service-count">
+                    <div class="service-count" onclick="showDatesModal('onboarding','predicted','${row.imoNo}')">
                         Contracted: <span>${row.onboardingContract}</span>
                     </div>
-                    <div class="service-count">
+                    <div class="service-count" onclick="showDatesModal('onboarding','completed','${row.imoNo}')">
                         Completed: <span>${row.onboardingCompleted}</span>
                     </div>
-                    <div class="service-count">
-                        Remaining: <span>${row.onboardingContract - row.onboardingCompleted}</span>
+                    <div class="service-count ${onboardingRemainingClass}" onclick="showDatesModal('onboarding','remaining','${row.imoNo}')">
+                        Remaining: <span>${remainingOnboarding}</span>
                     </div>
                 </div>
             </td>
             <td>
                 <div class="service-details">
-                    <div class="service-count">
+                    <div class="service-count" onclick="showDatesModal('rms','predicted','${row.imoNo}')">
                         Contracted: <span>${row.rmsContract}</span>
                     </div>
-                    <div class="service-count">
+                    <div class="service-count" onclick="showDatesModal('rms','completed','${row.imoNo}')">
                         Completed: <span>${row.rmsCompleted}</span>
                     </div>
-                    <div class="service-count">
-                        Remaining: <span>${row.rmsContract - row.rmsCompleted}</span>
+                    <div class="service-count ${rmsRemainingClass}" onclick="showDatesModal('rms','remaining','${row.imoNo}')">
+                        Remaining: <span>${remainingRms}</span>
                     </div>
                 </div>
             </td>
@@ -831,19 +977,19 @@ function displayData(data) {
                     ${row.contractStatus}
                 </span>
             </td>
-<td>
-    <div class="pdf-container">  
-        <div class="pdf-list">
-            ${row.pdfs ? Object.entries(row.pdfs).map(([key, pdfUrl]) => `
-                <div class="pdf-item">
-                    <a href="${pdfUrl}" target="_blank" class="pdf-link">PDF_${key.slice(-8)}</a>
-                    <button class="delete-pdf-btn" onclick="deletePDF('${row.imoNo}', '${key}')">×</button>
+            <td>
+                <div class="pdf-container">  
+                    <div class="pdf-list">
+                        ${row.pdfs ? Object.entries(row.pdfs).map(([key, pdfUrl]) => `
+                            <div class="pdf-item">
+                                <a href="${pdfUrl}" target="_blank" class="pdf-link">PDF_${key.slice(-8)}</a>
+                                <button class="delete-pdf-btn" onclick="deletePDF('${row.imoNo}', '${key}')">×</button>
+                            </div>
+                        `).join('') : ''}
+                    </div>
+                    <button class="upload-btn" onclick="showPdfModal('${row.imoNo}')">Upload PDF</button>
                 </div>
-            `).join('') : ''}
-        </div>
-        <button class="upload-btn" onclick="showPdfModal('${row.imoNo}')">Upload PDF</button>
-    </div>
-</td>
+            </td>
             <td>
                 <button class="edit-btn" onclick="showEditModal('${row.imoNo}')">Edit</button>
             </td>
@@ -853,14 +999,67 @@ function displayData(data) {
     });
 }
 
+function showDatesModal(serviceType, dateType, imoNo) {
+    const row = previousData.find(r => r.imoNo === imoNo);
+    if (!row) return;
+
+    let title = '';
+    let dateArray = [];
+
+    if (serviceType === 'onboarding') {
+        if (dateType === 'predicted') {
+            title = 'Onboarding Predicted Dates';
+            dateArray = row.onboardingPredictedDates || [];
+        } else if (dateType === 'completed') {
+            title = 'Onboarding Completed Dates';
+            dateArray = row.onboardingCompletedDates || [];
+        } else {
+            // remaining
+            title = 'Onboarding Remaining Dates (Uncompleted Predicted)';
+            const predicted = row.onboardingPredictedDates || [];
+            const completed = row.onboardingCompletedDates || [];
+            dateArray = predicted.map((p,i) => (!completed[i] ? p : null)).filter(d=>d);
+        }
+    } else {
+        if (dateType === 'predicted') {
+            title = 'RMS Predicted Dates';
+            dateArray = row.rmsPredictedDates || [];
+        } else if (dateType === 'completed') {
+            title = 'RMS Completed Dates';
+            dateArray = row.rmsCompletedDates || [];
+        } else {
+            // remaining
+            title = 'RMS Remaining Dates (Uncompleted Predicted)';
+            const predicted = row.rmsPredictedDates || [];
+            const completed = row.rmsCompletedDates || [];
+            dateArray = predicted.map((p,i) => (!completed[i] ? p : null)).filter(d=>d);
+        }
+    }
+
+    document.getElementById('dateViewTitle').textContent = title;
+    const dateList = document.getElementById('dateList');
+    dateList.innerHTML = '';
+    if (dateArray.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No dates available';
+        dateList.appendChild(li);
+    } else {
+        dateArray.forEach(d => {
+            const li = document.createElement('li');
+            li.textContent = d;
+            dateList.appendChild(li);
+        });
+    }
+
+    document.getElementById('dateViewModal').style.display = 'block';
+}
+
 function updateStatistics() {
     const data = previousData;
     
     document.getElementById('totalShips').textContent = data.length;
     
-    const normalOps = data.filter(row => 
-        row.currentStatus === 'Normal Operation'
-    ).length;
+    const normalOps = data.filter(row => row.currentStatus === 'Normal Operation').length;
     document.getElementById('normalOps').textContent = normalOps;
     
     const servicesNeeded = data.filter(row => 
@@ -869,66 +1068,337 @@ function updateStatistics() {
     ).length;
     document.getElementById('servicesNeeded').textContent = servicesNeeded;
     
-    const activeContracts = data.filter(row => 
-        row.contractStatus === 'In Service'
-    ).length;
+    const activeContracts = data.filter(row => row.contractStatus === 'In Service').length;
     document.getElementById('activeContracts').textContent = activeContracts;
 }
+
+function showError(message) {
+    const errorLog = document.getElementById('errorLog');
+    errorLog.textContent = message;
+    errorLog.style.display = 'block';
+    setTimeout(() => {
+        errorLog.style.display = 'none';
+    }, 5000);
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showAddOwnerModal() {
+    document.getElementById('addOwnerModal').style.display = 'block';
+    document.getElementById('newOwnerName').value = '';
+}
+
+function addNewOwner() {
+    const ownerName = document.getElementById('newOwnerName').value.trim();
+    
+    if (!ownerName) {
+        showError('Please enter an owner name');
+        return;
+    }
+
+    const customCompaniesRef = database.ref('custom-companies');
+    customCompaniesRef.push(ownerName)
+        .then(() => {
+            closeModal('addOwnerModal');
+            loadCustomCompanies();
+        })
+        .catch(error => {
+            showError('Error adding owner: ' + error.message);
+        });
+}
+
+function showDelOwnerModal() {
+    document.getElementById('delOwnerModal').style.display = 'block';
+    loadOwnerButtons();
+    resetDeleteModal();
+}
+
+function resetDeleteModal() {
+    selectedOwner = null;
+    document.getElementById('deleteConfirmSection').style.display = 'none';
+    document.getElementById('deletePassword').value = '';
+}
+
+function loadOwnerButtons() {
+    const container = document.getElementById('ownerButtonsContainer');
+    container.innerHTML = '';
+    
+    const defaultOwners = ['PAN OCEAN', 'NAVIGARE CAPITAL', 'K-LINE'];
+    defaultOwners.forEach(owner => {
+        addOwnerButton(owner, container);
+    });
+    
+    const customCompaniesRef = database.ref('custom-companies');
+    customCompaniesRef.once('value')
+        .then(snapshot => {
+            snapshot.forEach(child => {
+                addOwnerButton(child.val(), container);
+            });
+        });
+}
+
+function addOwnerButton(ownerName, container) {
+    const button = document.createElement('button');
+    button.className = 'owner-select-btn';
+    button.textContent = ownerName;
+    button.onclick = () => selectOwnerForDeletion(ownerName, button);
+    container.appendChild(button);
+}
+
+function selectOwnerForDeletion(ownerName, button) {
+    document.querySelectorAll('.owner-select-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    button.classList.add('selected');
+    selectedOwner = ownerName;
+    document.getElementById('deleteConfirmSection').style.display = 'block';
+}
+
+function cancelDeletion() {
+    resetDeleteModal();
+}
+
+async function confirmOwnerDeletion() {
+    if (!selectedOwner) {
+        showError('Please select an owner to delete');
+        return;
+    }
+
+    const password = document.getElementById('deletePassword').value;
+    if (password.toUpperCase() !== "SNSYS") {
+        showError("Incorrect password. Delete cancelled.");
+        return;
+    }
+
+    try {
+        const snapshot = await database.ref('custom-companies').once('value');
+        let ownerKey = null;
+        snapshot.forEach(child => {
+            if (child.val() === selectedOwner) {
+                ownerKey = child.key;
+            }
+        });
+
+        if (ownerKey) {
+            await database.ref(`custom-companies/${ownerKey}`).remove();
+        }
+        
+        await database.ref(`bwms-service/${selectedOwner}`).remove();
+        await database.ref(`history/${selectedOwner}`).remove();
+        
+        const historyEntry = {
+            name: prompt("Enter your name for the record:") || 'Unknown',
+            timestamp: new Date().toISOString(),
+            action: "Owner Deleted",
+            changes: [`Deleted owner: ${selectedOwner}`]
+        };
+        
+        await database.ref('history/system').push(historyEntry);
+        
+        if (currentCompany === selectedOwner) {
+            changeCompany('PAN OCEAN');
+        }
+        
+        closeModal('delOwnerModal');
+        loadCustomCompanies();
+        alert('Owner deleted successfully');
+    } catch (error) {
+        showError('Error deleting owner: ' + error.message);
+    }
+}
+
+function validateForm() {
+    return validateServiceNumbers() && validateDates();
+}
+
+function validateServiceNumbers() {
+    const onboardingContract = parseInt(document.getElementById('onboardingContract').value);
+    const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value);
+    const rmsContract = parseInt(document.getElementById('rmsContract').value);
+    const rmsCompleted = parseInt(document.getElementById('rmsCompleted').value);
+
+    if (onboardingCompleted > onboardingContract) {
+        showError('Completed Onboarding services cannot exceed contracted services');
+        return false;
+    }
+
+    if (rmsCompleted > rmsContract) {
+        showError('Completed RMS services cannot exceed contracted services');
+        return false;
+    }
+
+    return true;
+}
+
+function validateDates() {
+    const deliveryDate = new Date(document.getElementById('deliveryDate').value);
+    const contractDateVal = document.getElementById('contractDate').value;
+    const finishedDateVal = document.getElementById('finishedDate').value;
+    const contractDate = contractDateVal ? new Date(contractDateVal) : null;
+    const finishedDate = finishedDateVal ? new Date(finishedDateVal) : null;
+
+    if (contractDate && contractDate < deliveryDate) {
+        showError('ASP Start Date cannot be earlier than delivery date');
+        return false;
+    }
+
+    if (finishedDate && contractDate && finishedDate < contractDate) {
+        showError('ASP Finish Date cannot be earlier than ASP Start Date');
+        return false;
+    }
+
+    return true;
+}
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchTable();
+    }
+});
+
+window.onclick = function(event) {
+    if (event.target.className === 'modal') {
+        event.target.style.display = 'none';
+    }
+};
+
+document.getElementById('imoNo').addEventListener('input', function(e) {
+    let value = e.target.value;
+    value = value.replace(/[^0-9]/g, '');
+    if (value.length > 7) {
+        value = value.slice(0, 7);
+    }
+    e.target.value = value;
+});
+
+function showAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add New Service Entry';
+    document.getElementById('serviceForm').reset();
+    document.getElementById('imoNo').readOnly = false;
+    document.getElementById('onboardingDatesContainer').innerHTML = '';
+    document.getElementById('rmsDatesContainer').innerHTML = '';
+    document.getElementById('serviceModal').style.display = 'block';
+}
+
+function showEditModal(imoNo) {
+    document.getElementById('modalTitle').textContent = 'Edit Service Entry';
+    
+    const rowData = previousData.find(row => row.imoNo === imoNo);
+    if (!rowData) return;
+    
+    document.getElementById('imoNo').value = rowData.imoNo;
+    document.getElementById('shipName').value = rowData.shipName;
+    document.getElementById('deliveryDate').value = rowData.deliveryDate;
+    document.getElementById('contractDate').value = rowData.contractDate || '';
+    document.getElementById('finishedDate').value = rowData.finishedDate || '';
+    document.getElementById('onboardingContract').value = rowData.onboardingContract;
+    document.getElementById('onboardingCompleted').value = rowData.onboardingCompleted;
+    document.getElementById('rmsContract').value = rowData.rmsContract;
+    document.getElementById('rmsCompleted').value = rowData.rmsCompleted;
+    document.getElementById('currentStatus').value = rowData.currentStatus;
+    document.getElementById('serviceRemarks').value = rowData.serviceRemarks || '';
+    document.getElementById('nextPlan').value = rowData.nextPlan || '';
+    document.getElementById('contractStatus').value = rowData.contractStatus;
+    document.getElementById('imoNo').readOnly = true;
+
+    // 날짜 필드 생성 후 기존 데이터 넣어주기
+    generateDateFields();
+    // 기존 predictedDates, completedDates 반영
+    const onboardingPredictedInputs = document.querySelectorAll('.onboardingPredictedDates');
+    const onboardingCompletedInputs = document.querySelectorAll('.onboardingCompletedDates');
+    const rmsPredictedInputs = document.querySelectorAll('.rmsPredictedDates');
+    const rmsCompletedInputs = document.querySelectorAll('.rmsCompletedDates');
+
+    if (rowData.onboardingPredictedDates) {
+        rowData.onboardingPredictedDates.forEach((d,i) => {
+            if (onboardingPredictedInputs[i]) onboardingPredictedInputs[i].value = d;
+        });
+    }
+
+    if (rowData.onboardingCompletedDates) {
+        rowData.onboardingCompletedDates.forEach((d,i) => {
+            if (onboardingCompletedInputs[i]) onboardingCompletedInputs[i].value = d;
+        });
+    }
+
+    if (rowData.rmsPredictedDates) {
+        rowData.rmsPredictedDates.forEach((d,i) => {
+            if (rmsPredictedInputs[i]) rmsPredictedInputs[i].value = d;
+        });
+    }
+
+    if (rowData.rmsCompletedDates) {
+        rowData.rmsCompletedDates.forEach((d,i) => {
+            if (rmsCompletedInputs[i]) rmsCompletedInputs[i].value = d;
+        });
+    }
+
+    document.getElementById('serviceModal').style.display = 'block';
+}
+
 function saveServiceEntry() {
-            const form = document.getElementById('serviceForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
+    const form = document.getElementById('serviceForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
 
-            if (!validateForm()) {
-                return;
-            }
+    if (!validateForm()) {
+        return;
+    }
 
-            const formData = {
-                imoNo: document.getElementById('imoNo').value,
-                shipName: document.getElementById('shipName').value,
-                deliveryDate: document.getElementById('deliveryDate').value,
-                contractDate: document.getElementById('contractDate').value || '',  // 빈 값 허용
-                finishedDate: document.getElementById('finishedDate').value || '',
-                onboardingContract: parseInt(document.getElementById('onboardingContract').value),
-                onboardingCompleted: parseInt(document.getElementById('onboardingCompleted').value),
-                rmsContract: parseInt(document.getElementById('rmsContract').value),
-                rmsCompleted: parseInt(document.getElementById('rmsCompleted').value),
-                currentStatus: document.getElementById('currentStatus').value,
-                serviceRemarks: document.getElementById('serviceRemarks').value,
-                nextPlan: document.getElementById('nextPlan').value,
-                contractStatus: document.getElementById('contractStatus').value
-            };
+    const onboardingPredictedInputs = document.querySelectorAll('.onboardingPredictedDates');
+    const onboardingCompletedInputs = document.querySelectorAll('.onboardingCompletedDates');
+    const rmsPredictedInputs = document.querySelectorAll('.rmsPredictedDates');
+    const rmsCompletedInputs = document.querySelectorAll('.rmsCompletedDates');
 
-            const data = [...previousData];
-            const index = data.findIndex(row => row.imoNo === formData.imoNo);
-            
-            if (index !== -1) {
-                // Preserve PDF URL if it exists
-                if (data[index].pdfUrl) {
-                    formData.pdfUrl = data[index].pdfUrl;
-                }
-                data[index] = formData;
-            } else {
-                data.push(formData);
-            }
+    const formData = {
+        imoNo: document.getElementById('imoNo').value,
+        shipName: document.getElementById('shipName').value,
+        deliveryDate: document.getElementById('deliveryDate').value,
+        contractDate: document.getElementById('contractDate').value || '',
+        finishedDate: document.getElementById('finishedDate').value || '',
+        onboardingContract: parseInt(document.getElementById('onboardingContract').value),
+        onboardingCompleted: parseInt(document.getElementById('onboardingCompleted').value),
+        rmsContract: parseInt(document.getElementById('rmsContract').value),
+        rmsCompleted: parseInt(document.getElementById('rmsCompleted').value),
+        currentStatus: document.getElementById('currentStatus').value,
+        serviceRemarks: document.getElementById('serviceRemarks').value,
+        nextPlan: document.getElementById('nextPlan').value,
+        contractStatus: document.getElementById('contractStatus').value
+    };
 
-            saveToFirebase(data);
-            closeModal('serviceModal');
+    formData.onboardingPredictedDates = Array.from(onboardingPredictedInputs).map(i => i.value);
+    formData.onboardingCompletedDates = Array.from(onboardingCompletedInputs).map(i => i.value);
+    formData.rmsPredictedDates = Array.from(rmsPredictedInputs).map(i => i.value);
+    formData.rmsCompletedDates = Array.from(rmsCompletedInputs).map(i => i.value);
+
+    const data = [...previousData];
+    const index = data.findIndex(row => row.imoNo === formData.imoNo);
+    
+    if (index !== -1) {
+        if (data[index].pdfs) {
+            formData.pdfs = data[index].pdfs;
         }
+        data[index] = formData;
+    } else {
+        data.push(formData);
+    }
 
-        function showPdfModal(imoNo) {
-            currentImoNo = imoNo;
-            document.getElementById('pdfModal').style.display = 'block';
-                // 파일 입력 필드 초기화
-            document.getElementById('pdfFile').value = '';
-        }
+    saveToFirebase(data);
+    closeModal('serviceModal');
+}
+
+function showPdfModal(imoNo) {
+    currentImoNo = imoNo;
+    document.getElementById('pdfModal').style.display = 'block';
+    document.getElementById('pdfFile').value = '';
+}
 
 async function uploadPDF() {
-    // 디버깅을 위한 콘솔 로그 추가
-    console.log('uploadPDF function called');
-    
     const fileInput = document.getElementById('pdfFile');
     const file = fileInput.files[0];
     
@@ -938,21 +1408,13 @@ async function uploadPDF() {
     }
 
     try {
-        // 파일 업로드 경로 설정
         const timestamp = Date.now();
         const filePath = `service-reports/${currentCompany}/VESSEL/${currentImoNo}_${timestamp}.pdf`;
         const fileRef = storage.child(filePath);
 
-        // 파일 업로드 시작
-        console.log('Starting file upload...');
-        const snapshot = await fileRef.put(file);
-        console.log('File uploaded successfully');
-
-        // 다운로드 URL 가져오기
+        await fileRef.put(file);
         const downloadURL = await fileRef.getDownloadURL();
-        console.log('Download URL obtained:', downloadURL);
 
-        // 데이터베이스 업데이트
         const data = [...previousData];
         const index = data.findIndex(row => row.imoNo === currentImoNo);
 
@@ -962,11 +1424,8 @@ async function uploadPDF() {
             }
             data[index].pdfs[`pdf_${timestamp}`] = downloadURL;
 
-            // 데이터베이스 업데이트
             await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data);
-            console.log('Database updated successfully');
 
-            // 히스토리 추가
             const historyEntry = {
                 name: prompt("Enter your name for the record:") || 'Unknown',
                 timestamp: new Date().toISOString(),
@@ -975,7 +1434,6 @@ async function uploadPDF() {
             };
 
             await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
-            console.log('History updated successfully');
 
             closeModal('pdfModal');
             loadFromFirebase();
@@ -986,368 +1444,125 @@ async function uploadPDF() {
         showError(`Error uploading PDF: ${error.message}`);
     }
 }
-async function deletePDF(imoNo, pdfKey) {
-    if (!confirm('Are you sure you want to delete this PDF?')) {
+
+/** 추가 기능 구현 **/
+function toggleAllCheckboxes() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function searchTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = previousData.filter(row => {
+        return row.imoNo.toString().includes(query) ||
+               (row.shipName && row.shipName.toLowerCase().includes(query));
+    });
+    displayData(filtered);
+}
+
+function deleteSelectedRows() {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    const rowsToDelete = [];
+    checkboxes.forEach((cb) => {
+        if (cb.checked) {
+            const imoNo = cb.closest('tr').children[1].textContent;
+            rowsToDelete.push(imoNo);
+        }
+    });
+
+    if (rowsToDelete.length === 0) {
+        alert('No rows selected to delete.');
         return;
     }
 
+    const newData = previousData.filter(row => !rowsToDelete.includes(row.imoNo));
+    saveToFirebase(newData);
+}
+
+async function saveToFirebase(data) {
+    if (!data) data = previousData;
     try {
-        const data = [...previousData];
-        const index = data.findIndex(row => row.imoNo === imoNo);
-        
-        if (index !== -1 && data[index].pdfs && data[index].pdfs[pdfKey]) {
-            // Delete from Storage
-            const storageRef = storage.ref();
-            const pdfPath = data[index].pdfs[pdfKey]
-                .split('service-reports/')[1]
-                .split('?')[0];
-            await storageRef.child(`service-reports/${pdfPath}`).delete();
-            
-            // Delete from Database
-            delete data[index].pdfs[pdfKey];
-            
-            // If no PDFs left, remove the pdfs object
-            if (Object.keys(data[index].pdfs).length === 0) {
-                delete data[index].pdfs;
-            }
-            
-            await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data);
-            
-            // Add to history
-            const historyEntry = {
-                name: prompt("Enter your name:") || 'Unknown',
-                timestamp: new Date().toISOString(),
-                action: "PDF Delete",
-                changes: [`Deleted service report PDF for IMO: ${imoNo}`]
-            };
-            
-            await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
-            
-            loadFromFirebase();
-            alert('PDF deleted successfully');
-        }
-    } catch (error) {
-        showError('Error deleting PDF: ' + error.message);
+        await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data);
+
+        const historyEntry = {
+            name: prompt("Enter your name for the record:") || 'Unknown',
+            timestamp: new Date().toISOString(),
+            action: "Data Saved",
+            changes: ["Data saved to Firebase"]
+        };
+        await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
+
+        previousData = data;
+        loadFromFirebase();
+        alert('Changes saved successfully.');
+    } catch (err) {
+        showError('Failed to save: ' + err.message);
     }
 }
-        function saveToFirebase(data = previousData) {
-            const name = prompt("Enter your name:");
-            if (!name) {
-                showError("Name is required for saving changes.");
-                return;
-            }
 
-    const password = prompt("Enter password to save:");
-    if (password.toUpperCase() !== "SNSYS") {  // 대문자로 변환하여 비교
-        showError("Incorrect password. Save cancelled.");
-        return;
-    }
+async function showHistory() {
+    const historyRef = database.ref(`history/${currentCompany}/VESSEL`);
+    const snapshot = await historyRef.once('value');
+    const data = snapshot.val() || {};
+    const entries = Object.values(data);
 
-            const timestamp = new Date().toISOString();
-            const changes = getChanges(previousData, data);
-            const historyEntry = {
-                name: name,
-                timestamp: timestamp,
-                action: "Data updated",
-                changes: changes
-            };
+    const historyContent = document.getElementById('historyContent');
+    historyContent.innerHTML = '';
 
- database.ref(`bwms-service/${currentCompany}/VESSEL`).set(data)    // /${currentType} 를 /VESSEL로 변경
-                .then(() => {
-                    return database.ref(`history/${currentCompany}/${currentType}`).push(historyEntry);
-                })
-                .then(() => {
-                    alert('Data saved successfully');
-                    previousData = [...data];
-                    loadFromFirebase();
-                })
-                .catch((error) => {
-                    showError('Error saving data: ' + error.message);
-                });
-        }
-function getChanges(oldData, newData) {
-            const changes = [];
-            const fields = [
-                'IMO No', 'Ship Name', 'Delivery Date', 'ASP Start Date', 
-                'ASP Finish Date', 'Onboarding Contract', 'Onboarding Completed',
-                'RMS Contract', 'RMS Completed', 'Current Status', 
-                'Service Remarks', 'Contract Status', 'Service Report'
-            ];
+    entries.forEach(entry => {
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${entry.timestamp}</strong> - ${entry.name} - ${entry.action}<br>${entry.changes.join(', ')}`;
+        historyContent.appendChild(div);
+        historyContent.appendChild(document.createElement('hr'));
+    });
 
-            for (let i = 0; i < Math.max(oldData.length, newData.length); i++) {
-                if (i >= oldData.length) {
-changes.push(`Added new ship: ${newData[i].shipName} (IMO: ${newData[i].imoNo})`);
-                } else if (i >= newData.length) {
-                    changes.push(`Removed ship: ${oldData[i].shipName} (IMO: ${oldData[i].imoNo})`);
-                } else {
-                    Object.keys(newData[i]).forEach((key, index) => {
-                        if (key !== 'pdfUrl' && JSON.stringify(oldData[i][key]) !== JSON.stringify(newData[i][key])) {
-                            changes.push(
-                                `Changed ${fields[index]} for ${newData[i].shipName} ` +
-                                `(IMO: ${newData[i].imoNo}): ` +
-                                `${oldData[i][key] || 'empty'} → ${newData[i][key]}`
-                            );
-                        }
-                    });
-                }
-            }
-            return changes;
-        }
+    document.getElementById('historyModal').style.display = 'block';
+}
 
-        function downloadExcel() {
-            const data = previousData.map(row => ({
-                'IMO No.': row.imoNo,
-                'Ship Name': row.shipName,
-                'Delivery Date': row.deliveryDate,
-                'ASP Start Date': row.contractDate,
-                'ASP Finish Date': row.finishedDate || '',
-                'Onboarding Contract': row.onboardingContract,
-                'Onboarding Completed': row.onboardingCompleted,
-                'Onboarding Remaining': row.onboardingContract - row.onboardingCompleted,
-                'RMS Contract': row.rmsContract,
-                'RMS Completed': row.rmsCompleted,
-                'RMS Remaining': row.rmsContract - row.rmsCompleted,
-                'Current Status': row.currentStatus,
-                'Service Remarks': row.serviceRemarks || '',
-                'Contract Status': row.contractStatus,
-                'Service Report URL': row.pdfUrl || ''
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "BWMS Services");
-            XLSX.writeFile(wb, 
-                `bwms_service_${currentCompany}_${currentType}_${new Date().toISOString().split('T')[0]}.xlsx`
-            );
-        }
+function downloadExcel() {
+    const ws = XLSX.utils.json_to_sheet(previousData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data");
+    XLSX.writeFile(wb, "BWMS_Data.xlsx");
+}
 
 function uploadExcel(event) {
     const file = event.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
-
     reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-            const formattedData = jsonData.map(row => ({
-                imoNo: row['IMO No.'].toString(),
-                shipName: row['Ship Name'],
-                deliveryDate: row['Delivery Date'],
-                contractDate: row['ASP Start Date'] || '',  // 빈 값 허용
-                finishedDate: row['ASP Finish Date'] || '',
-                onboardingContract: parseInt(row['Onboarding Contract']),
-                onboardingCompleted: parseInt(row['Onboarding Completed']),
-                rmsContract: parseInt(row['RMS Contract']),
-                rmsCompleted: parseInt(row['RMS Completed']),
-                currentStatus: row['Current Status'],
-                serviceRemarks: row['Service Remarks'] || '',
-                nextPlan: row['Next Plan'] || '',          // Next Plan 필드 추가
-                contractStatus: row['Contract Status'],
-                pdfUrl: row['Service Report URL'] || ''
-            }));
-
-                    saveToFirebase(formattedData);
-                } catch (error) {
-                    showError('Error processing Excel file: ' + error.message);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-function showHistory() {
-database.ref(`history/${currentCompany}/VESSEL`).once('value')    // /${currentType} 를 /VESSEL로 변경
-        .then((snapshot) => {
-            const historyData = snapshot.val();
-            const historyContent = document.getElementById('historyContent');
-            historyContent.innerHTML = '';
-
-            if (historyData) {
-                const entries = Object.values(historyData);
-                entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                entries.forEach(entry => {
-                    const entryDiv = document.createElement('div');
-                    entryDiv.className = 'history-entry';
-                    
-                    // 변경된 부분: changes 배열이 없는 경우 빈 배열로 처리
-                    const changes = entry.changes || [];
-                    
-                    entryDiv.innerHTML = `
-                        <div class="history-meta">
-                            <strong>${entry.name || 'Unknown'}</strong>
-                            <span>${new Date(entry.timestamp).toLocaleString()}</span>
-                        </div>
-                        <div>${entry.action || 'Action not specified'}</div>
-                        ${changes.length > 0 ? `
-                            <ul class="history-changes">
-                                ${changes.map(change => `<li>${change}</li>`).join('')}
-                            </ul>
-                        ` : '<p>No detailed changes recorded</p>'}
-                    `;
-                    historyContent.appendChild(entryDiv);
-                });
-            } else {
-                historyContent.innerHTML = '<p>No history available</p>';
-            }
-
-            document.getElementById('historyModal').style.display = 'block';
-        })
-        .catch((error) => {
-            console.error('History error:', error);
-            showError('Error loading history: ' + error.message);
-        });
-}
-function showEditModal(imoNo) {
-    document.getElementById('modalTitle').textContent = 'Edit Service Entry';
-    
-    // Find the row data
-    const rowData = previousData.find(row => row.imoNo === imoNo);
-    if (!rowData) return;
-    
-    // Fill the form with existing data
-    document.getElementById('imoNo').value = rowData.imoNo;
-    document.getElementById('shipName').value = rowData.shipName;
-    document.getElementById('deliveryDate').value = rowData.deliveryDate;
-    document.getElementById('contractDate').value = rowData.contractDate;
-    document.getElementById('finishedDate').value = rowData.finishedDate || '';
-    document.getElementById('onboardingContract').value = rowData.onboardingContract;
-    document.getElementById('onboardingCompleted').value = rowData.onboardingCompleted;
-    document.getElementById('rmsContract').value = rowData.rmsContract;
-    document.getElementById('rmsCompleted').value = rowData.rmsCompleted;
-    document.getElementById('currentStatus').value = rowData.currentStatus;
-    document.getElementById('serviceRemarks').value = rowData.serviceRemarks || '';
-    document.getElementById('nextPlan').value = rowData.nextPlan || '';
-    document.getElementById('contractStatus').value = rowData.contractStatus;
-    
-    // IMO No should be read-only in edit mode
-    document.getElementById('imoNo').readOnly = true;
-    
-    document.getElementById('serviceModal').style.display = 'block';
-}
-function showAddModal() {
-    document.getElementById('modalTitle').textContent = 'Add New Service Entry';
-    document.getElementById('serviceForm').reset();
-    document.getElementById('imoNo').readOnly = false;  // 추가 모드에서는 IMO No 편집 가능
-    document.getElementById('serviceModal').style.display = 'block';
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {raw: false});
+        
+        saveToFirebase(jsonData);
+    };
+    reader.readAsArrayBuffer(file);
 }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
+async function deletePDF(imoNo, key) {
+    const index = previousData.findIndex(row => row.imoNo === imoNo);
+    if (index === -1) return;
+    if (!previousData[index].pdfs || !previousData[index].pdfs[key]) return;
 
-        function deleteSelectedRows() {
-            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-            if (checkboxes.length === 0) {
-                alert('No rows selected');
-                return;
-            }
+    delete previousData[index].pdfs[key];
+    await database.ref(`bwms-service/${currentCompany}/VESSEL`).set(previousData);
 
-            if (confirm(`Are you sure you want to delete ${checkboxes.length} selected entries?`)) {
-                const data = [...previousData];
-                for (let i = checkboxes.length - 1; i >= 0; i--) {
-                    const row = checkboxes[i].closest('tr');
-                    const index = row.rowIndex - 1;
-                    data.splice(index, 1);
-                }
-                saveToFirebase(data);
-            }
-        }
+    const historyEntry = {
+        name: prompt("Enter your name for the record:") || 'Unknown',
+        timestamp: new Date().toISOString(),
+        action: "PDF Deleted",
+        changes: [`Deleted PDF: ${key} from IMO: ${imoNo}`]
+    };
+    await database.ref(`history/${currentCompany}/VESSEL`).push(historyEntry);
 
-        function toggleAllCheckboxes() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('.row-checkbox');
-            checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
-        }
-
-        function searchTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.getElementById('serviceBody').getElementsByTagName('tr');
-
-            for (let row of rows) {
-                const textContent = row.textContent.toLowerCase();
-                row.style.display = textContent.includes(searchTerm) ? '' : 'none';
-            }
-        }
-
-        function showError(message) {
-            const errorLog = document.getElementById('errorLog');
-            errorLog.textContent = message;
-            errorLog.style.display = 'block';
-            setTimeout(() => {
-                errorLog.style.display = 'none';
-            }, 5000);
-        }
-
-        function validateServiceNumbers() {
-            const onboardingContract = parseInt(document.getElementById('onboardingContract').value);
-            const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value);
-            const rmsContract = parseInt(document.getElementById('rmsContract').value);
-            const rmsCompleted = parseInt(document.getElementById('rmsCompleted').value);
-
-            if (onboardingCompleted > onboardingContract) {
-                showError('Completed Onboarding services cannot exceed contracted services');
-                return false;
-            }
-
-            if (rmsCompleted > rmsContract) {
-                showError('Completed RMS services cannot exceed contracted services');
-                return false;
-            }
-
-            return true;
-        }
-
-function validateDates() {
-    const deliveryDate = new Date(document.getElementById('deliveryDate').value);
-    const contractDate = document.getElementById('contractDate').value ? 
-        new Date(document.getElementById('contractDate').value) : null;
-    const finishedDate = document.getElementById('finishedDate').value ? 
-        new Date(document.getElementById('finishedDate').value) : null;
-
-    // ASP Start Date가 있는 경우에만 검증
-    if (contractDate) {
-        if (contractDate < deliveryDate) {
-            showError('ASP Start Date cannot be earlier than delivery date');
-            return false;
-        }
-
-        if (finishedDate && finishedDate < contractDate) {
-            showError('ASP Finish Date cannot be earlier than ASP Start Date');
-            return false;
-        }
-    }
-
-    return true;
+    loadFromFirebase();
+    alert('PDF deleted successfully');
 }
-
-        function validateForm() {
-            return validateServiceNumbers() && validateDates();
-        }
-
-        // Event Listeners
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchTable();
-            }
-        });
-
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
-            }
-        };
-
-        document.getElementById('imoNo').addEventListener('input', function(e) {
-            let value = e.target.value;
-            value = value.replace(/[^0-9]/g, '');
-            if (value.length > 7) {
-                value = value.slice(0, 7);
-            }
-            e.target.value = value;
-        });
-    </script>
+</script>
 </body>
 </html>
