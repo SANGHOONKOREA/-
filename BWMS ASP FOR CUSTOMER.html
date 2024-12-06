@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BWMS Annual Service Management - PAN OCEAN (Read-Only)</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    
+    <!-- Excel Library (미사용이지만 혹시나 유지) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f1c40f;
+            --danger-color: #e74c3c;
+            --background-color: #ecf0f1;
+            --text-color: #2c3e50;
+            --border-color: #bdc3c7;
+            --table-header-bg: #2c3e50;
+            --table-border: #ddd;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .brand-logo {
+            margin: 20px auto;
+            width: 100%;
+            padding: 10px;
+        }
+
+        .brand-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* 사이드바에서 다른 선사나 기능 버튼 제거했으므로 빈 영역 최소화 */
+        /* 다른 회사 버튼, ADD OWNER, DEL OWNER 제거 */
+
+        .container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .statistics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .table-container {
+            flex-grow: 1;
+            overflow: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            min-width: 1800px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--table-border);
+            border-right: 1px solid var(--table-border);
+            font-size: 13px;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-weight: 600;
+            text-align: left;
+            padding-left: 12px;
+        }
+
+        .remarks-cell {
+            width: 200px;
+            height: 80px;
+            max-height: 80px;
+            overflow-y: auto;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: block;
+            padding: 5px;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        table td {
+            vertical-align: top;
+            height: 100px;
+        }
+
+        .status-normal {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+
+        .status-partial {
+            color: var(--warning-color);
+            font-weight: bold;
+        }
+
+        .status-not {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        .pdf-link {
+            color: #3498db;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .pdf-container {
+            min-width: 150px;
+        }
+
+        .pdf-list {
+            margin-bottom: 8px;
+            max-height: 60px;
+            overflow-y: auto;
+        }
+
+        .pdf-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        /* PDF 업로드, Delete PDF 버튼 제거 */
+
+        .contract-completed,
+        .contract-service,
+        .contract-terminated {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .contract-completed {
+            background-color: #d4edda;
+            color: var(--success-color);
+        }
+
+        .contract-service {
+            background-color: #fff3cd;
+            color: var(--warning-color);
+        }
+
+        .contract-terminated {
+            background-color: #f8d7da;
+            color: var(--danger-color);
+        }
+
+        .service-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .service-count {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 2px 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 1000px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        #connectionStatus {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .highlight-overdue {
+            background-color: yellow;
+        }
+
+        #dateViewModal .modal-content {
+            max-width: 600px;
+        }
+
+        .date-list {
+            margin: 10px 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .date-list li {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        /* 편집, 추가 관련 버튼 제거 */
+        .no-edit-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .no-edit-buttons button {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="connectionStatus">Checking Firebase Connection...</div>
+    <div class="sidebar">
+        <div class="brand-logo">
+            <img src="https://pds.saramin.co.kr/company/logo/202002/24/q676t0_a5ak-ya4cjo_logo.jpg" alt="Brand Logo" class="brand-image">
+        </div>
+        <!-- 다른 선사나 Owner 관리 기능 제거. -->
+        <!-- 오직 PAN OCEAN 전용이므로 아무것도 표시하지 않음 -->
+    </div>
+    <div class="container">
+        <div class="header">
+            <h1>BWMS Annual Service Management - PAN OCEAN (Read-Only)</h1>
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search by IMO No, Ship Name...">
+                <button onclick="searchTable()" class="btn btn-primary">Search</button>
+            </div>
+
+            <div class="statistics">
+                <div class="stat-card">
+                    <h3>Total Ships</h3>
+                    <div class="stat-value" id="totalShips">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Normal Operation</h3>
+                    <div class="stat-value" id="normalOps">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Services Needed</h3>
+                    <div class="stat-value" id="servicesNeeded">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Contracts</h3>
+                    <div class="stat-value" id="activeContracts">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="serviceTable">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>IMO No.</th>
+                        <th>Ship Name</th>
+                        <th>Delivery Date</th>
+                        <th>ASP Start Date</th>
+                        <th>ASP Finish Date</th>
+                        <th style="min-width: 150px;">Onboarding Service</th>
+                        <th style="min-width: 150px;">RMS Service</th>
+                        <th>Current Status</th>
+                        <th>Service Remarks</th>
+                        <th>Next Plan</th>
+                        <th>Contract Status</th>
+                        <th>Service Report</th>
+                        <th><!-- Edit 제거 --></th>
+                    </tr>
+                </thead>
+                <tbody id="serviceBody"></tbody>
+            </table>
+        </div>
+
+        <!-- 편집, 추가, 삭제, 저장, 업로드, 다운로드 관련 버튼 모두 제거 -->
+        <div class="no-edit-buttons">
+            <!-- View History는 모니터링용으로 유지 -->
+            <button onclick="showHistory()" class="btn btn-secondary">View History</button>
+        </div>
+    </div>
+
+    <!-- History Modal (읽기전용) -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('historyModal')">&times;</span>
+            <h2>Change History</h2>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <!-- 날짜 보기 모달 (읽기전용) -->
+    <div id="dateViewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('dateViewModal')">&times;</span>
+            <h2 id="dateViewTitle"></h2>
+            <ul class="date-list" id="dateList"></ul>
+        </div>
+    </div>
+
+    <div id="errorLog" class="error-message"></div>
+
+<script>
+// Firebase 초기화 (자신의 Firebase 설정값으로)
+const firebaseConfig = {
+    apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+    authDomain: "sanghoon-d8f1c.firebaseapp.com",
+    databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+    projectId: "sanghoon-d8f1c",
+    storageBucket: "sanghoon-d8f1c.appspot.com",
+    messagingSenderId: "495391900753",
+    appId: "1:495391900753:web:b0d708eeca64fafe562470",
+    measurementId: "G-J2E22BW61H"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+// PAN OCEAN 전용
+const currentCompany = 'PAN OCEAN';
+let previousData = [];
+
+function testConnection() {
+    const testRef = database.ref('test');
+    testRef.set({
+        timestamp: Date.now(),
+        test: true
+    })
+    .then(() => {
+        document.getElementById('connectionStatus').innerHTML = 
+            '<span style="color: green;">Connected to Firebase ✓</span>';
+    })
+    .catch((error) => {
+        console.error("Firebase 연결 실패:", error);
+        document.getElementById('connectionStatus').innerHTML = 
+            '<span style="color: red;">Firebase Connection Failed ✗</span>';
+    });
+}
+
+window.onload = function() {
+    testConnection();
+    loadFromFirebase();
+};
+
+function loadFromFirebase() {
+    database.ref(`bwms-service/${currentCompany}/VESSEL`).once('value')
+        .then((snapshot) => {
+            let data = snapshot.val() || {};
+            const dataArray = Array.isArray(data) ? data : Object.values(data);
+
+            const sortedData = dataArray.sort((a, b) => {
+                const priority = {
+                    'In Service': 1,
+                    'Contract Completed': 2,
+                    'Contract Terminated': 3
+                };
+                return priority[a.contractStatus] - priority[b.contractStatus];
+            });
+            
+            displayData(sortedData);
+            previousData = [...sortedData];
+            updateStatistics();
+        })
+        .catch((error) => {
+            showError('Error loading data: ' + error.message);
+        });
+}
+
+function isOverdue(row) {
+    const today = new Date().setHours(0,0,0,0);
+
+    // Onboarding
+    for (let i = 0; i < (row.onboardingContract || 0); i++) {
+        const predDate = row.onboardingPredictedDates && row.onboardingPredictedDates[i] ? new Date(row.onboardingPredictedDates[i]).setHours(0,0,0,0) : null;
+        if (predDate && predDate < today) {
+            if (!row.onboardingCompletedDates || !row.onboardingCompletedDates[i]) {
+                return true;
+            }
+        }
+    }
+
+    // RMS
+    for (let i = 0; i < (row.rmsContract || 0); i++) {
+        const predDate = row.rmsPredictedDates && row.rmsPredictedDates[i] ? new Date(row.rmsPredictedDates[i]).setHours(0,0,0,0) : null;
+        if (predDate && predDate < today) {
+            if (!row.rmsCompletedDates || !row.rmsCompletedDates[i]) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function displayData(data) {
+    const tbody = document.getElementById('serviceBody');
+    tbody.innerHTML = '';
+
+    data.forEach((row) => {
+        const remainingOnboarding = row.onboardingContract - row.onboardingCompleted;
+        const remainingRms = row.rmsContract - row.rmsCompleted;
+
+        const overdue = isOverdue(row);
+        
+        const onboardingRemainingClass = overdue && remainingOnboarding > 0 ? 'highlight-overdue' : '';
+        const rmsRemainingClass = overdue && remainingRms > 0 ? 'highlight-overdue' : '';
+
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+            <td></td>
+            <td>${row.imoNo}</td>
+            <td>${row.shipName}</td>
+            <td>${row.deliveryDate}</td>
+            <td>${row.contractDate || ''}</td>
+            <td>${row.finishedDate || ''}</td>
+            <td>
+                <div class="service-details">
+                    <div class="service-count" onclick="showDatesModal('onboarding','predicted','${row.imoNo}')">
+                        Contracted: <span>${row.onboardingContract}</span>
+                    </div>
+                    <div class="service-count" onclick="showDatesModal('onboarding','completed','${row.imoNo}')">
+                        Completed: <span>${row.onboardingCompleted}</span>
+                    </div>
+                    <div class="service-count ${onboardingRemainingClass}" onclick="showDatesModal('onboarding','remaining','${row.imoNo}')">
+                        Remaining: <span>${remainingOnboarding}</span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="service-details">
+                    <div class="service-count" onclick="showDatesModal('rms','predicted','${row.imoNo}')">
+                        Contracted: <span>${row.rmsContract}</span>
+                    </div>
+                    <div class="service-count" onclick="showDatesModal('rms','completed','${row.imoNo}')">
+                        Completed: <span>${row.rmsCompleted}</span>
+                    </div>
+                    <div class="service-count ${rmsRemainingClass}" onclick="showDatesModal('rms','remaining','${row.imoNo}')">
+                        Remaining: <span>${remainingRms}</span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="status-${row.currentStatus.toLowerCase().split(' ')[0]}">
+                    ${row.currentStatus}
+                </span>
+            </td>
+            <td><div class="remarks-cell">${row.serviceRemarks || ''}</div></td>
+            <td><div class="remarks-cell">${row.nextPlan || ''}</div></td>
+            <td>
+                <span class="contract-${row.contractStatus.toLowerCase().replace(' ', '-')}">
+                    ${row.contractStatus}
+                </span>
+            </td>
+            <td>
+                <div class="pdf-container">  
+                    <div class="pdf-list">
+                        ${row.pdfs ? Object.entries(row.pdfs).map(([key, pdfUrl]) => `
+                            <div class="pdf-item">
+                                <a href="${pdfUrl}" target="_blank" class="pdf-link">PDF_${key.slice(-8)}</a>
+                            </div>
+                        `).join('') : ''}
+                    </div>
+                </div>
+            </td>
+            <td></td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
+}
+
+function showDatesModal(serviceType, dateType, imoNo) {
+    const row = previousData.find(r => r.imoNo === imoNo);
+    if (!row) return;
+
+    let title = '';
+    let dateArray = [];
+
+    if (serviceType === 'onboarding') {
+        if (dateType === 'predicted') {
+            title = 'Onboarding Predicted Dates';
+            dateArray = row.onboardingPredictedDates || [];
+        } else if (dateType === 'completed') {
+            title = 'Onboarding Completed Dates';
+            dateArray = row.onboardingCompletedDates || [];
+        } else {
+            title = 'Onboarding Remaining Dates (Uncompleted Predicted)';
+            const predicted = row.onboardingPredictedDates || [];
+            const completed = row.onboardingCompletedDates || [];
+            dateArray = predicted.map((p,i) => (!completed[i] ? p : null)).filter(d=>d);
+        }
+    } else {
+        if (dateType === 'predicted') {
+            title = 'RMS Predicted Dates';
+            dateArray = row.rmsPredictedDates || [];
+        } else if (dateType === 'completed') {
+            title = 'RMS Completed Dates';
+            dateArray = row.rmsCompletedDates || [];
+        } else {
+            title = 'RMS Remaining Dates (Uncompleted Predicted)';
+            const predicted = row.rmsPredictedDates || [];
+            const completed = row.rmsCompletedDates || [];
+            dateArray = predicted.map((p,i) => (!completed[i] ? p : null)).filter(d=>d);
+        }
+    }
+
+    document.getElementById('dateViewTitle').textContent = title;
+    const dateList = document.getElementById('dateList');
+    dateList.innerHTML = '';
+    if (dateArray.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No dates available';
+        dateList.appendChild(li);
+    } else {
+        dateArray.forEach(d => {
+            const li = document.createElement('li');
+            li.textContent = d;
+            dateList.appendChild(li);
+        });
+    }
+
+    document.getElementById('dateViewModal').style.display = 'block';
+}
+
+function updateStatistics() {
+    const data = previousData;
+    
+    document.getElementById('totalShips').textContent = data.length;
+    
+    const normalOps = data.filter(row => row.currentStatus === 'Normal Operation').length;
+    document.getElementById('normalOps').textContent = normalOps;
+    
+    const servicesNeeded = data.filter(row => 
+        row.currentStatus === 'Partial Operation' || 
+        row.currentStatus === 'Not Operation'
+    ).length;
+    document.getElementById('servicesNeeded').textContent = servicesNeeded;
+    
+    const activeContracts = data.filter(row => row.contractStatus === 'In Service').length;
+    document.getElementById('activeContracts').textContent = activeContracts;
+}
+
+function showError(message) {
+    const errorLog = document.getElementById('errorLog');
+    errorLog.textContent = message;
+    errorLog.style.display = 'block';
+    setTimeout(() => {
+        errorLog.style.display = 'none';
+    }, 5000);
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchTable();
+    }
+});
+
+window.onclick = function(event) {
+    if (event.target.className === 'modal') {
+        event.target.style.display = 'none';
+    }
+};
+
+function searchTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = previousData.filter(row => {
+        return row.imoNo.toString().includes(query) ||
+               (row.shipName && row.shipName.toLowerCase().includes(query));
+    });
+    displayData(filtered);
+}
+
+async function showHistory() {
+    const historyRef = database.ref(`history/${currentCompany}/VESSEL`);
+    const snapshot = await historyRef.once('value');
+    const data = snapshot.val() || {};
+    const entries = Object.values(data);
+
+    const historyContent = document.getElementById('historyContent');
+    historyContent.innerHTML = '';
+
+    entries.forEach(entry => {
+        const div = document.createElement('div');
+        div.innerHTML = `<strong>${entry.timestamp}</strong> - ${entry.name} - ${entry.action}<br>${entry.changes.join(', ')}`;
+        historyContent.appendChild(div);
+        historyContent.appendChild(document.createElement('hr'));
+    });
+
+    document.getElementById('historyModal').style.display = 'block';
+}
+</script>
+</body>
+</html>
