@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -7,16 +7,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --background-color: #ecf0f1;
-            --text-color: #34495e;
-            --border-color: #bdc3c7;
+            --primary-color: #315b8a; 
+            --secondary-color: #1e3d59;
+            --background-color: #f5f7fa;
+            --text-color: #2d3e50;
+            --border-color: #d1d5db;
+            --highlight-color: #e0eaf3;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Noto Sans KR', sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--background-color);
@@ -25,39 +28,50 @@
             height: 100vh;
             overflow: hidden;
         }
+
         .sidebar {
-            width: 200px;
-            background-color: var(--secondary-color);
+            width: 240px;
+            background: linear-gradient(180deg, var(--secondary-color) 0%, #183046 100%);
             padding: 20px;
             height: 100vh;
             overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
         .sidebar h3 {
-            color: white;
+            color: #ffffff;
             margin-top: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.2em;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
         }
         .sidebar button {
             display: block;
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 10px;
-            background-color: var(--primary-color);
+            background-color: #315b8a;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
+            text-align: left;
+            font-size: 0.95em;
         }
         .sidebar button:hover {
-            background-color: #2980b9;
+            background-color: #2b4f7a;
+            transform: translateY(-2px);
         }
+
         .container {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+
         .content {
             flex-grow: 1;
             padding: 20px;
@@ -69,16 +83,31 @@
             color: var(--primary-color);
             text-align: center;
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 2.2em;
+            font-weight: 700;
         }
+        #connectionStatus {
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        #errorLog {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
         .table-container {
             overflow: hidden;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 8px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         .scrollbar-container {
             overflow: auto;
@@ -87,16 +116,20 @@
             overflow: auto;
             flex-grow: 1;
         }
+
         table {
             border-collapse: separate;
             border-spacing: 0;
             width: 100%;
+            font-size: 0.9em;
         }
         th, td {
             border: 1px solid var(--border-color);
             padding: 12px;
             text-align: left;
             position: relative;
+            background-color: #ffffff;
+            transition: background-color 0.2s;
         }
         th {
             background-color: var(--primary-color);
@@ -104,37 +137,37 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            font-weight: 500;
+            white-space: nowrap;
         }
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
+        tr:nth-child(even) td {
+            background-color: #f9fafb;
         }
-        input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+        tr:hover td {
+            background-color: var(--highlight-color);
+        }
+
+        input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea.large-input {
             width: 90%;
             padding: 8px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             transition: border-color 0.3s;
+            font-size: 0.85em;
+            font-family: inherit;
+            background-color: #fcfcfd;
         }
-        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus {
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea.large-input:focus {
             border-color: var(--primary-color);
             outline: none;
+            background-color: #ffffff;
         }
         textarea.large-input {
-            width: 100%;
             height: 60px;
             resize: vertical;
             min-height: 60px;
-            font-family: inherit;
-            font-size: inherit;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            transition: border-color 0.3s;
         }
-        textarea.large-input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
+
         .button-group {
             margin-top: 20px;
             display: flex;
@@ -148,34 +181,29 @@
             color: white;
             padding: 10px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
             flex-grow: 1;
+            font-size: 0.95em;
+            font-weight: 500;
         }
         .button-group button:hover {
-            background-color: #2980b9;
+            background-color: #2b4f7a;
+            transform: translateY(-2px);
         }
-        #errorLog {
-            color: #e74c3c;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        #connectionStatus {
-            margin-bottom: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
+
         #historyModal {
             display: none;
             position: fixed;
-            z-index: 1;
+            z-index: 9999;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
+            animation: fadeIn 0.3s ease;
         }
         .modal-content {
             background-color: #fefefe;
@@ -185,6 +213,9 @@
             width: 80%;
             max-height: 90%;
             overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
         }
         .close {
             color: #aaa;
@@ -192,13 +223,24 @@
             font-size: 28px;
             font-weight: bold;
             margin-top: -10px;
+            cursor: pointer;
         }
         .close:hover,
         .close:focus {
             color: black;
-            text-decoration: none;
-            cursor: pointer;
         }
+        #historyContent p {
+            margin: 8px 0;
+        }
+        #historyContent ul {
+            list-style: disc inside;
+            margin: 5px 0 15px 0;
+            padding: 0;
+        }
+        #historyContent li {
+            margin: 5px 0;
+        }
+
         .resizer {
             position: absolute;
             top: 0;
@@ -211,6 +253,7 @@
         .resizing {
             border-right: 2px solid var(--primary-color);
         }
+
         th:nth-child(1), td:nth-child(1) { width: 30px; min-width: 30px; max-width: 30px; }
         th:nth-child(2), td:nth-child(2) { width: 100px; min-width: 100px; }
         th:nth-child(3), td:nth-child(3),
@@ -224,22 +267,27 @@
         th:nth-child(11), td:nth-child(11),
         th:nth-child(12), td:nth-child(12) { width: 400px; min-width: 400px; max-width: 400px; }
         th:nth-child(13), td:nth-child(13) { width: 150px; min-width: 150px; }
+
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+        @keyframes slideUp {
+            from {transform: translateY(20px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h3>BWMS</h3>
-        <button onclick="changeCategory('BWMS', 2020)">2020년</button>
-        <button onclick="changeCategory('BWMS', 2021)">2021년</button>
-        <button onclick="changeCategory('BWMS', 2022)">2022년</button>
-        <button onclick="changeCategory('BWMS', 2023)">2023년</button>
+        <!-- 2020,2021,2022,2023 제거하고 2024,2025만 -->
         <button onclick="changeCategory('BWMS', 2024)">2024년</button>
+        <button onclick="changeCategory('BWMS', 2025)">2025년</button>
         <h3>제어</h3>
-        <button onclick="changeCategory('control', 2020)">2020년</button>
-        <button onclick="changeCategory('control', 2021)">2021년</button>
-        <button onclick="changeCategory('control', 2022)">2022년</button>
-        <button onclick="changeCategory('control', 2023)">2023년</button>
+        <!-- 마찬가지로 2024,2025만 -->
         <button onclick="changeCategory('control', 2024)">2024년</button>
+        <button onclick="changeCategory('control', 2025)">2025년</button>
     </div>
     <div class="container">
         <div class="content">
@@ -283,6 +331,8 @@
             <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
             <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
             <button onclick="showHistory()">히스토리</button>
+            <!-- 히스토리 전체 삭제 버튼 추가 -->
+            <button onclick="deleteAllHistory()">히스토리 전체 삭제</button>
         </div>
     </div>
 
@@ -293,7 +343,7 @@
             <div id="historyContent"></div>
         </div>
     </div>
-<script>
+    <script>
         // Firebase 구성
         const firebaseConfig = {
             apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
@@ -357,7 +407,6 @@
             }
             const row = tbody.insertRow(0);
             
-            // Checkbox cell
             const checkboxCell = row.insertCell(0);
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -366,7 +415,7 @@
             for (let i = 0; i < 12; i++) {
                 const cell = row.insertCell(i + 1);
                 let input;
-                if (i === 9 || i === 10) { // 클레임 내용과 조치 결과
+                if (i === 9 || i === 10) {
                     input = document.createElement('textarea');
                     input.className = 'large-input';
                 } else {
@@ -398,7 +447,7 @@
                 let diff = end - start;
                 
                 if (diff < 0) {
-                    diff += 24 * 60 * 60 * 1000; // Add 24 hours if end time is on the next day
+                    diff += 24 * 60 * 60 * 1000; 
                 }
                 
                 const hours = Math.floor(diff / (60 * 60 * 1000));
@@ -406,6 +455,42 @@
                 
                 row.cells[4].querySelector('input').value = `${hours}시간 ${minutes}분`;
             }
+        }
+
+        function getChanges(oldData, newData) {
+            const changes = [];
+            const fields = ['일자', '시작 시간', '종료 시간', '총 작업 시간', 'Ship name', 'Hull No.', 'AS공번', '호선 담당자', '기술 담당자', '클레임 내용', '조치 결과', '비고'];
+            
+            const maxLength = Math.max(oldData.length, newData.length);
+            for (let i = 0; i < maxLength; i++) {
+                if (i >= oldData.length) {
+                    // 새로운 항목 추가
+                    const shipName = newData[i][4] || 'Ship name 미기재';
+                    const hullNo = newData[i][5] || 'Hull No. 미기재';
+                    changes.push(`행 추가: ${shipName} (${hullNo})`);
+                } else if (i >= newData.length) {
+                    // 기존 항목 삭제
+                    const shipName = oldData[i][4] || 'Ship name 미기재';
+                    const hullNo = oldData[i][5] || 'Hull No. 미기재';
+                    changes.push(`행 삭제: ${shipName} (${hullNo})`);
+                } else {
+                    // 변경 체크
+                    const shipName = newData[i][4] || 'Ship name 미기재';
+                    const hullNo = newData[i][5] || 'Hull No. 미기재';
+
+                    const rowChanges = [];
+                    for (let j = 0; j < oldData[i].length; j++) {
+                        if (oldData[i][j] !== newData[i][j]) {
+                            rowChanges.push(`${fields[j]}: "${oldData[i][j] || ''}" → "${newData[i][j] || ''}"`);
+                        }
+                    }
+                    if (rowChanges.length > 0) {
+                        changes.push(`변경 (${shipName} - ${hullNo}): ` + rowChanges.join(', '));
+                    }
+                }
+            }
+
+            return changes;
         }
 
         function saveToFirebase() {
@@ -420,28 +505,30 @@
                 return;
             }
 
-            // Get all rows and convert to array of objects with date for sorting
             const rows = Array.from(document.querySelectorAll('#rmsBody tr')).map(row => {
                 const inputs = Array.from(row.querySelectorAll('input, textarea')).slice(1);
                 const values = inputs.map(input => input.value);
                 return {
-                    date: values[0], // 일자
+                    date: values[0],
                     values: values
                 };
             });
 
-            // Sort rows by date in descending order
             rows.sort((a, b) => {
-                if (!a.date) return 1;  // Empty dates go to the end
+                if (!a.date) return 1;
                 if (!b.date) return -1;
                 return new Date(b.date) - new Date(a.date);
             });
 
-            // Extract just the values for saving
             const sortedRows = rows.map(row => row.values);
 
             const timestamp = new Date().toISOString();
             const changes = getChanges(previousData, sortedRows);
+            if (changes.length === 0) {
+                alert("변경 사항이 없습니다.");
+                return;
+            }
+
             const historyEntry = {
                 name: name,
                 timestamp: timestamp,
@@ -451,47 +538,18 @@
 
             database.ref(`rms/${currentCategory}/${currentYear}`).set(sortedRows)
                 .then(() => {
-                    return database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry);
+                    const newRef = database.ref(`history/${currentCategory}/${currentYear}`).push();
+                    return newRef.set(historyEntry);
                 })
                 .then(() => {
-                    return database.ref(`history/${currentCategory}/${currentYear}`).once('value');
-                })
-                .then((snapshot) => {
-                    const historyData = snapshot.val();
-                    const historyEntries = Object.values(historyData || {});
-                    if (historyEntries.length > 100) {
-                        const entriesToRemove = historyEntries.slice(0, historyEntries.length - 100);
-                        entriesToRemove.forEach(entry => {
-                            database.ref(`history/${currentCategory}/${currentYear}/${entry.key}`).remove();
-                        });
-                    }
                     alert('데이터가 성공적으로 저장되었습니다.');
                     previousData = sortedRows;
-                    loadFromFirebase(); // Reload the data to show the sorted order
+                    loadFromFirebase(); 
                 })
                 .catch((error) => {
                     console.error("저장 중 오류 발생:", error);
                     document.getElementById('errorLog').textContent = '저장 중 오류가 발생했습니다: ' + error.message;
                 });
-        }
-
-function getChanges(oldData, newData) {
-            const changes = [];
-            const fields = ['일자', '시작 시간', '종료 시간', '총 작업 시간', 'Ship name', 'Hull No.', 'AS공번', '호선 담당자', '기술 담당자', '클레임 내용', '조치 결과', '비고'];
-            for (let i = 0; i < Math.max(oldData.length, newData.length); i++) {
-                if (i >= oldData.length) {
-                    changes.push(`새로운 항목 추가: ${newData[i][4]} (${newData[i][5]})`);
-                } else if (i >= newData.length) {
-                    changes.push(`항목 삭제: ${oldData[i][4]} (${oldData[i][5]})`);
-                } else {
-                    for (let j = 0; j < oldData[i].length; j++) {
-                        if (oldData[i][j] !== newData[i][j]) {
-                            changes.push(`${newData[i][4]} (${newData[i][5]})의 ${fields[j]} 변경: ${oldData[i][j] || '없음'} → ${newData[i][j] || '없음'}`);
-                        }
-                    }
-                }
-            }
-            return changes;
         }
 
         function loadFromFirebase() {
@@ -504,8 +562,6 @@ function getChanges(oldData, newData) {
                         data.forEach((row, index) => {
                             if (index < 2000) {
                                 const newRow = tbody.insertRow();
-                                
-                                // Checkbox cell
                                 const checkboxCell = newRow.insertCell(0);
                                 const checkbox = document.createElement('input');
                                 checkbox.type = 'checkbox';
@@ -514,7 +570,7 @@ function getChanges(oldData, newData) {
                                 row.forEach((cell, cellIndex) => {
                                     const newCell = newRow.insertCell(cellIndex + 1);
                                     let input;
-                                    if (cellIndex === 9 || cellIndex === 10) { // 클레임 내용과 조치 결과
+                                    if (cellIndex === 9 || cellIndex === 10) {
                                         input = document.createElement('textarea');
                                         input.className = 'large-input';
                                     } else {
@@ -576,7 +632,6 @@ function getChanges(oldData, newData) {
                 json.slice(1).forEach((row, index) => {
                     if (index < 2000) {
                         const newRow = tbody.insertRow();
-                        
                         const checkboxCell = newRow.insertCell(0);
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
@@ -622,21 +677,44 @@ function getChanges(oldData, newData) {
                     historyContent.innerHTML = '';
 
                     if (historyData) {
-                        const historyEntries = Object.values(historyData);
+                        let historyEntries = Object.entries(historyData).map(([key, value]) => {
+                            return { key, ...value };
+                        });
+
+                        const now = new Date();
+                        const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+                        let entriesToDelete = [];
+
+                        historyEntries = historyEntries.filter(entry => {
+                            const entryDate = new Date(entry.timestamp);
+                            const isOld = entryDate < cutoff;
+                            if (isOld) {
+                                entriesToDelete.push(entry.key);
+                            }
+                            return !isOld;
+                        });
+
+                        entriesToDelete.forEach(keyToDelete => {
+                            database.ref(`history/${currentCategory}/${currentYear}/${keyToDelete}`).remove();
+                        });
+
                         historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-                        historyEntries.forEach(entry => {
-                            const entryDiv = document.createElement('div');
-                            entryDiv.innerHTML = `
-                                <p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
-                                <p>${entry.action}</p>
-                                <ul>
-                                    ${entry.changes && Array.isArray(entry.changes) ? entry.changes.map(change => `<li>${change}</li>`).join('') : '변경 사항 없음'}
-                                </ul>
-                                <hr>
-                            `;
-                            historyContent.appendChild(entryDiv);
-                        });
+                        if (historyEntries.length === 0) {
+                            historyContent.innerHTML = '<p>최근 30일 이내 변경 히스토리가 없습니다.</p>';
+                        } else {
+                            historyEntries.forEach(entry => {
+                                const entryDiv = document.createElement('div');
+                                entryDiv.innerHTML = 
+                                    `<p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
+                                     <p>${entry.action}</p>
+                                     <ul>
+                                        ${entry.changes && Array.isArray(entry.changes) ? entry.changes.map(change => `<li>${change}</li>`).join('') : '<li>변경 사항 없음</li>'}
+                                     </ul>
+                                     <hr>`;
+                                historyContent.appendChild(entryDiv);
+                            });
+                        }
                     } else {
                         historyContent.innerHTML = '<p>변경 히스토리가 없습니다.</p>';
                     }
@@ -651,6 +729,30 @@ function getChanges(oldData, newData) {
 
         function closeHistory() {
             document.getElementById('historyModal').style.display = 'none';
+        }
+
+        function deleteAllHistory() {
+            const loginId = prompt("로그인 아이디를 입력하세요:");
+            if (loginId !== 'administrator') {
+                alert("잘못된 아이디입니다.");
+                return;
+            }
+            const loginPassword = prompt("비밀번호를 입력하세요:");
+            if (loginPassword !== '1') {
+                alert("잘못된 비밀번호입니다.");
+                return;
+            }
+
+            if (confirm("정말 히스토리를 모두 삭제하시겠습니까?")) {
+                database.ref(`history/${currentCategory}/${currentYear}`).remove()
+                    .then(() => {
+                        alert("히스토리가 모두 삭제되었습니다.");
+                    })
+                    .catch((error) => {
+                        console.error("히스토리 삭제 중 오류:", error);
+                        document.getElementById('errorLog').textContent = '히스토리 삭제 중 오류가 발생했습니다: ' + error.message;
+                    });
+            }
         }
 
         function toggleAllCheckboxes() {
@@ -682,7 +784,6 @@ function getChanges(oldData, newData) {
             document.getElementById('selectAll').checked = false;
         }
 
-        // Column resize functionality
         const table = document.getElementById('rmsTable');
         let resizingCol;
         let startX;
@@ -715,6 +816,7 @@ function getChanges(oldData, newData) {
         window.onload = function() {
             testConnection();
             loadFromFirebase();
+            const scrollbarContainer = document.querySelector('.scrollbar-container');
             const scrollbarContent = document.createElement('div');
             scrollbarContent.style.width = table.scrollWidth + 'px';
             scrollbarContainer.appendChild(scrollbarContent);
