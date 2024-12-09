@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -526,7 +526,7 @@
                 <div id="deleteConfirmSection" style="display: none;">
                     <div class="form-group">
                         <label>Password:</label>
-                        <input type="password" id="deletePassword" required>
+                        <input type="password" id="deletePassword">
                     </div>
                     <div class="button-group">
                         <button onclick="confirmOwnerDeletion()" class="btn btn-danger">Delete</button>
@@ -608,15 +608,15 @@
             <form id="serviceForm">
                 <div class="form-group">
                     <label>IMO No.</label>
-                    <input type="text" id="imoNo" required pattern="[0-9]{7}" title="Please enter a valid 7-digit IMO number">
+                    <input type="text" id="imoNo" pattern="[0-9]{7}" title="Please enter a valid 7-digit IMO number">
                 </div>
                 <div class="form-group">
                     <label>Ship Name</label>
-                    <input type="text" id="shipName" required>
+                    <input type="text" id="shipName">
                 </div>
                 <div class="form-group">
                     <label>Delivery Date</label>
-                    <input type="date" id="deliveryDate" required>
+                    <input type="date" id="deliveryDate">
                 </div>
                 <div class="form-group">
                     <label>ASP Start Date</label>
@@ -628,27 +628,27 @@
                 </div>
                 <div class="form-group">
                     <label>Onboarding Service Contract</label>
-                    <input type="number" id="onboardingContract" min="0" required>
+                    <input type="number" id="onboardingContract" min="0">
                 </div>
                 <div class="form-group">
                     <label>Onboarding Service Completed</label>
-                    <input type="number" id="onboardingCompleted" min="0" required>
+                    <input type="number" id="onboardingCompleted" min="0">
                 </div>
                 <div class="form-group" id="onboardingDatesContainer"></div>
 
                 <div class="form-group">
                     <label>RMS Service Contract</label>
-                    <input type="number" id="rmsContract" min="0" required>
+                    <input type="number" id="rmsContract" min="0">
                 </div>
                 <div class="form-group">
                     <label>RMS Service Completed</label>
-                    <input type="number" id="rmsCompleted" min="0" required>
+                    <input type="number" id="rmsCompleted" min="0">
                 </div>
                 <div class="form-group" id="rmsDatesContainer"></div>
 
                 <div class="form-group">
                     <label>Current Status</label>
-                    <select id="currentStatus" required>
+                    <select id="currentStatus">
                         <option value="Normal Operation">Normal Operation</option>
                         <option value="Partial Operation">Partial Operation</option>
                         <option value="Not Operation">Not Operation</option>
@@ -664,7 +664,7 @@
                 </div>
                 <div class="form-group">
                     <label>Contract Status</label>
-                    <select id="contractStatus" required>
+                    <select id="contractStatus">
                         <option value="Contract Completed">Contract Completed</option>
                         <option value="In Service">In Service</option>
                         <option value="Contract Terminated">Contract Terminated</option>
@@ -694,7 +694,7 @@
             <h2>Add New Owner</h2>
             <div class="form-group">
                 <label>Owner Name:</label>
-                <input type="text" id="newOwnerName" required>
+                <input type="text" id="newOwnerName">
             </div>
             <div class="button-group">
                 <button onclick="addNewOwner()" class="btn btn-primary">Add</button>
@@ -711,7 +711,7 @@
             <form id="pdfUploadForm">
                 <div class="form-group">
                     <label>Select PDF File</label>
-                    <input type="file" id="pdfFile" accept=".pdf" required>
+                    <input type="file" id="pdfFile" accept=".pdf">
                 </div>
                 <div class="button-group">
                     <button type="button" onclick="uploadPDF()" class="btn btn-primary">Upload</button>
@@ -793,6 +793,12 @@ function addServiceFormListeners() {
 }
 
 function generateDateFields() {
+    // 기존 필드 값 저장
+    const oldOnboardingPredicted = Array.from(document.querySelectorAll('.onboardingPredictedDates')).map(i => i.value);
+    const oldOnboardingCompleted = Array.from(document.querySelectorAll('.onboardingCompletedDates')).map(i => i.value);
+    const oldRmsPredicted = Array.from(document.querySelectorAll('.rmsPredictedDates')).map(i => i.value);
+    const oldRmsCompleted = Array.from(document.querySelectorAll('.rmsCompletedDates')).map(i => i.value);
+
     const onboardingContract = parseInt(document.getElementById('onboardingContract').value) || 0;
     const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value) || 0;
     const rmsContract = parseInt(document.getElementById('rmsContract').value) || 0;
@@ -807,11 +813,11 @@ function generateDateFields() {
     if (onboardingContract > 0) {
         let html = '<label>Onboarding Predicted Dates (total '+ onboardingContract +'):</label>';
         for (let i = 0; i < onboardingContract; i++) {
-            html += `<input type="date" class="onboardingPredictedDates" required>`;
+            html += `<input type="date" class="onboardingPredictedDates">`;
         }
         html += `<label>Onboarding Completed Dates (total ${onboardingCompleted}):</label>`;
         for (let i = 0; i < onboardingCompleted; i++) {
-            html += `<input type="date" class="onboardingCompletedDates" required>`;
+            html += `<input type="date" class="onboardingCompletedDates">`;
         }
         onboardingDatesContainer.innerHTML = html;
     }
@@ -820,14 +826,33 @@ function generateDateFields() {
     if (rmsContract > 0) {
         let html = '<label>RMS Predicted Dates (total '+ rmsContract +'):</label>';
         for (let i = 0; i < rmsContract; i++) {
-            html += `<input type="date" class="rmsPredictedDates" required>`;
+            html += `<input type="date" class="rmsPredictedDates">`;
         }
         html += `<label>RMS Completed Dates (total ${rmsCompleted}):</label>`;
         for (let i = 0; i < rmsCompleted; i++) {
-            html += `<input type="date" class="rmsCompletedDates" required>`;
+            html += `<input type="date" class="rmsCompletedDates">`;
         }
         rmsDatesContainer.innerHTML = html;
     }
+
+    // 새 필드에 이전 값 복원
+    const newOnboardingPredicted = document.querySelectorAll('.onboardingPredictedDates');
+    const newOnboardingCompleted = document.querySelectorAll('.onboardingCompletedDates');
+    const newRmsPredicted = document.querySelectorAll('.rmsPredictedDates');
+    const newRmsCompleted = document.querySelectorAll('.rmsCompletedDates');
+
+    oldOnboardingPredicted.forEach((val, i) => {
+        if (newOnboardingPredicted[i]) newOnboardingPredicted[i].value = val;
+    });
+    oldOnboardingCompleted.forEach((val, i) => {
+        if (newOnboardingCompleted[i]) newOnboardingCompleted[i].value = val;
+    });
+    oldRmsPredicted.forEach((val, i) => {
+        if (newRmsPredicted[i]) newRmsPredicted[i].value = val;
+    });
+    oldRmsCompleted.forEach((val, i) => {
+        if (newRmsCompleted[i]) newRmsCompleted[i].value = val;
+    });
 }
 
 // 회사 변경
@@ -893,18 +918,17 @@ function loadFromFirebase() {
 function isOverdue(row) {
     const today = new Date().setHours(0,0,0,0);
 
-    // Onboarding 남은 서비스 중 예측 날짜를 넘어선 경우
+    // Onboarding check
     for (let i = 0; i < (row.onboardingContract || 0); i++) {
         const predDate = row.onboardingPredictedDates && row.onboardingPredictedDates[i] ? new Date(row.onboardingPredictedDates[i]).setHours(0,0,0,0) : null;
         if (predDate && predDate < today) {
-            // 해당 i번째가 완료되지 않았다면
             if (!row.onboardingCompletedDates || !row.onboardingCompletedDates[i]) {
                 return true;
             }
         }
     }
 
-    // RMS 남은 서비스 중 예측 날짜를 넘어선 경우
+    // RMS check
     for (let i = 0; i < (row.rmsContract || 0); i++) {
         const predDate = row.rmsPredictedDates && row.rmsPredictedDates[i] ? new Date(row.rmsPredictedDates[i]).setHours(0,0,0,0) : null;
         if (predDate && predDate < today) {
@@ -936,7 +960,7 @@ function displayData(data) {
             <td><input type="checkbox" class="row-checkbox"></td>
             <td>${row.imoNo}</td>
             <td>${row.shipName}</td>
-            <td>${row.deliveryDate}</td>
+            <td>${row.deliveryDate || ''}</td>
             <td>${row.contractDate || ''}</td>
             <td>${row.finishedDate || ''}</td>
             <td>
@@ -1215,10 +1239,10 @@ function validateForm() {
 }
 
 function validateServiceNumbers() {
-    const onboardingContract = parseInt(document.getElementById('onboardingContract').value);
-    const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value);
-    const rmsContract = parseInt(document.getElementById('rmsContract').value);
-    const rmsCompleted = parseInt(document.getElementById('rmsCompleted').value);
+    const onboardingContract = parseInt(document.getElementById('onboardingContract').value) || 0;
+    const onboardingCompleted = parseInt(document.getElementById('onboardingCompleted').value) || 0;
+    const rmsContract = parseInt(document.getElementById('rmsContract').value) || 0;
+    const rmsCompleted = parseInt(document.getElementById('rmsCompleted').value) || 0;
 
     if (onboardingCompleted > onboardingContract) {
         showError('Completed Onboarding services cannot exceed contracted services');
@@ -1234,20 +1258,27 @@ function validateServiceNumbers() {
 }
 
 function validateDates() {
-    const deliveryDate = new Date(document.getElementById('deliveryDate').value);
+    const deliveryDateVal = document.getElementById('deliveryDate').value;
     const contractDateVal = document.getElementById('contractDate').value;
     const finishedDateVal = document.getElementById('finishedDate').value;
-    const contractDate = contractDateVal ? new Date(contractDateVal) : null;
-    const finishedDate = finishedDateVal ? new Date(finishedDateVal) : null;
 
-    if (contractDate && contractDate < deliveryDate) {
-        showError('ASP Start Date cannot be earlier than delivery date');
-        return false;
+    // 날짜가 비어있으면 검증을 하지 않고 통과
+    if (deliveryDateVal && contractDateVal) {
+        const deliveryDate = new Date(deliveryDateVal);
+        const contractDate = new Date(contractDateVal);
+        if (contractDate < deliveryDate) {
+            showError('ASP Start Date cannot be earlier than delivery date');
+            return false;
+        }
     }
 
-    if (finishedDate && contractDate && finishedDate < contractDate) {
-        showError('ASP Finish Date cannot be earlier than ASP Start Date');
-        return false;
+    if (contractDateVal && finishedDateVal) {
+        const contractDate = new Date(contractDateVal);
+        const finishedDate = new Date(finishedDateVal);
+        if (finishedDate < contractDate) {
+            showError('ASP Finish Date cannot be earlier than ASP Start Date');
+            return false;
+        }
     }
 
     return true;
@@ -1291,7 +1322,7 @@ function showEditModal(imoNo) {
     
     document.getElementById('imoNo').value = rowData.imoNo;
     document.getElementById('shipName').value = rowData.shipName;
-    document.getElementById('deliveryDate').value = rowData.deliveryDate;
+    document.getElementById('deliveryDate').value = rowData.deliveryDate || '';
     document.getElementById('contractDate').value = rowData.contractDate || '';
     document.getElementById('finishedDate').value = rowData.finishedDate || '';
     document.getElementById('onboardingContract').value = rowData.onboardingContract;
@@ -1304,8 +1335,8 @@ function showEditModal(imoNo) {
     document.getElementById('contractStatus').value = rowData.contractStatus;
     document.getElementById('imoNo').readOnly = true;
 
-    // 날짜 필드 생성 후 기존 데이터 넣어주기
     generateDateFields();
+
     // 기존 predictedDates, completedDates 반영
     const onboardingPredictedInputs = document.querySelectorAll('.onboardingPredictedDates');
     const onboardingCompletedInputs = document.querySelectorAll('.onboardingCompletedDates');
@@ -1341,11 +1372,6 @@ function showEditModal(imoNo) {
 
 function saveServiceEntry() {
     const form = document.getElementById('serviceForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
     if (!validateForm()) {
         return;
     }
@@ -1358,13 +1384,13 @@ function saveServiceEntry() {
     const formData = {
         imoNo: document.getElementById('imoNo').value,
         shipName: document.getElementById('shipName').value,
-        deliveryDate: document.getElementById('deliveryDate').value,
+        deliveryDate: document.getElementById('deliveryDate').value || '',
         contractDate: document.getElementById('contractDate').value || '',
         finishedDate: document.getElementById('finishedDate').value || '',
-        onboardingContract: parseInt(document.getElementById('onboardingContract').value),
-        onboardingCompleted: parseInt(document.getElementById('onboardingCompleted').value),
-        rmsContract: parseInt(document.getElementById('rmsContract').value),
-        rmsCompleted: parseInt(document.getElementById('rmsCompleted').value),
+        onboardingContract: parseInt(document.getElementById('onboardingContract').value) || 0,
+        onboardingCompleted: parseInt(document.getElementById('onboardingCompleted').value) || 0,
+        rmsContract: parseInt(document.getElementById('rmsContract').value) || 0,
+        rmsCompleted: parseInt(document.getElementById('rmsCompleted').value) || 0,
         currentStatus: document.getElementById('currentStatus').value,
         serviceRemarks: document.getElementById('serviceRemarks').value,
         nextPlan: document.getElementById('nextPlan').value,
