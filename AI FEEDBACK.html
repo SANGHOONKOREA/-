@@ -114,7 +114,21 @@ table {
     font-size: 0.9em;
     table-layout: fixed; /* 테이블 레이아웃 고정 */
 }
+/* 첫번째 열(체크박스 열) 너비 조절 */
+table th:first-child,
+table td:first-child {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
 
+/* 두번째 열(일자) 너비 조절 */
+table th:nth-child(2),
+table td:nth-child(2) {
+    width: 100px;
+    min-width: 100px;
+    max-width: 100px;
+}
         th, td {
             border: 1px solid var(--border-color);
             padding: 10px;
