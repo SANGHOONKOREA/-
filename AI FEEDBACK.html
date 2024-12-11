@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 대응 AI 피드백 접수</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #315b8a; 
+            --secondary-color: #1e3d59;
+            --background-color: #f5f7fa;
+            --text-color: #2d3e50;
+            --border-color: #d1d5db;
+            --highlight-color: #e0eaf3;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(180deg, var(--secondary-color) 0%, #183046 100%);
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h3 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.2em;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+        }
+        .sidebar .stats {
+            margin-top: 20px;
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        .sidebar .stats div {
+            margin-bottom: 10px;
+        }
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.95em;
+        }
+        .sidebar button:hover {
+            background-color: #2b4f7a;
+        }
+
+        .container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        #connectionStatus {
+            color: var(--primary-color);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .table-container {
+            flex-grow: 1;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        table {
+            width: 2400px;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            resize: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .button-group button {
+            padding: 10px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            flex-grow: 1;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+
+        .button-group button:hover {
+            background-color: #2b4f7a;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>고객 대응 AI</h3>
+        <button onclick="window.open('https://snsys-qa.neoali.com', '_blank')">사이트로 이동</button>
+        <div class="stats" id="statsContainer">
+            <h3>담당자별 등록 현황</h3>
+            <div id="realtimeStats"></div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="content">
+            <h1>고객 대응 AI 피드백 접수</h1>
+            <div id="connectionStatus">연결 상태: 확인 중...</div>
+            <div class="table-container">
+                <table id="feedbackTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                            <th>일자</th>
+                            <th>챗봇 종류</th>
+                            <th>사용자 질문</th>
+                            <th>AI 답변</th>
+                            <th>AI 문서</th>
+                            <th>평가(AI 답변)</th>
+                            <th>평가(AI 문서)</th>
+                            <th>담당자 이름</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="button-group">
+                <button onclick="addRow()">행 추가</button>
+                <button onclick="deleteSelectedRows()">선택 행 삭제</button>
+                <button onclick="saveToFirebase()">저장</button>
+                <button onclick="downloadExcel()">엑셀 다운로드</button>
+                <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display: none;" onchange="uploadExcel(event)">
+                <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
+                <button onclick="showHistory()">히스토리</button>
+                <button onclick="deleteAllHistory()">히스토리 전체 삭제</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Firebase 구성
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+            authDomain: "sanghoon-d8f1c.firebaseapp.com",
+            databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+            projectId: "sanghoon-d8f1c",
+            storageBucket: "sanghoon-d8f1c.appspot.com",
+            messagingSenderId: "495391900753",
+            appId: "1:495391900753:web:b0d708eeca64fafe562470",
+            measurementId: "G-J2E22BW61H"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const database = firebase.database();
+
+        function updateConnectionStatus(isConnected) {
+            const connectionStatus = document.getElementById('connectionStatus');
+            connectionStatus.textContent = isConnected ? '연결 상태: Firebase에 연결되었습니다.' : '연결 상태: Firebase 연결 실패';
+            connectionStatus.style.color = isConnected ? 'green' : 'red';
+        }
+
+        // Firebase 연결 상태 확인
+        function testFirebaseConnection() {
+            const testRef = database.ref('.info/connected');
+            testRef.on('value', (snapshot) => {
+                updateConnectionStatus(snapshot.val());
+            }, (error) => {
+                console.error("Firebase 연결 확인 오류:", error);
+                updateConnectionStatus(false);
+            });
+        }
+
+        function addRow() {
+            const table = document.getElementById('feedbackTable').querySelector('tbody');
+            const newRow = table.insertRow();
+            const today = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < 10; i++) {
+                const cell = newRow.insertCell(i);
+                let input;
+                if (i === 0) {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                } else if (i === 1) {
+                    input = document.createElement('input');
+                    input.type = 'date';
+                    input.value = today;
+                } else if (i === 2) {
+                    input = document.createElement('select');
+                    const options = ['TROUBLE SHOOTING', 'MAINTENANCE', 'GENERAL INQUIRY'];
+                    options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        input.appendChild(opt);
+                    });
+                } else if (i >= 3 && i <= 7) {
+                    input = document.createElement('textarea');
+                } else {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                }
+                cell.appendChild(input);
+            }
+        }
+
+        function deleteSelectedRows() {
+            const rows = document.querySelectorAll('#feedbackTable tbody tr');
+            rows.forEach(row => {
+                const checkbox = row.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    row.remove();
+                }
+            });
+        }
+
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('#feedbackTable tbody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+function saveToFirebase() {
+    const password = prompt('저장하려면 비밀번호를 입력하세요:');
+
+    // 비밀번호 검증
+    if (!password || password.trim().toLowerCase() !== 'snsys') {
+        alert('잘못된 비밀번호입니다. 저장이 취소되었습니다.');
+        return;
+    }
+
+    const rows = Array.from(document.querySelectorAll('#feedbackTable tbody tr'));
+    const data = rows.map(row => {
+        const cells = row.querySelectorAll('input, select, textarea');
+        return Array.from(cells).map(cell => {
+            if (cell.type === 'checkbox') {
+                return cell.checked ? 'true' : 'false';
+            } else {
+                return cell.value;
+            }
+        });
+    });
+
+    console.log('저장 데이터:', data); // 디버깅용 로그 추가
+
+    // 현재 시간을 Firebase 허용 경로로 변환
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // `:`와 `.`를 `-`로 대체
+
+    database.ref('feedback').set(data)
+        .then(() => {
+            console.log('피드백 저장 성공');
+            return database.ref(`history/${timestamp}`).set(data); // Firebase 경로에서 허용되지 않는 문자를 변환한 `timestamp` 사용
+        })
+        .then(() => {
+            console.log('히스토리 저장 성공');
+            alert('저장되었습니다.');
+        })
+        .catch(error => {
+            console.error('저장 중 오류:', error.message || error);
+            alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.\n오류 내용: ' + (error.message || error));
+        });
+}
+
+
+
+
+function showHistory() {
+    const table = document.getElementById('feedbackTable').querySelector('tbody');
+    table.innerHTML = '';
+
+    database.ref('history').once('value')
+        .then(snapshot => {
+            const historyData = snapshot.val();
+            if (!historyData) {
+                alert('히스토리가 없습니다.');
+                return;
+            }
+
+            Object.entries(historyData).forEach(([timestamp, rows]) => {
+                rows.forEach(rowData => {
+                    const newRow = table.insertRow();
+                    rowData.forEach((cellData, index) => {
+                        const cell = newRow.insertCell();
+                        let input;
+                        if (index === 0) {
+                            input = document.createElement('input');
+                            input.type = 'checkbox';
+                            input.checked = cellData === 'true';
+                        } else if (index === 1) {
+                            input = document.createElement('input');
+                            input.type = 'date';
+                            input.value = cellData || '';
+                        } else if (index === 2) {
+                            input = document.createElement('select');
+                            const options = ['TROUBLE SHOOTING', 'MAINTENANCE', 'GENERAL INQUIRY'];
+                            options.forEach(option => {
+                                const opt = document.createElement('option');
+                                opt.value = option;
+                                opt.textContent = option;
+                                input.appendChild(opt);
+                            });
+                            input.value = cellData || options[0];
+                        } else if (index >= 3 && index <= 7) {
+                            input = document.createElement('textarea');
+                            input.value = cellData || '';
+                        } else {
+                            input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = cellData || '';
+                        }
+                        cell.appendChild(input);
+                    });
+                });
+            });
+        })
+        .catch(error => {
+            console.error('히스토리 불러오기 오류:', error);
+            alert('히스토리를 불러오는 데 실패했습니다.');
+        });
+}
+
+function deleteAllHistory() {
+    const confirmDelete = confirm('히스토리를 모두 삭제하시겠습니까?');
+    if (!confirmDelete) return;
+
+    database.ref('history').remove()
+        .then(() => {
+            alert('히스토리가 모두 삭제되었습니다.');
+        })
+        .catch(error => {
+            console.error('히스토리 삭제 오류:', error);
+            alert('히스토리를 삭제하는 데 실패했습니다.');
+        });
+}
+
+        function autoLoadData() {
+            database.ref('feedback').on('value', snapshot => {
+                const data = snapshot.val();
+                const tableBody = document.querySelector('#feedbackTable tbody');
+                tableBody.innerHTML = '';
+
+                if (data) {
+                    data.forEach(rowData => {
+                        const newRow = tableBody.insertRow();
+                        rowData.forEach((cellData, index) => {
+                            const cell = newRow.insertCell();
+                            let input;
+                            if (index === 0) {
+                                input = document.createElement('input');
+                                input.type = 'checkbox';
+                                input.checked = cellData === 'true';
+                            } else if (index === 1) {
+                                input = document.createElement('input');
+                                input.type = 'date';
+                                input.value = cellData || '';
+                            } else if (index === 2) {
+                                input = document.createElement('select');
+                                const options = ['TROUBLE SHOOTING', 'MAINTENANCE', 'GENERAL INQUIRY'];
+                                options.forEach(option => {
+                                    const opt = document.createElement('option');
+                                    opt.value = option;
+                                    opt.textContent = option;
+                                    input.appendChild(opt);
+                                });
+                                input.value = cellData || options[0];
+                            } else if (index >= 3 && index <= 7) {
+                                input = document.createElement('textarea');
+                                input.value = cellData || '';
+                            } else {
+                                input = document.createElement('input');
+                                input.type = 'text';
+                                input.value = cellData || '';
+                            }
+                            cell.appendChild(input);
+                        });
+                    });
+                }
+            });
+        }
+
+function downloadExcel() {
+    const table = document.getElementById('feedbackTable');
+    const tableRows = Array.from(table.querySelectorAll('tbody tr'));
+
+    const data = tableRows.map(row => {
+        return Array.from(row.querySelectorAll('td')).map((cell, index) => {
+            if (index === 0) return null; // 체크박스가 포함된 첫 번째 열 제외
+            const input = cell.querySelector('input, select, textarea');
+            if (input) {
+                return input.value || '';
+            }
+            return cell.textContent.trim(); // 기본 텍스트 내용 반환
+        }).filter(cellData => cellData !== null); // 제외된 열은 필터링
+    });
+
+    // 엑셀 헤더 추가
+    const headers = Array.from(table.querySelectorAll('thead th')).map((th, index) => {
+        return index === 0 ? null : th.textContent.trim(); // 첫 번째 헤더(체크박스) 제외
+    }).filter(header => header !== null);
+
+    data.unshift(headers);
+
+    // XLSX를 이용해 엑셀 생성
+    const worksheet = XLSX.utils.aoa_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Feedback');
+    XLSX.writeFile(workbook, 'feedback.xlsx');
+}
+
+function uploadExcel(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const table = document.getElementById('feedbackTable').querySelector('tbody');
+        table.innerHTML = '';
+
+        json.slice(1).forEach(row => {
+            const newRow = table.insertRow();
+            row.forEach((cellData, index) => {
+                const cell = newRow.insertCell();
+
+                // 첫 번째 열(체크박스)은 건너뜀
+                if (index === 0) return;
+
+                let input;
+                if (index === 1) {
+                    input = document.createElement('input');
+                    input.type = 'date';
+                    input.value = cellData || '';
+                } else if (index === 2) {
+                    input = document.createElement('select');
+                    const options = ['TROUBLE SHOOTING', 'MAINTENANCE', 'GENERAL INQUIRY'];
+                    options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        input.appendChild(opt);
+                    });
+                    input.value = cellData || options[0];
+                } else if (index >= 3 && index <= 7) {
+                    input = document.createElement('textarea');
+                    input.value = cellData || '';
+                } else {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = cellData || '';
+                }
+                cell.appendChild(input);
+            });
+        });
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+        function showHistory() {
+            // 로직 구현
+        }
+
+        function deleteAllHistory() {
+            // 로직 구현
+        }
+
+        // 실시간 담당자별 등록 건수 현황 업데이트
+        function updateRealtimeStats() {
+            database.ref('feedback').on('value', (snapshot) => {
+                const statsContainer = document.getElementById('realtimeStats');
+                statsContainer.innerHTML = '';
+                const feedbackData = snapshot.val();
+                const stats = {};
+
+                if (feedbackData) {
+                    feedbackData.forEach(row => {
+                        const 담당자 = row[8] || "미지정"; // 담당자 이름 필드
+                        stats[담당자] = (stats[담당자] || 0) + 1;
+                    });
+                }
+
+                Object.entries(stats).forEach(([name, count]) => {
+                    const statDiv = document.createElement('div');
+                    statDiv.textContent = `${name}: ${count}건`;
+                    statsContainer.appendChild(statDiv);
+                });
+            });
+        }
+
+        testFirebaseConnection();
+        updateRealtimeStats();
+        autoLoadData();
+    </script>
+</body>
+</html>
