@@ -96,16 +96,16 @@
             margin-bottom: 10px;
         }
 
-        .table-container {
-            flex-grow: 1;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: white;
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 60vh;
-        }
+.table-container {
+    flex-grow: 1;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: white;
+    overflow: hidden;
+    position: relative;
+    max-height: 60vh;
+}
 
         table {
             width: 2400px;
@@ -119,10 +119,13 @@
             text-align: left;
         }
 
-        th {
-            background-color: var(--primary-color);
-            color: white;
-        }
+th {
+    background-color: var(--primary-color);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
 
         textarea {
             width: 100%;
