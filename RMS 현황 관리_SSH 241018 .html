@@ -500,10 +500,10 @@
                 return;
             }
             const password = prompt("저장하려면 패스워드를 입력하세요:");
-            if (password !== "SNSYS") {
-                alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
-                return;
-            }
+if (password.toUpperCase() !== "SNSYS") {
+    alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
+    return;
+}
 
             const rows = Array.from(document.querySelectorAll('#rmsBody tr')).map(row => {
                 const inputs = Array.from(row.querySelectorAll('input, textarea')).slice(1);
@@ -733,15 +733,15 @@
 
         function deleteAllHistory() {
             const loginId = prompt("로그인 아이디를 입력하세요:");
-            if (loginId !== 'administrator') {
-                alert("잘못된 아이디입니다.");
-                return;
-            }
-            const loginPassword = prompt("비밀번호를 입력하세요:");
-            if (loginPassword !== '1') {
-                alert("잘못된 비밀번호입니다.");
-                return;
-            }
+if (loginId.toLowerCase() !== 'administrator') {
+    alert("잘못된 아이디입니다.");
+    return;
+}
+const loginPassword = prompt("비밀번호를 입력하세요:");
+if (loginPassword !== '1') {
+    alert("잘못된 비밀번호입니다.");
+    return;
+}
 
             if (confirm("정말 히스토리를 모두 삭제하시겠습니까?")) {
                 database.ref(`history/${currentCategory}/${currentYear}`).remove()
