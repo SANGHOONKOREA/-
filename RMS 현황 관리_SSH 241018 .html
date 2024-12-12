@@ -457,41 +457,34 @@
             }
         }
 
-        function getChanges(oldData, newData) {
-            const changes = [];
-            const fields = ['일자', '시작 시간', '종료 시간', '총 작업 시간', 'Ship name', 'Hull No.', 'AS공번', '호선 담당자', '기술 담당자', '클레임 내용', '조치 결과', '비고'];
-            
-            const maxLength = Math.max(oldData.length, newData.length);
-            for (let i = 0; i < maxLength; i++) {
-                if (i >= oldData.length) {
-                    // 새로운 항목 추가
-                    const shipName = newData[i][4] || 'Ship name 미기재';
-                    const hullNo = newData[i][5] || 'Hull No. 미기재';
-                    changes.push(`행 추가: ${shipName} (${hullNo})`);
-                } else if (i >= newData.length) {
-                    // 기존 항목 삭제
-                    const shipName = oldData[i][4] || 'Ship name 미기재';
-                    const hullNo = oldData[i][5] || 'Hull No. 미기재';
-                    changes.push(`행 삭제: ${shipName} (${hullNo})`);
-                } else {
-                    // 변경 체크
-                    const shipName = newData[i][4] || 'Ship name 미기재';
-                    const hullNo = newData[i][5] || 'Hull No. 미기재';
-
-                    const rowChanges = [];
-                    for (let j = 0; j < oldData[i].length; j++) {
-                        if (oldData[i][j] !== newData[i][j]) {
-                            rowChanges.push(`${fields[j]}: "${oldData[i][j] || ''}" → "${newData[i][j] || ''}"`);
-                        }
-                    }
-                    if (rowChanges.length > 0) {
-                        changes.push(`변경 (${shipName} - ${hullNo}): ` + rowChanges.join(', '));
-                    }
-                }
+function getChanges(oldData, newData) {
+    const changes = [];
+    
+    const maxLength = Math.max(oldData.length, newData.length);
+    for (let i = 0; i < maxLength; i++) {
+        if (i >= oldData.length && newData[i] && newData[i].some(value => value)) {
+            // 새로운 행이 추가되고 데이터가 있는 경우만 기록
+            const shipName = newData[i][4] || 'Ship name 미기재';
+            const hullNo = newData[i][5] || 'Hull No. 미기재';
+            changes.push(`신규: ${shipName} (${hullNo})`);
+        } else if (i >= newData.length && oldData[i] && oldData[i].some(value => value)) {
+            // 기존 행이 삭제되고 데이터가 있었던 경우만 기록
+            const shipName = oldData[i][4] || 'Ship name 미기재';
+            const hullNo = oldData[i][5] || 'Hull No. 미기재';
+            changes.push(`삭제: ${shipName} (${hullNo})`);
+        } else if (oldData[i] && newData[i]) {
+            // 실제 변경된 내용이 있는 경우만 기록
+            const hasChanges = oldData[i].some((value, index) => value !== newData[i][index]);
+            if (hasChanges) {
+                const shipName = newData[i][4] || 'Ship name 미기재';
+                const hullNo = newData[i][5] || 'Hull No. 미기재';
+                changes.push(`수정: ${shipName} (${hullNo})`);
             }
-
-            return changes;
         }
+    }
+
+    return changes;
+}
 
         function saveToFirebase() {
             const name = prompt("저장하는 사람의 이름을 입력하세요:");
