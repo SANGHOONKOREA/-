@@ -1,14 +1,16 @@
 
+
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S&SYS 고객지원팀 AI챗봇</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>S&amp;SYS 고객지원팀 AI챗봇</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-image: url('https://sanghoonkorea.github.io/-/snsys%20image.jpg');
@@ -345,255 +347,263 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-4">
-    <div class="overlay"></div>
-    
-    <div class="ai-tool-container">
-        <div class="ai-tool-title">AI TOOL</div>
-        <div class="ai-tool-links">
-         <a href="https://chat.openai.com" target="_blank" class="ai-tool-link">ChatGPT(대표AI)</a>
-         <a href="https://claude.ai" target="_blank" class="ai-tool-link">Claude(코딩,글쓰기)</a>
-         <a href="https://gemini.google.com" target="_blank" class="ai-tool-link">Gemini(다양한정보)</a>
-         <a href="https://www.perplexity.ai" target="_blank" class="ai-tool-link">Perplexity(최신검색)</a>
-         <a href="https://copilot.microsoft.com/" target="_blank" class="ai-tool-link">코파일럿(소스제공)</a>
-         <a href="https://chatgpt.com/g/g-NDMXJfqHq-gpt-peurompeuteu-saengseonggi" target="_blank" class="ai-tool-link">프롬프트생성도우미</a>
-         <a href="https://glif.app/glifs" target="_blank" class="ai-tool-link">고품질이미지(GLIFS)</a>
-         <a href="https://ideogram.ai/" target="_blank" class="ai-tool-link">고품질이미지(IDEOGRAM)</a>
-         <a href="https://lumalabs.ai/dream-machine" target="_blank" class="ai-tool-link">영상제작(LUMA)</a>
-         <a href="https://hourone.ai/" target="_blank" class="ai-tool-link">AI아나운서(HOUR ONE)</a>
-         <a href="https://lilys.ai/" target="_blank" class="ai-tool-link">영상요약(LILYS)</a>
-         <a href="https://gamma.app/" target="_blank" class="ai-tool-link">PPT제작(GAMMA)</a>
-         <a href="https://www.ilovepdf.com/ko/ocr-pdf" target="_blank" class="ai-tool-link">PDF 인식 변환</a>
-         <a href="https://tableconvert.com/ko/excel-to-json" target="_blank" class="ai-tool-link">EXCEL TO JSON</a>
-        </div>
-    </div>
-    
-    <h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
-    
-    <div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
-        <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 w-full">
-            <h1 class="title text-center mb-8">
-              S&SYS<span class="title-break"></span> 고객지원팀 AI챗봇 </h1>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- AS 업무 자동화 섹션 -->
-                <div class="section-container">
-                    <h3 class="section-title">AS 업무 자동화</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <button onclick="startChatbot(1)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-envelope"></i>
-                                영문 이메일<br>회신 자동 작성기
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(2)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-file-alt"></i>
-                                ERP 조치결과<br>입력 도우미
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(3)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-database"></i>
-                                BWMS ERP<br>접수 도우미
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(14)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-cogs"></i>
-                                제어 ERP<br>접수 도우미
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(15)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-bolt"></i>
-                                배전 ERP<br>접수 도우미
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(19)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-pen"></i>
-                                영문 비즈니스<br>이메일 작성기
-                            </div>
-                        </button>
-                    </div>
-                </div>
+<div class="overlay"></div>
+<div class="ai-tool-container">
+<div class="ai-tool-title">AI TOOL</div>
+<div class="ai-tool-links">
+<a class="ai-tool-link" href="https://chat.openai.com" target="_blank">ChatGPT(대표AI)</a>
+<a class="ai-tool-link" href="https://claude.ai" target="_blank">Claude(코딩,글쓰기)</a>
+<a class="ai-tool-link" href="https://gemini.google.com" target="_blank">Gemini(다양한정보)</a>
+<a class="ai-tool-link" href="https://www.perplexity.ai" target="_blank">Perplexity(최신검색)</a>
+<a class="ai-tool-link" href="https://copilot.microsoft.com/" target="_blank">코파일럿(소스제공)</a>
+<a class="ai-tool-link" href="https://chatgpt.com/g/g-NDMXJfqHq-gpt-peurompeuteu-saengseonggi" target="_blank">프롬프트생성도우미</a>
+<a class="ai-tool-link" href="https://glif.app/glifs" target="_blank">고품질이미지(GLIFS)</a>
+<a class="ai-tool-link" href="https://ideogram.ai/" target="_blank">고품질이미지(IDEOGRAM)</a>
+<a class="ai-tool-link" href="https://lumalabs.ai/dream-machine" target="_blank">영상제작(LUMA)</a>
+<a class="ai-tool-link" href="https://hourone.ai/" target="_blank">AI아나운서(HOUR ONE)</a>
+<a class="ai-tool-link" href="https://lilys.ai/" target="_blank">영상요약(LILYS)</a>
+<a class="ai-tool-link" href="https://gamma.app/" target="_blank">PPT제작(GAMMA)</a>
+<a class="ai-tool-link" href="https://www.ilovepdf.com/ko/ocr-pdf" target="_blank">PDF 인식 변환</a>
+<a class="ai-tool-link" href="https://tableconvert.com/ko/excel-to-json" target="_blank">EXCEL TO JSON</a>
+</div>
+</div>
+<h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
+<div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
+<div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 w-full">
+<h1 class="title text-center mb-8">
+              S&amp;SYS<span class="title-break"></span> 고객지원팀 AI챗봇 </h1>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- AS 업무 자동화 섹션 -->
+<!-- 업무 지식 섹션 -->
+<!-- 정보 조회 섹션 -->
+<!-- AS 관리 섹션 -->
+<!-- 기타 참고용 섹션 -->
 
-                <!-- 업무 지식 섹션 -->
-                <div class="section-container">
-                    <h3 class="section-title">업무 지식</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <button onclick="startChatbot(5)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-anchor"></i>
-                                호선 AS 업무<br>전문가
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(7)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-tools"></i>
-                                BWMS 기술<br>전문가
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(8)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-bolt"></i>
-                                SSAS-PRO<br>전문가
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(9)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-award"></i>
-                                SSAS-MASTER<br>전문가
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(4)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-calculator"></i>
-                                정산 업무<br>전문가
-                            </div>
-                        </button>
-                    </div>
-                </div>
 
-                <!-- 정보 조회 섹션 -->
-                <div class="section-container">
-                    <h3 class="section-title">정보 조회</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <button onclick="startChatbot(6)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-ship"></i>
-                                BWMS 호선<br>정보 제공
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(10)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-search"></i>
-                                선박 정보<br>검색기
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(25)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-barcode"></i>
-                                BWMS 자재코드<br>검색기
-                            </div>
-                        </button>
-                        <button onclick="window.open('https://www.perplexity.ai/', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-search-plus"></i>
-                                자재 사양<br>검색
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(16)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-book"></i>
-                                선급 규정<br>전문가
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(17)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-newspaper"></i>
-                                최신 조선<br>정보 제공
-                            </div>
-                        </button>
-                    </div>
-                </div>
 
-                <!-- AS 관리 섹션 -->
-                <div class="section-container">
-                    <h3 class="section-title">AS 관리</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <button onclick="startChatbot(11)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-percent"></i>
-                                AS 처리율<br>계산기
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(12)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-chart-line"></i>
-                                채권 분석<br>마스터
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(18)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-chart-bar"></i>
-                                BWMS AS<br>현황 분석기
-                            </div>
-                        </button>
-                        <button onclick="window.open('https://sanghoonkorea.github.io/-/%EC%9E%AC%EA%B3%A0%EA%B4%80%EB%A6%AC%20%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EC%B4%88%EC%95%88.html', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-warehouse"></i>
-                                해외 재고<br>관리 시스템
-                            </div>
-                        </button>
-                        <button onclick="window.open('https://sanghoonkorea.github.io/-/RMS%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC_SSH%20241018%20.html', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-tasks"></i>
-                                RMS 현황<br>관리 시스템
-                            </div>
-                        </button>
-                        <button onclick="window.open('https://sanghoonkorea.github.io/-/ASP%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC%20%EC%B5%9C%EC%A2%85%20241127.html', '_blank')" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-calendar-check"></i>
-                                연간서비스<br>관리 시스템
-                            </div>
-                        </button>
-                    </div>
-                </div>
 
-                <!-- 기타 참고용 섹션 -->
-                <div class="section-container">
-                    <h3 class="section-title">기타 참고용</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <button onclick="startChatbot(20)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-chart-pie"></i>
-                                기업분석<br>보고서
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(21)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-file-excel"></i>
-                                엑셀문서<br>취합
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(22)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-file-alt"></i>
-                                보고서<br>제작기
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(23)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-diagnoses"></i>
-                                기업 진단<br>보고서 작성기
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(24)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                                <i class="fas fa-balance-scale"></i>
-                                중대재해처벌법<br>도우미
-                            </div>
-                        </button>
-                        <button onclick="startChatbot(13)" class="btn-gradient text-white font-semibold rounded-lg">
-                            <div class="btn-content">
-                            <i class="fas fa-users"></i>
-                                인사 정보<br>도우미
-                            </div>
-                        </button>
-                    </div>
-                </div>
+
+
+<div class="section-container">
+<h3 class="section-title">AS 업무 자동화</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(1)">
+<div class="btn-content">
+<i class="fas fa-award"></i>
+                영문 이메일회신 자동 작성기
             </div>
-        </div>
-    </div>
-    
-    <div class="footer z-10">
-        <p>문의 사항 및 개선 제안</p>
-        <p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(2)">
+<div class="btn-content">
+<i class="fas fa-book"></i>
+                ERP 조치결과입력 도우미
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(3)">
+<div class="btn-content">
+<i class="fas fa-cogs"></i>
+                BWMS ERP접수 도우미
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(14)">
+<div class="btn-content">
+<i class="fas fa-pen"></i>
+                제어 ERP접수 도우미
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(15)">
+<div class="btn-content">
+<i class="fas fa-anchor"></i>
+                배전 ERP접수 도우미
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(19)">
+<div class="btn-content">
+<i class="fas fa-book"></i>
+                영문 비즈니스이메일 작성기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('테스트', '_blank')">
+<div class="btn-content">
+<i class="fas fa-users"></i>
+                테스트
+            </div>
+</button>
+</div>
+</div>
+<div class="section-container">
+<h3 class="section-title">업무 지식</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(5)">
+<div class="btn-content">
+<i class="fas fa-newspaper"></i>
+                호선 AS 업무전문가
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(7)">
+<div class="btn-content">
+<i class="fas fa-tools"></i>
+                BWMS 기술전문가
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(8)">
+<div class="btn-content">
+<i class="fas fa-warehouse"></i>
+                SSAS-PRO전문가
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(9)">
+<div class="btn-content">
+<i class="fas fa-calculator"></i>
+                SSAS-MASTER전문가
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(4)">
+<div class="btn-content">
+<i class="fas fa-file-excel"></i>
+                정산 업무전문가
+            </div>
+</button>
+</div>
+</div>
+<div class="section-container">
+<h3 class="section-title">정보 조회</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(6)">
+<div class="btn-content">
+<i class="fas fa-chart-bar"></i>
+                BWMS 호선정보 제공
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(10)">
+<div class="btn-content">
+<i class="fas fa-warehouse"></i>
+                선박 정보검색기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(25)">
+<div class="btn-content">
+<i class="fas fa-cogs"></i>
+                BWMS 자재코드검색기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://www.perplexity.ai/', '_blank')">
+<div class="btn-content">
+<i class="fas fa-award"></i>
+                자재 사양검색
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(16)">
+<div class="btn-content">
+<i class="fas fa-warehouse"></i>
+                선급 규정전문가
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(17)">
+<div class="btn-content">
+<i class="fas fa-percent"></i>
+                최신 조선정보 제공
+            </div>
+</button>
+</div>
+</div>
+<div class="section-container">
+<h3 class="section-title">AS 관리</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(11)">
+<div class="btn-content">
+<i class="fas fa-balance-scale"></i>
+                AS 처리율계산기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(12)">
+<div class="btn-content">
+<i class="fas fa-percent"></i>
+                채권 분석마스터
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(18)">
+<div class="btn-content">
+<i class="fas fa-ship"></i>
+                BWMS AS현황 분석기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/%EC%9E%AC%EA%B3%A0%EA%B4%80%EB%A6%AC%20%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EC%B4%88%EC%95%88.html', '_blank')">
+<div class="btn-content">
+<i class="fas fa-tasks"></i>
+                해외 재고관리 시스템
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/RMS%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC_SSH%20241018%20.html', '_blank')">
+<div class="btn-content">
+<i class="fas fa-newspaper"></i>
+                RMS 현황관리 시스템
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/ASP%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC%20%EC%B5%9C%EC%A2%85%20241127.html', '_blank')">
+<div class="btn-content">
+<i class="fas fa-users"></i>
+                연간서비스관리 시스템
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/AI%20FEEDBACK.html', '_blank')">
+<div class="btn-content">
+<i class="fas fa-users"></i>
+                AI 피드백 관리
+            </div>
+</button>
+</div>
+</div>
+<div class="section-container">
+<h3 class="section-title">기타 참고용</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(20)">
+<div class="btn-content">
+<i class="fas fa-file-excel"></i>
+                기업분석보고서
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(21)">
+<div class="btn-content">
+<i class="fas fa-diagnoses"></i>
+                엑셀문서취합
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(22)">
+<div class="btn-content">
+<i class="fas fa-chart-pie"></i>
+                보고서제작기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(23)">
+<div class="btn-content">
+<i class="fas fa-users"></i>
+                기업 진단보고서 작성기
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(24)">
+<div class="btn-content">
+<i class="fas fa-barcode"></i>
+                중대재해처벌법도우미
+            </div>
+</button>
+<button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(13)">
+<div class="btn-content">
+<i class="fas fa-barcode"></i>
+                인사 정보도우미
+            </div>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer z-10">
+<p>문의 사항 및 개선 제안</p>
+<p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
 <p>서상훈 차장 (내선번호: 1432)</p>
-    </div>
-
-    <script>
+</div>
+<script>
         function startChatbot(number) {
             const urls = [
                 'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi',
