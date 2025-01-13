@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>  
 <html lang="ko">
 <head>
@@ -281,11 +282,9 @@
 <body>
     <div class="sidebar">
         <h3>BWMS</h3>
-        <!-- 2020,2021,2022,2023 제거하고 2024,2025만 -->
         <button onclick="changeCategory('BWMS', 2024)">2024년</button>
         <button onclick="changeCategory('BWMS', 2025)">2025년</button>
         <h3>제어</h3>
-        <!-- 마찬가지로 2024,2025만 -->
         <button onclick="changeCategory('control', 2024)">2024년</button>
         <button onclick="changeCategory('control', 2025)">2025년</button>
     </div>
@@ -295,8 +294,7 @@
             <div id="connectionStatus">연결 상태: 확인 중...</div>
             <div id="errorLog"></div>
             <div class="table-container">
-                <div class="scrollbar-container">
-                </div>
+                <div class="scrollbar-container"></div>
                 <div class="table-wrapper">
                     <table id="rmsTable">
                         <thead>
@@ -331,7 +329,6 @@
             <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
             <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
             <button onclick="showHistory()">히스토리</button>
-            <!-- 히스토리 전체 삭제 버튼 추가 -->
             <button onclick="deleteAllHistory()">히스토리 전체 삭제</button>
         </div>
     </div>
@@ -344,7 +341,9 @@
         </div>
     </div>
     <script>
-        // Firebase 구성
+        // ------------------------------
+        // 1. Firebase 초기화
+        // ------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
             authDomain: "sanghoon-d8f1c.firebaseapp.com",
@@ -355,17 +354,19 @@
             appId: "1:495391900753:web:b0d708eeca64fafe562470",
             measurementId: "G-J2E22BW61H"
         };
-
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         let currentCategory = 'BWMS';
         let currentYear = 2024;
-        let previousData = [];
+        // 이전에 불러온 DB 데이터(객체 형태)를 저장
+        let previousData = {};
 
+        // ------------------------------
+        // 2. 연결 테스트
+        // ------------------------------
         function testConnection() {
-            const testRef = database.ref('test');
-            testRef.set({ connectionTest: true })
+            database.ref('test').set({ connectionTest: true })
                 .then(() => {
                     console.log("Firebase 연결 성공");
                     updateConnectionStatus(true);
@@ -391,6 +392,9 @@
             }
         }
 
+        // ------------------------------
+        // 3. 카테고리/연도 변경
+        // ------------------------------
         function changeCategory(category, year) {
             currentCategory = category;
             currentYear = year;
@@ -398,6 +402,9 @@
             loadFromFirebase();
         }
 
+        // ------------------------------
+        // 4. 테이블 행 추가 (신규행 -> 새로운 UID 생성)
+        // ------------------------------
         function addRow() {
             const tbody = document.getElementById('rmsBody');
             const rowCount = tbody.rows.length;
@@ -405,20 +412,31 @@
                 alert('최대 2000개의 항목만 입력할 수 있습니다.');
                 return;
             }
-            const row = tbody.insertRow(0);
+
+            // Firebase push().key를 사용하거나 UUID v4를 사용
+            // 여기서는 push().key 예시
+            const newId = database.ref().push().key; 
             
+            // 최상단(첫 번째 행)에 추가
+            const row = tbody.insertRow(0);
+            row.setAttribute('data-uid', newId);
+
+            // 체크박스
             const checkboxCell = row.insertCell(0);
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkboxCell.appendChild(checkbox);
 
+            // 나머지 12개 칸 (일자, 시작/종료, 총작업, shipName, hullNo, etc)
             for (let i = 0; i < 12; i++) {
                 const cell = row.insertCell(i + 1);
                 let input;
                 if (i === 9 || i === 10) {
+                    // 클레임 내용, 조치 결과는 textarea
                     input = document.createElement('textarea');
                     input.className = 'large-input';
                 } else {
+                    // 그 외는 input
                     input = document.createElement('input');
                     if (i === 0) {
                         input.type = 'date';
@@ -426,7 +444,7 @@
                         input.type = 'time';
                     } else if (i === 3) {
                         input.type = 'text';
-                        input.readOnly = true;
+                        input.readOnly = true; // 총 작업 시간
                     } else {
                         input.type = 'text';
                     }
@@ -436,6 +454,9 @@
             }
         }
 
+        // ------------------------------
+        // 5. 총 작업 시간 계산
+        // ------------------------------
         function calculateTotalTime(event) {
             const row = event.target.closest('tr');
             const startTime = row.cells[2].querySelector('input').value;
@@ -445,47 +466,112 @@
                 const start = new Date(`2000-01-01T${startTime}`);
                 const end = new Date(`2000-01-01T${endTime}`);
                 let diff = end - start;
-                
                 if (diff < 0) {
                     diff += 24 * 60 * 60 * 1000; 
                 }
-                
                 const hours = Math.floor(diff / (60 * 60 * 1000));
                 const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
-                
                 row.cells[4].querySelector('input').value = `${hours}시간 ${minutes}분`;
             }
         }
 
-function getChanges(oldData, newData) {
-    const changes = [];
-    
-    const maxLength = Math.max(oldData.length, newData.length);
-    for (let i = 0; i < maxLength; i++) {
-        if (i >= oldData.length && newData[i] && newData[i].some(value => value)) {
-            // 새로운 행이 추가되고 데이터가 있는 경우만 기록
-            const shipName = newData[i][4] || 'Ship name 미기재';
-            const hullNo = newData[i][5] || 'Hull No. 미기재';
-            changes.push(`신규: ${shipName} (${hullNo})`);
-        } else if (i >= newData.length && oldData[i] && oldData[i].some(value => value)) {
-            // 기존 행이 삭제되고 데이터가 있었던 경우만 기록
-            const shipName = oldData[i][4] || 'Ship name 미기재';
-            const hullNo = oldData[i][5] || 'Hull No. 미기재';
-            changes.push(`삭제: ${shipName} (${hullNo})`);
-        } else if (oldData[i] && newData[i]) {
-            // 실제 변경된 내용이 있는 경우만 기록
-            const hasChanges = oldData[i].some((value, index) => value !== newData[i][index]);
-            if (hasChanges) {
-                const shipName = newData[i][4] || 'Ship name 미기재';
-                const hullNo = newData[i][5] || 'Hull No. 미기재';
-                changes.push(`수정: ${shipName} (${hullNo})`);
+        // ------------------------------
+        // 6. 변경 내역 추적 (히스토리)
+        // ------------------------------
+        function getChanges(oldDataObj, newDataObj) {
+            const changes = [];
+
+            // 1) 삭제된 것(과거에 있었는데 현재는 없음)
+            for (let oldId in oldDataObj) {
+                if (!newDataObj.hasOwnProperty(oldId)) {
+                    const shipName = oldDataObj[oldId].shipName || 'Ship name 미기재';
+                    const hullNo   = oldDataObj[oldId].hullNo   || 'Hull No. 미기재';
+                    changes.push(`삭제: ${shipName} (${hullNo})`);
+                }
             }
+
+            // 2) 새로 추가된 것(현재 있는데 과거에는 없었음)
+            for (let newId in newDataObj) {
+                if (!oldDataObj.hasOwnProperty(newId)) {
+                    const shipName = newDataObj[newId].shipName || 'Ship name 미기재';
+                    const hullNo   = newDataObj[newId].hullNo   || 'Hull No. 미기재';
+                    changes.push(`신규: ${shipName} (${hullNo})`);
+                }
+            }
+
+            // 3) 수정된 것(둘 다 존재하지만, 필드가 달라진 경우)
+            for (let newId in newDataObj) {
+                if (oldDataObj.hasOwnProperty(newId)) {
+                    // 필드별 비교
+                    const oldRow = oldDataObj[newId];
+                    const newRow = newDataObj[newId];
+                    let isChanged = false;
+                    // 비교해볼 필드 목록
+                    const fields = ["date","startTime","endTime","totalTime","shipName","hullNo","asNo","hosen","tech","claim","action","note"];
+                    for (let f of fields) {
+                        if ((oldRow[f] || '') !== (newRow[f] || '')) {
+                            isChanged = true;
+                            break;
+                        }
+                    }
+                    if (isChanged) {
+                        const shipName = newRow.shipName || 'Ship name 미기재';
+                        const hullNo   = newRow.hullNo   || 'Hull No. 미기재';
+                        changes.push(`수정: ${shipName} (${hullNo})`);
+                    }
+                }
+            }
+            return changes;
         }
-    }
 
-    return changes;
-}
+        // ------------------------------
+        // 7. 로컬 테이블 -> 객체(UID->rowData) 변환
+        // ------------------------------
+        function convertTableToObject() {
+            const rows = document.querySelectorAll('#rmsBody tr');
+            const result = {};
+            rows.forEach((tr) => {
+                const uid = tr.getAttribute('data-uid');
+                if (!uid) return;
 
+                const inputs = tr.querySelectorAll('td input, td textarea');
+                // 인덱스: 0=checkbox(무시), 1=일자, 2=시작시간, 3=종료시간, 4=총작업시간, ...
+                // 실제 각 필드를 의미있게 저장
+                const date      = inputs[1].value;
+                const startTime = inputs[2].value;
+                const endTime   = inputs[3].value;
+                const totalTime = inputs[4].value;
+                const shipName  = inputs[5].value;
+                const hullNo    = inputs[6].value;
+                const asNo      = inputs[7].value;
+                const hosen     = inputs[8].value;
+                const tech      = inputs[9].value;
+                const claim     = inputs[10].value;
+                const action    = inputs[11].value;
+                const note      = inputs[12].value;
+
+                result[uid] = {
+                    id: uid,
+                    date,
+                    startTime,
+                    endTime,
+                    totalTime,
+                    shipName,
+                    hullNo,
+                    asNo,
+                    hosen,
+                    tech,
+                    claim,
+                    action,
+                    note
+                };
+            });
+            return result;
+        }
+
+        // ------------------------------
+        // 8. 저장 (트랜잭션 + ID 기반 병합)
+        // ------------------------------
         function saveToFirebase() {
             const name = prompt("저장하는 사람의 이름을 입력하세요:");
             if (!name) {
@@ -493,104 +579,151 @@ function getChanges(oldData, newData) {
                 return;
             }
             const password = prompt("저장하려면 패스워드를 입력하세요:");
-if (password.toUpperCase() !== "SNSYS") {
-    alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
-    return;
-}
+            if (!password || password.toUpperCase() !== "SNSYS") {
+                alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
+                return;
+            }
 
-            const rows = Array.from(document.querySelectorAll('#rmsBody tr')).map(row => {
-                const inputs = Array.from(row.querySelectorAll('input, textarea')).slice(1);
-                const values = inputs.map(input => input.value);
-                return {
-                    date: values[0],
-                    values: values
-                };
-            });
-
-            rows.sort((a, b) => {
-                if (!a.date) return 1;
-                if (!b.date) return -1;
-                return new Date(b.date) - new Date(a.date);
-            });
-
-            const sortedRows = rows.map(row => row.values);
-
-            const timestamp = new Date().toISOString();
-            const changes = getChanges(previousData, sortedRows);
+            const newDataObj = convertTableToObject();
+            const changes = getChanges(previousData, newDataObj);
             if (changes.length === 0) {
                 alert("변경 사항이 없습니다.");
                 return;
             }
 
             const historyEntry = {
-                name: name,
-                timestamp: timestamp,
+                name,
+                timestamp: new Date().toISOString(),
                 action: "데이터 저장",
                 changes: changes
             };
 
-            database.ref(`rms/${currentCategory}/${currentYear}`).set(sortedRows)
-                .then(() => {
-                    const newRef = database.ref(`history/${currentCategory}/${currentYear}`).push();
-                    return newRef.set(historyEntry);
-                })
-                .then(() => {
-                    alert('데이터가 성공적으로 저장되었습니다.');
-                    previousData = sortedRows;
-                    loadFromFirebase(); 
-                })
-                .catch((error) => {
-                    console.error("저장 중 오류 발생:", error);
+            const ref = database.ref(`rms/${currentCategory}/${currentYear}`);
+            ref.transaction(function(currentData) {
+                // currentData가 없거나 객체가 아니면 새 객체로 간주
+                if (!currentData || typeof currentData !== 'object') {
+                    return newDataObj; 
+                }
+
+                // 병합 로직:
+                //  1) currentData 중에서, 로컬에 없는 것은 "삭제" 되었다고 보고 제거
+                //  2) 로컬에 있는 것은 내용 업데이트
+                //  3) 없는 UID는 새로 추가
+                // 위 과정을 단순화: "newDataObj"로 완전히 덮어쓰되, 
+                // "newDataObj"에 없는 UID는 제거
+                // (실제로는 '삭제된 것이라면?' 로직을 구분할 수도 있음)
+                
+                const merged = {};
+
+                // 먼저 "newDataObj"에 있는 애들은 그대로 merged에 넣는다.
+                for (let uid in newDataObj) {
+                    merged[uid] = newDataObj[uid];
+                }
+                // currentData에서 newDataObj에 없는 uid는 테이블에서 삭제된 것으로 보고 pass
+                // -> 즉 merged에 넣지 않음
+                return merged;
+            }, 
+            function(error, committed, snapshot) {
+                if (error) {
+                    console.error("트랜잭션 오류 발생:", error);
                     document.getElementById('errorLog').textContent = '저장 중 오류가 발생했습니다: ' + error.message;
-                });
+                } else if (!committed) {
+                    console.warn("트랜잭션이 중단되었습니다.");
+                } else {
+                    // 트랜잭션 완료 후, 히스토리 저장
+                    database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry)
+                        .then(() => {
+                            alert("데이터가 성공적으로 저장되었습니다.");
+                            // 트랜잭션 이후 최종값을 previousData에 반영
+                            previousData = snapshot.val() || {};
+                            // 혹시 모를 화면과 DB 간 데이터 차이를 없애기 위해 다시 로딩
+                            loadFromFirebase();
+                        })
+                        .catch(err => {
+                            console.error("히스토리 저장 중 오류:", err);
+                        });
+                }
+            });
         }
 
+        // ------------------------------
+        // 9. DB -> 화면 로드
+        // ------------------------------
         function loadFromFirebase() {
             database.ref(`rms/${currentCategory}/${currentYear}`).once('value')
                 .then((snapshot) => {
-                    const data = snapshot.val();
+                    const dataObj = snapshot.val();
+                    previousData = dataObj && typeof dataObj === 'object' ? dataObj : {};
+
                     const tbody = document.getElementById('rmsBody');
                     tbody.innerHTML = '';
-                    if (data && Array.isArray(data)) {
-                        data.forEach((row, index) => {
-                            if (index < 2000) {
-                                const newRow = tbody.insertRow();
-                                const checkboxCell = newRow.insertCell(0);
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkboxCell.appendChild(checkbox);
 
-                                row.forEach((cell, cellIndex) => {
-                                    const newCell = newRow.insertCell(cellIndex + 1);
-                                    let input;
-                                    if (cellIndex === 9 || cellIndex === 10) {
-                                        input = document.createElement('textarea');
-                                        input.className = 'large-input';
-                                    } else {
-                                        input = document.createElement('input');
-                                        if (cellIndex === 0) {
-                                            input.type = 'date';
-                                        } else if (cellIndex === 1 || cellIndex === 2) {
-                                            input.type = 'time';
-                                        } else if (cellIndex === 3) {
-                                            input.type = 'text';
-                                            input.readOnly = true;
-                                        } else {
-                                            input.type = 'text';
-                                        }
-                                    }
-                                    input.value = cell || '';
-                                    input.addEventListener('input', calculateTotalTime);
-                                    newCell.appendChild(input);
-                                });
+                    // 객체 형태의 데이터를 "내림차순 정렬"하려면
+                    // date(일자) 기준으로 정렬할 수 있게 배열 변환
+                    let rowsArray = Object.values(previousData); 
+                    rowsArray.sort((a,b) => {
+                        // a.date, b.date 비교
+                        const da = a.date ? new Date(a.date) : null;
+                        const db = b.date ? new Date(b.date) : null;
+                        if (!da) return 1;
+                        if (!db) return -1;
+                        return db - da;
+                    });
+
+                    // 이제 rowsArray를 테이블에 표시
+                    rowsArray.forEach(obj => {
+                        const newRow = tbody.insertRow();
+                        newRow.setAttribute('data-uid', obj.id);
+
+                        // 체크박스
+                        const checkboxCell = newRow.insertCell(0);
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkboxCell.appendChild(checkbox);
+
+                        // 순서대로 (일자, 시작, 종료, 총작업시간, ShipName, ...)
+                        // 인덱스 9,10에 해당하는 건 textarea
+                        const fields = [
+                            ['date','date'],         // 0
+                            ['startTime','time'],    // 1
+                            ['endTime','time'],      // 2
+                            ['totalTime','text'],    // 3 (readOnly)
+                            ['shipName','text'],     // 4
+                            ['hullNo','text'],       // 5
+                            ['asNo','text'],         // 6
+                            ['hosen','text'],        // 7
+                            ['tech','text'],         // 8
+                            ['claim','textarea'],    // 9
+                            ['action','textarea'],   // 10
+                            ['note','text']          // 11
+                        ];
+                        fields.forEach((info, i) => {
+                            const fieldName = info[0];
+                            const fieldType = info[1];
+                            const newCell = newRow.insertCell(i+1);
+                            let input;
+                            if (fieldType === 'textarea') {
+                                input = document.createElement('textarea');
+                                input.className = 'large-input';
+                            } else {
+                                input = document.createElement('input');
+                                input.type = fieldType;
+                                if (i === 3) {
+                                    // totalTime 칸이면 readOnly
+                                    input.readOnly = true;
+                                }
                             }
+                            input.value = obj[fieldName] || '';
+                            input.addEventListener('input', calculateTotalTime);
+                            newCell.appendChild(input);
                         });
-                        previousData = data;
-                    } else {
+                    });
+
+                    // DB가 아예 없으면(초기) 10줄 정도 채워넣기
+                    if (rowsArray.length === 0) {
                         for (let i = 0; i < 10; i++) {
                             addRow();
                         }
-                        previousData = [];
                     }
                 })
                 .catch((error) => {
@@ -599,18 +732,90 @@ if (password.toUpperCase() !== "SNSYS") {
                 });
         }
 
+        // ------------------------------
+        // 10. 선택 행 삭제
+        // ------------------------------
+        function deleteSelectedRows() {
+            const tbody = document.getElementById('rmsBody');
+            const rows = tbody.querySelectorAll('tr');
+            let deletedCount = 0;
+
+            for (let i = rows.length - 1; i >= 0; i--) {
+                const checkbox = rows[i].querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    tbody.removeChild(rows[i]);
+                    deletedCount++;
+                }
+            }
+
+            if (deletedCount > 0) {
+                alert(`${deletedCount}개의 행이 삭제되었습니다.`);
+            } else {
+                alert('선택된 행이 없습니다.');
+            }
+            document.getElementById('selectAll').checked = false;
+        }
+
+        // ------------------------------
+        // 11. 전체 선택 체크박스
+        // ------------------------------
+        function toggleAllCheckboxes() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('#rmsBody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        // ------------------------------
+        // 12. 엑셀 다운로드
+        // ------------------------------
         function downloadExcel() {
-            const rows = Array.from(document.querySelectorAll('#rmsBody tr')).map(row => 
-                Array.from(row.querySelectorAll('input, textarea')).slice(1).map(input => input.value)
-            );
-            const ws = XLSX.utils.aoa_to_sheet([['일자', '시작 시간', '종료 시간', '총 작업 시간', 'Ship name', 'Hull No.', 'AS공번', '호선 담당자', '기술 담당자', '클레임 내용', '조치 결과', '비고'], ...rows]);
+            // 테이블을 객체로 변환
+            const dataObj = convertTableToObject();
+            // Object -> array (일자 내림차순 정렬)
+            let rowsArray = Object.values(dataObj);
+            rowsArray.sort((a,b) => {
+                const da = a.date ? new Date(a.date) : null;
+                const db = b.date ? new Date(b.date) : null;
+                if (!da) return 1;
+                if (!db) return -1;
+                return db - da;
+            });
+
+            // 헤더와 함께 2차원 배열로 변환
+            const header = ['일자','시작 시간','종료 시간','총 작업 시간','Ship name','Hull No.','AS공번','호선 담당자','기술 담당자','클레임 내용','조치 결과','비고'];
+            const sheetData = [header];
+            rowsArray.forEach(row => {
+                sheetData.push([
+                    row.date || '',
+                    row.startTime || '',
+                    row.endTime || '',
+                    row.totalTime || '',
+                    row.shipName || '',
+                    row.hullNo || '',
+                    row.asNo || '',
+                    row.hosen || '',
+                    row.tech || '',
+                    row.claim || '',
+                    row.action || '',
+                    row.note || ''
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "RMS 현황");
             XLSX.writeFile(wb, `rms_${currentCategory}_${currentYear}.xlsx`);
         }
 
+        // ------------------------------
+        // 13. 엑셀 업로드
+        // ------------------------------
         function uploadExcel(e) {
             const file = e.target.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
@@ -621,47 +826,54 @@ if (password.toUpperCase() !== "SNSYS") {
                 
                 const tbody = document.getElementById('rmsBody');
                 tbody.innerHTML = '';
-                
-                json.slice(1).forEach((row, index) => {
-                    if (index < 2000) {
-                        const newRow = tbody.insertRow();
-                        const checkboxCell = newRow.insertCell(0);
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkboxCell.appendChild(checkbox);
 
-                        for (let i = 0; i < 12; i++) {
-                            const newCell = newRow.insertCell(i + 1);
-                            let input;
-                            if (i === 9 || i === 10) {
-                                input = document.createElement('textarea');
-                                input.className = 'large-input';
+                // 헤더행 제외하고 최대 2000행
+                const rows = json.slice(1, 2001);
+                
+                rows.forEach(row => {
+                    const newId = database.ref().push().key;
+                    const newRow = tbody.insertRow();
+                    newRow.setAttribute('data-uid', newId);
+
+                    // 체크박스
+                    const checkboxCell = newRow.insertCell(0);
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkboxCell.appendChild(checkbox);
+
+                    // (일자, 시작, 종료, 총작업시간, ShipName, HullNo, asNo, hosen, tech, claim, action, note)
+                    for (let i = 0; i < 12; i++) {
+                        const newCell = newRow.insertCell(i + 1);
+                        let input;
+                        if (i === 9 || i === 10) {
+                            input = document.createElement('textarea');
+                            input.className = 'large-input';
+                        } else {
+                            input = document.createElement('input');
+                            if (i === 0) {
+                                input.type = 'date';
+                            } else if (i === 1 || i === 2) {
+                                input.type = 'time';
+                            } else if (i === 3) {
+                                input.type = 'text';
+                                input.readOnly = true;
                             } else {
-                                input = document.createElement('input');
-                                if (i === 0) {
-                                    input.type = 'date';
-                                } else if (i === 1 || i === 2) {
-                                    input.type = 'time';
-                                } else if (i === 3) {
-                                    input.type = 'text';
-                                    input.readOnly = true;
-                                } else {
-                                    input.type = 'text';
-                                }
+                                input.type = 'text';
                             }
-                            input.value = row[i] || '';
-                            input.addEventListener('input', calculateTotalTime);
-                            newCell.appendChild(input);
                         }
-                        calculateTotalTime({target: newRow.cells[2].querySelector('input')});
+                        input.value = row[i] || '';
+                        input.addEventListener('input', calculateTotalTime);
+                        newCell.appendChild(input);
                     }
                 });
-                
-                alert(`총 ${Math.min(json.length - 1, 2000)}개의 행이 업로드되었습니다.`);
+                alert(`총 ${rows.length}개의 행이 업로드되었습니다.`);
             };
             reader.readAsArrayBuffer(file);
         }
 
+        // ------------------------------
+        // 14. 히스토리 보기/삭제
+        // ------------------------------
         function showHistory() {
             database.ref(`history/${currentCategory}/${currentYear}`).once('value')
                 .then((snapshot) => {
@@ -673,7 +885,7 @@ if (password.toUpperCase() !== "SNSYS") {
                         let historyEntries = Object.entries(historyData).map(([key, value]) => {
                             return { key, ...value };
                         });
-
+                        // 30일 지나면 삭제
                         const now = new Date();
                         const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
                         let entriesToDelete = [];
@@ -686,11 +898,11 @@ if (password.toUpperCase() !== "SNSYS") {
                             }
                             return !isOld;
                         });
-
                         entriesToDelete.forEach(keyToDelete => {
                             database.ref(`history/${currentCategory}/${currentYear}/${keyToDelete}`).remove();
                         });
 
+                        // 최신순 정렬
                         historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
                         if (historyEntries.length === 0) {
@@ -702,7 +914,11 @@ if (password.toUpperCase() !== "SNSYS") {
                                     `<p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
                                      <p>${entry.action}</p>
                                      <ul>
-                                        ${entry.changes && Array.isArray(entry.changes) ? entry.changes.map(change => `<li>${change}</li>`).join('') : '<li>변경 사항 없음</li>'}
+                                        ${
+                                            entry.changes && Array.isArray(entry.changes)
+                                            ? entry.changes.map(change => `<li>${change}</li>`).join('')
+                                            : '<li>변경 사항 없음</li>'
+                                        }
                                      </ul>
                                      <hr>`;
                                 historyContent.appendChild(entryDiv);
@@ -726,15 +942,15 @@ if (password.toUpperCase() !== "SNSYS") {
 
         function deleteAllHistory() {
             const loginId = prompt("로그인 아이디를 입력하세요:");
-if (loginId.toLowerCase() !== 'administrator') {
-    alert("잘못된 아이디입니다.");
-    return;
-}
-const loginPassword = prompt("비밀번호를 입력하세요:");
-if (loginPassword !== '1') {
-    alert("잘못된 비밀번호입니다.");
-    return;
-}
+            if (loginId.toLowerCase() !== 'administrator') {
+                alert("잘못된 아이디입니다.");
+                return;
+            }
+            const loginPassword = prompt("비밀번호를 입력하세요:");
+            if (loginPassword !== '1') {
+                alert("잘못된 비밀번호입니다.");
+                return;
+            }
 
             if (confirm("정말 히스토리를 모두 삭제하시겠습니까?")) {
                 database.ref(`history/${currentCategory}/${currentYear}`).remove()
@@ -748,35 +964,9 @@ if (loginPassword !== '1') {
             }
         }
 
-        function toggleAllCheckboxes() {
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('#rmsBody input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
-            });
-        }
-
-        function deleteSelectedRows() {
-            const tbody = document.getElementById('rmsBody');
-            const rows = tbody.querySelectorAll('tr');
-            let deletedCount = 0;
-
-            for (let i = rows.length - 1; i >= 0; i--) {
-                const checkbox = rows[i].querySelector('input[type="checkbox"]');
-                if (checkbox && checkbox.checked) {
-                    tbody.removeChild(rows[i]);
-                    deletedCount++;
-                }
-            }
-
-            if (deletedCount > 0) {
-                alert(`${deletedCount}개의 행이 삭제되었습니다.`);
-            } else {
-                alert('선택된 행이 없습니다.');
-            }
-            document.getElementById('selectAll').checked = false;
-        }
-
+        // ------------------------------
+        // 15. 컬럼 리사이즈 이벤트
+        // ------------------------------
         const table = document.getElementById('rmsTable');
         let resizingCol;
         let startX;
@@ -806,6 +996,9 @@ if (loginPassword !== '1') {
             resizingCol = null;
         }
 
+        // ------------------------------
+        // 16. 초기 실행
+        // ------------------------------
         window.onload = function() {
             testConnection();
             loadFromFirebase();
