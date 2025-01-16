@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>  
 <html lang="ko">
 <head>
@@ -359,7 +358,7 @@
 
         let currentCategory = 'BWMS';
         let currentYear = 2024;
-        // 이전에 불러온 DB 데이터(객체 형태)를 저장
+        // 이전에 불러온 DB 데이터(UID->행객체)
         let previousData = {};
 
         // ------------------------------
@@ -403,7 +402,7 @@
         }
 
         // ------------------------------
-        // 4. 테이블 행 추가 (신규행 -> 새로운 UID 생성)
+        // 4. 행 추가 (신규행 -> 새로운 UID 생성)
         // ------------------------------
         function addRow() {
             const tbody = document.getElementById('rmsBody');
@@ -413,11 +412,7 @@
                 return;
             }
 
-            // Firebase push().key를 사용하거나 UUID v4를 사용
-            // 여기서는 push().key 예시
             const newId = database.ref().push().key; 
-            
-            // 최상단(첫 번째 행)에 추가
             const row = tbody.insertRow(0);
             row.setAttribute('data-uid', newId);
 
@@ -427,16 +422,15 @@
             checkbox.type = 'checkbox';
             checkboxCell.appendChild(checkbox);
 
-            // 나머지 12개 칸 (일자, 시작/종료, 총작업, shipName, hullNo, etc)
+            // 나머지 12칸
             for (let i = 0; i < 12; i++) {
                 const cell = row.insertCell(i + 1);
                 let input;
                 if (i === 9 || i === 10) {
-                    // 클레임 내용, 조치 결과는 textarea
+                    // 클레임 내용, 조치 결과
                     input = document.createElement('textarea');
                     input.className = 'large-input';
                 } else {
-                    // 그 외는 input
                     input = document.createElement('input');
                     if (i === 0) {
                         input.type = 'date';
@@ -444,7 +438,7 @@
                         input.type = 'time';
                     } else if (i === 3) {
                         input.type = 'text';
-                        input.readOnly = true; // 총 작업 시간
+                        input.readOnly = true;
                     } else {
                         input.type = 'text';
                     }
@@ -476,56 +470,7 @@
         }
 
         // ------------------------------
-        // 6. 변경 내역 추적 (히스토리)
-        // ------------------------------
-        function getChanges(oldDataObj, newDataObj) {
-            const changes = [];
-
-            // 1) 삭제된 것(과거에 있었는데 현재는 없음)
-            for (let oldId in oldDataObj) {
-                if (!newDataObj.hasOwnProperty(oldId)) {
-                    const shipName = oldDataObj[oldId].shipName || 'Ship name 미기재';
-                    const hullNo   = oldDataObj[oldId].hullNo   || 'Hull No. 미기재';
-                    changes.push(`삭제: ${shipName} (${hullNo})`);
-                }
-            }
-
-            // 2) 새로 추가된 것(현재 있는데 과거에는 없었음)
-            for (let newId in newDataObj) {
-                if (!oldDataObj.hasOwnProperty(newId)) {
-                    const shipName = newDataObj[newId].shipName || 'Ship name 미기재';
-                    const hullNo   = newDataObj[newId].hullNo   || 'Hull No. 미기재';
-                    changes.push(`신규: ${shipName} (${hullNo})`);
-                }
-            }
-
-            // 3) 수정된 것(둘 다 존재하지만, 필드가 달라진 경우)
-            for (let newId in newDataObj) {
-                if (oldDataObj.hasOwnProperty(newId)) {
-                    // 필드별 비교
-                    const oldRow = oldDataObj[newId];
-                    const newRow = newDataObj[newId];
-                    let isChanged = false;
-                    // 비교해볼 필드 목록
-                    const fields = ["date","startTime","endTime","totalTime","shipName","hullNo","asNo","hosen","tech","claim","action","note"];
-                    for (let f of fields) {
-                        if ((oldRow[f] || '') !== (newRow[f] || '')) {
-                            isChanged = true;
-                            break;
-                        }
-                    }
-                    if (isChanged) {
-                        const shipName = newRow.shipName || 'Ship name 미기재';
-                        const hullNo   = newRow.hullNo   || 'Hull No. 미기재';
-                        changes.push(`수정: ${shipName} (${hullNo})`);
-                    }
-                }
-            }
-            return changes;
-        }
-
-        // ------------------------------
-        // 7. 로컬 테이블 -> 객체(UID->rowData) 변환
+        // 6. 로컬 테이블 -> 객체 변환 (UID->행객체)
         // ------------------------------
         function convertTableToObject() {
             const rows = document.querySelectorAll('#rmsBody tr');
@@ -536,7 +481,6 @@
 
                 const inputs = tr.querySelectorAll('td input, td textarea');
                 // 인덱스: 0=checkbox(무시), 1=일자, 2=시작시간, 3=종료시간, 4=총작업시간, ...
-                // 실제 각 필드를 의미있게 저장
                 const date      = inputs[1].value;
                 const startTime = inputs[2].value;
                 const endTime   = inputs[3].value;
@@ -570,7 +514,53 @@
         }
 
         // ------------------------------
-        // 8. 저장 (트랜잭션 + ID 기반 병합)
+        // 7. 변경 내역 추적용(히스토리)
+        // ------------------------------
+        function getChanges(oldDataObj, newDataObj) {
+            const changes = [];
+
+            // (1) 삭제된 것 감지: oldDataObj에는 있는데 newDataObj에 없는 UID
+            for (let oldId in oldDataObj) {
+                if (!newDataObj.hasOwnProperty(oldId)) {
+                    const shipName = oldDataObj[oldId].shipName || 'Ship name 미기재';
+                    const hullNo   = oldDataObj[oldId].hullNo   || 'Hull No. 미기재';
+                    changes.push(`삭제: ${shipName} (${hullNo})`);
+                }
+            }
+            // (2) 신규
+            for (let newId in newDataObj) {
+                if (!oldDataObj.hasOwnProperty(newId)) {
+                    const shipName = newDataObj[newId].shipName || 'Ship name 미기재';
+                    const hullNo   = newDataObj[newId].hullNo   || 'Hull No. 미기재';
+                    changes.push(`신규: ${shipName} (${hullNo})`);
+                }
+            }
+            // (3) 수정
+            const fields = ["date","startTime","endTime","totalTime","shipName","hullNo","asNo","hosen","tech","claim","action","note"];
+            for (let newId in newDataObj) {
+                if (oldDataObj.hasOwnProperty(newId)) {
+                    // 필드 단위 비교
+                    const oldRow = oldDataObj[newId];
+                    const newRow = newDataObj[newId];
+                    let isChanged = false;
+                    for (let f of fields) {
+                        if ((oldRow[f] || '') !== (newRow[f] || '')) {
+                            isChanged = true;
+                            break;
+                        }
+                    }
+                    if (isChanged) {
+                        const shipName = newRow.shipName || 'Ship name 미기재';
+                        const hullNo   = newRow.hullNo   || 'Hull No. 미기재';
+                        changes.push(`수정: ${shipName} (${hullNo})`);
+                    }
+                }
+            }
+            return changes;
+        }
+
+        // ------------------------------
+        // 8. 저장(트랜잭션에서 “기존 데이터 유지 + 신규/수정만 반영”)
         // ------------------------------
         function saveToFirebase() {
             const name = prompt("저장하는 사람의 이름을 입력하세요:");
@@ -600,29 +590,27 @@
 
             const ref = database.ref(`rms/${currentCategory}/${currentYear}`);
             ref.transaction(function(currentData) {
-                // currentData가 없거나 객체가 아니면 새 객체로 간주
                 if (!currentData || typeof currentData !== 'object') {
-                    return newDataObj; 
+                    // DB가 비어 있으면, 새 객체로 통째로 세팅
+                    return newDataObj;
                 }
 
-                // 병합 로직:
-                //  1) currentData 중에서, 로컬에 없는 것은 "삭제" 되었다고 보고 제거
-                //  2) 로컬에 있는 것은 내용 업데이트
-                //  3) 없는 UID는 새로 추가
-                // 위 과정을 단순화: "newDataObj"로 완전히 덮어쓰되, 
-                // "newDataObj"에 없는 UID는 제거
-                // (실제로는 '삭제된 것이라면?' 로직을 구분할 수도 있음)
-                
-                const merged = {};
-
-                // 먼저 "newDataObj"에 있는 애들은 그대로 merged에 넣는다.
+                /**
+                 *  "기존 데이터 유지" + "새로 입력/수정된 것 덮어쓰기" 형태의 병합
+                 *  
+                 *  예) currentData = { uid1: {...}, uid2: {...} }
+                 *      newDataObj  = { uid2: {...(수정됨)}, uid3: {...(신규)}, ... }
+                 * 
+                 *  => merged = { uid1: {...기존}, uid2: {...덮어씀}, uid3: {...신규}, ... }
+                 * 
+                 *  즉, newDataObj에 없는 UID라도 currentData에 있으면 **삭제하지 않고** 그대로 둔다.
+                 */
+                const merged = { ...currentData };
                 for (let uid in newDataObj) {
                     merged[uid] = newDataObj[uid];
                 }
-                // currentData에서 newDataObj에 없는 uid는 테이블에서 삭제된 것으로 보고 pass
-                // -> 즉 merged에 넣지 않음
                 return merged;
-            }, 
+            },
             function(error, committed, snapshot) {
                 if (error) {
                     console.error("트랜잭션 오류 발생:", error);
@@ -630,13 +618,12 @@
                 } else if (!committed) {
                     console.warn("트랜잭션이 중단되었습니다.");
                 } else {
-                    // 트랜잭션 완료 후, 히스토리 저장
+                    // 성공적으로 병합이 끝난 후, 히스토리 저장
                     database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry)
                         .then(() => {
                             alert("데이터가 성공적으로 저장되었습니다.");
-                            // 트랜잭션 이후 최종값을 previousData에 반영
                             previousData = snapshot.val() || {};
-                            // 혹시 모를 화면과 DB 간 데이터 차이를 없애기 위해 다시 로딩
+                            // 혹시 모를 화면-DB 불일치를 없애기 위해 다시 로딩
                             loadFromFirebase();
                         })
                         .catch(err => {
@@ -647,22 +634,20 @@
         }
 
         // ------------------------------
-        // 9. DB -> 화면 로드
+        // 9. DB에서 불러오기
         // ------------------------------
         function loadFromFirebase() {
             database.ref(`rms/${currentCategory}/${currentYear}`).once('value')
                 .then((snapshot) => {
-                    const dataObj = snapshot.val();
-                    previousData = dataObj && typeof dataObj === 'object' ? dataObj : {};
-
+                    const dataObj = snapshot.val() || {};
+                    previousData = dataObj; 
+                    
                     const tbody = document.getElementById('rmsBody');
                     tbody.innerHTML = '';
 
-                    // 객체 형태의 데이터를 "내림차순 정렬"하려면
-                    // date(일자) 기준으로 정렬할 수 있게 배열 변환
-                    let rowsArray = Object.values(previousData); 
+                    // 객체 -> 배열로 변환 후, 일자 기준 내림차순 정렬
+                    let rowsArray = Object.values(dataObj);
                     rowsArray.sort((a,b) => {
-                        // a.date, b.date 비교
                         const da = a.date ? new Date(a.date) : null;
                         const db = b.date ? new Date(b.date) : null;
                         if (!da) return 1;
@@ -670,7 +655,7 @@
                         return db - da;
                     });
 
-                    // 이제 rowsArray를 테이블에 표시
+                    // 테이블에 표시
                     rowsArray.forEach(obj => {
                         const newRow = tbody.insertRow();
                         newRow.setAttribute('data-uid', obj.id);
@@ -681,26 +666,25 @@
                         checkbox.type = 'checkbox';
                         checkboxCell.appendChild(checkbox);
 
-                        // 순서대로 (일자, 시작, 종료, 총작업시간, ShipName, ...)
-                        // 인덱스 9,10에 해당하는 건 textarea
+                        // (일자, 시작, 종료, 총작업시간, shipName, hullNo, ...)
                         const fields = [
-                            ['date','date'],         // 0
-                            ['startTime','time'],    // 1
-                            ['endTime','time'],      // 2
-                            ['totalTime','text'],    // 3 (readOnly)
-                            ['shipName','text'],     // 4
-                            ['hullNo','text'],       // 5
-                            ['asNo','text'],         // 6
-                            ['hosen','text'],        // 7
-                            ['tech','text'],         // 8
-                            ['claim','textarea'],    // 9
-                            ['action','textarea'],   // 10
-                            ['note','text']          // 11
+                            ['date','date'],
+                            ['startTime','time'],
+                            ['endTime','time'],
+                            ['totalTime','text'],
+                            ['shipName','text'],
+                            ['hullNo','text'],
+                            ['asNo','text'],
+                            ['hosen','text'],
+                            ['tech','text'],
+                            ['claim','textarea'],
+                            ['action','textarea'],
+                            ['note','text']
                         ];
-                        fields.forEach((info, i) => {
-                            const fieldName = info[0];
-                            const fieldType = info[1];
-                            const newCell = newRow.insertCell(i+1);
+                        fields.forEach((f, i) => {
+                            const fieldName = f[0];
+                            const fieldType = f[1];
+                            const cell = newRow.insertCell(i + 1);
                             let input;
                             if (fieldType === 'textarea') {
                                 input = document.createElement('textarea');
@@ -708,18 +692,18 @@
                             } else {
                                 input = document.createElement('input');
                                 input.type = fieldType;
+                                // 총 작업시간 칸이면 readOnly
                                 if (i === 3) {
-                                    // totalTime 칸이면 readOnly
                                     input.readOnly = true;
                                 }
                             }
                             input.value = obj[fieldName] || '';
                             input.addEventListener('input', calculateTotalTime);
-                            newCell.appendChild(input);
+                            cell.appendChild(input);
                         });
                     });
 
-                    // DB가 아예 없으면(초기) 10줄 정도 채워넣기
+                    // DB가 비어 있으면 초기 10행 채워넣기
                     if (rowsArray.length === 0) {
                         for (let i = 0; i < 10; i++) {
                             addRow();
@@ -733,7 +717,7 @@
         }
 
         // ------------------------------
-        // 10. 선택 행 삭제
+        // 10. 선택 행 삭제(화면 상에서만 제거)
         // ------------------------------
         function deleteSelectedRows() {
             const tbody = document.getElementById('rmsBody');
@@ -771,9 +755,9 @@
         // 12. 엑셀 다운로드
         // ------------------------------
         function downloadExcel() {
-            // 테이블을 객체로 변환
+            // (1) 화면 테이블 -> 객체
             const dataObj = convertTableToObject();
-            // Object -> array (일자 내림차순 정렬)
+            // (2) 객체 -> 배열 + 정렬
             let rowsArray = Object.values(dataObj);
             rowsArray.sort((a,b) => {
                 const da = a.date ? new Date(a.date) : null;
@@ -782,24 +766,23 @@
                 if (!db) return -1;
                 return db - da;
             });
-
-            // 헤더와 함께 2차원 배열로 변환
+            // (3) 시트 데이터 구성
             const header = ['일자','시작 시간','종료 시간','총 작업 시간','Ship name','Hull No.','AS공번','호선 담당자','기술 담당자','클레임 내용','조치 결과','비고'];
             const sheetData = [header];
-            rowsArray.forEach(row => {
+            rowsArray.forEach(r => {
                 sheetData.push([
-                    row.date || '',
-                    row.startTime || '',
-                    row.endTime || '',
-                    row.totalTime || '',
-                    row.shipName || '',
-                    row.hullNo || '',
-                    row.asNo || '',
-                    row.hosen || '',
-                    row.tech || '',
-                    row.claim || '',
-                    row.action || '',
-                    row.note || ''
+                    r.date || '',
+                    r.startTime || '',
+                    r.endTime || '',
+                    r.totalTime || '',
+                    r.shipName || '',
+                    r.hullNo || '',
+                    r.asNo || '',
+                    r.hosen || '',
+                    r.tech || '',
+                    r.claim || '',
+                    r.action || '',
+                    r.note || ''
                 ]);
             });
 
@@ -827,7 +810,7 @@
                 const tbody = document.getElementById('rmsBody');
                 tbody.innerHTML = '';
 
-                // 헤더행 제외하고 최대 2000행
+                // 첫 행은 헤더이므로 제외, 최대 2000행
                 const rows = json.slice(1, 2001);
                 
                 rows.forEach(row => {
@@ -841,9 +824,8 @@
                     checkbox.type = 'checkbox';
                     checkboxCell.appendChild(checkbox);
 
-                    // (일자, 시작, 종료, 총작업시간, ShipName, HullNo, asNo, hosen, tech, claim, action, note)
                     for (let i = 0; i < 12; i++) {
-                        const newCell = newRow.insertCell(i + 1);
+                        const cell = newRow.insertCell(i + 1);
                         let input;
                         if (i === 9 || i === 10) {
                             input = document.createElement('textarea');
@@ -863,7 +845,7 @@
                         }
                         input.value = row[i] || '';
                         input.addEventListener('input', calculateTotalTime);
-                        newCell.appendChild(input);
+                        cell.appendChild(input);
                     }
                 });
                 alert(`총 ${rows.length}개의 행이 업로드되었습니다.`);
@@ -885,7 +867,7 @@
                         let historyEntries = Object.entries(historyData).map(([key, value]) => {
                             return { key, ...value };
                         });
-                        // 30일 지나면 삭제
+                        // 30일 지난 히스토리는 자동 삭제
                         const now = new Date();
                         const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
                         let entriesToDelete = [];
