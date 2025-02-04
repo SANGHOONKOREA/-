@@ -305,11 +305,6 @@
         }
     }
     @media (max-width: 767px) {
-        .footer {
-            margin-bottom: calc(20vh + 2rem);
-        }
-    }
-    @media (max-width: 767px) {
         .header {
             font-size: 2rem; 
         }
@@ -411,6 +406,13 @@
                         <div class="btn-content">
                             <i class="fas fa-language"></i>
                             번역기
+                        </div>
+                    </button>
+                    <!-- [신규추가] RMS 요청 메일 작성기 버튼 -->
+                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(27)">
+                        <div class="btn-content">
+                            <i class="fas fa-envelope"></i>
+                            RMS 요청 메일 작성기
                         </div>
                     </button>
                 </div>
@@ -631,8 +633,11 @@
             'https://chatgpt.com/g/g-vWyVaZ26Q-jungdaejaehaeceobeolbeob-daeeung-maenyueol',
             'https://chatgpt.com/g/g-30h6ekxqi-bwms-jajaekodeu-geomsaeggi',
 
-            // [신규추가] 번역기 링크(배열의 26번째, 호출은 startChatbot(26))
-            'https://chatgpt.com/g/g-67736cad49e88191955e6df083376d6e-beonyeoggi'
+            // [신규추가] 번역기 링크(배열의 26번째)
+            'https://chatgpt.com/g/g-67736cad49e88191955e6df083376d6e-beonyeoggi',
+
+            // [신규추가] RMS 요청 메일 작성기 (배열의 27번째)
+            'https://chatgpt.com/g/g-67a19701706c81919d123271dff78971-rms-yoceong-meil-jadong-jagseonggi'
         ];
 
         if (number >= 1 && number <= urls.length) {
