@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>서비스 엔지니어 일정 관리</title>
+  <style>
+    /* ---------------------------------------
+       1) 전역 스타일 (현대적 UI)
+    ----------------------------------------*/
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Malgun Gothic", sans-serif;
+      font-size: 14px;
+      background: #f7f7f7;
+      color: #333;
+    }
+    header {
+      background: #2c3e50;
+      color: #ecf0f1;
+      text-align: center;
+      padding: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    /* 항상 "서비스 엔지니어 일정 관리"라고 표시 */
+    header h1 {
+      margin: 0;
+      font-size: 1.2em;
+    }
+
+    #container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fff;
+      min-height: 100vh;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    /* 반응형: 작은 화면에서 폰트, 테이블 글자축소 */
+    @media (max-width:480px) {
+      body {
+        font-size: 13px;
+      }
+      .month-table th, .month-table td {
+        font-size: 0.7em;
+      }
+      .schedule-bar {
+        font-size: 0.65em;
+      }
+      .schedule-week-item {
+        font-size: 0.7em;
+      }
+    }
+
+    /* ---------------------------------------
+       2) 로그인 화면
+    ----------------------------------------*/
+    #login-container {
+      padding: 20px;
+    }
+    #login-container h2 {
+      margin-top: 0;
+      font-size: 1em;
+      color: #2c3e50;
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .login-form label {
+      font-weight: bold;
+      font-size: 0.85em;
+      color: #555;
+    }
+    .login-form input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+    .login-form button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .login-form button:hover {
+      background: #34495e;
+    }
+
+    /* ---------------------------------------
+       3) 상단 메뉴 (로그인 후)
+    ----------------------------------------*/
+    #main-menu {
+      display: none;
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      background: #fafafa;
+      overflow-x: auto;
+    }
+    #main-menu button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #eee;
+      font-size: 0.8em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    #main-menu button.active {
+      background: #2c3e50;
+      color: #ecf0f1;
+    }
+    #main-menu button:hover {
+      background: #ccc;
+    }
+
+    /* ---------------------------------------
+       4) 섹션 공통
+    ----------------------------------------*/
+    section {
+      display: none;
+      padding: 12px;
+    }
+    section.active {
+      display: block;
+    }
+
+    /* ---------------------------------------
+       5) 월간 달력 (연속 막대)
+    ----------------------------------------*/
+    #monthlySection {
+      margin-bottom: 60px;
+    }
+    .month-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .month-controls button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .month-controls button:hover {
+      background: #34495e;
+    }
+    #monthLabel {
+      font-size: 0.9em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .month-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .month-table th, .month-table td {
+      border: 1px solid #ddd;
+      height: 50px;
+      vertical-align: top;
+      position: relative;
+      text-align: center;
+      font-size: 0.75em;
+      padding: 2px;
+    }
+    .month-table th {
+      background: #f2f2f2;
+      font-weight: bold;
+      color: #555;
+      height: 35px;
+    }
+    .day-number {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      z-index: 2;
+      font-weight: bold;
+      font-size: 0.7em;
+    }
+    #monthOverlay {
+      position: absolute;
+      left: 0; top: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+    .schedule-bar {
+      position: absolute;
+      height: 16px;
+      background: #e74c3c;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 0.7em;
+      padding: 2px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      cursor: pointer;
+      pointer-events: auto;
+      z-index: 1;
+      transition: opacity 0.2s;
+    }
+    .schedule-bar:hover {
+      opacity: 0.8;
+    }
+
+    /* ---------------------------------------
+       6) 주간 달력 (한 줄 → 줄바꿈)
+    ----------------------------------------*/
+    .week-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .week-controls button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      padding: 4px 8px;
+      font-size: 0.8em;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .week-controls button:hover {
+      background: #34495e;
+    }
+    #weekLabel {
+      font-size: 0.9em;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .week-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .week-day-block {
+      border: 1px solid #ddd;
+      padding: 5px;
+      position: relative;
+      font-size: 0.75em;
+      background: #fafafa;
+      border-radius: 4px;
+    }
+    .schedule-week-item {
+      display: block;
+      background: #fffbe5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      padding: 4px;
+      position: relative;
+      font-size: 0.75em;
+      cursor: pointer;
+      min-width: 120px;
+      transition: background 0.2s;
+    }
+    .schedule-week-item:hover {
+      background: #fff9cc;
+    }
+    .schedule-color-bar {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+    }
+    .schedule-week-content {
+      margin-left: 6px;
+      padding-left: 4px;
+    }
+
+    /* ---------------------------------------
+       7) 관리자 페이지
+    ----------------------------------------*/
+    .admin-menu {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .admin-menu button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 0.75em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .admin-menu button:hover {
+      background: #34495e;
+    }
+    .admin-pane {
+      display: none;
+      border: 1px solid #ddd;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      background: #fafafa;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .admin-pane.active {
+      display: block;
+    }
+    .admin-pane h4 {
+      margin-top: 0;
+      font-size: 0.9em;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+    .admin-form-row {
+      margin-bottom: 6px;
+    }
+    .admin-form-row label {
+      display: block;
+      font-size: 0.75em;
+      font-weight: bold;
+      margin-bottom: 2px;
+    }
+    .admin-form-row input, .admin-form-row select {
+      width: 100%;
+      padding: 6px;
+      font-size: 0.75em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75em;
+      margin-bottom: 8px;
+    }
+    .admin-table th, .admin-table td {
+      border: 1px solid #ddd;
+      padding: 4px;
+      text-align: center;
+    }
+    .admin-table th {
+      background: #f2f2f2;
+      font-weight: bold;
+      color: #333;
+    }
+    .admin-btn {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      padding: 3px 6px;
+      font-size: 0.75em;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .admin-btn:hover {
+      background: #34495e;
+    }
+
+    /* ---------------------------------------
+       8) 스케줄 모달 (등록/수정/삭제)
+    ----------------------------------------*/
+    #modal-background {
+      display: none;
+      position: fixed;
+      top: 0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .modal {
+      background: #fff;
+      width: 90%;
+      max-width: 420px;
+      margin: 100px auto 0;
+      padding: 12px;
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .modal h3 {
+      margin: 0 0 8px;
+      font-size: 0.9em;
+      color: #2c3e50;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+    .modal-row {
+      margin-bottom: 6px;
+    }
+    .modal-row label {
+      display: block;
+      font-size: 0.75em;
+      font-weight: bold;
+      margin-bottom: 2px;
+      color: #555;
+    }
+    .modal-buttons {
+      text-align: right;
+      margin-top: 8px;
+    }
+    .modal-buttons button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 0.75em;
+      cursor: pointer;
+      margin-left: 6px;
+      transition: background 0.2s;
+    }
+    .modal-buttons button:hover {
+      background: #34495e;
+    }
+
+    /* ---------------------------------------
+       9) 유저 수정/삭제 모달 (관리자)
+    ----------------------------------------*/
+    #modalUserEditBg {
+      display: none;
+      position: fixed;
+      top: 0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    #userEditModal {
+      background: #fff;
+      width: 90%;
+      max-width: 420px;
+      margin: 100px auto 0;
+      padding: 12px;
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #userEditModal h3 {
+      margin: 0 0 8px;
+      font-size: 0.9em;
+      color: #2c3e50;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>서비스 엔지니어 일정 관리</h1>
+  </header>
+
+  <div id="container">
+    <!-- (A) 로그인 화면 -->
+    <div id="login-container">
+      <div style="text-align:center; margin-bottom:10px;">
+        <img src="https://media.licdn.com/dms/image/v2/C4E0BAQGQyZvSSEAV1Q/company-logo_200_200/company-logo_200_200/0/1630615026721?e=2147483647&v=beta&t=w_YW_KTfyfsmEyqVX7D69MStbrfMEIjYBII16M32JuA"
+             alt="S&SYS 로고"
+             style="max-width:120px;">
+      </div>
+      <h2>로그인</h2>
+      <div class="login-form">
+        <label>아이디(이름)</label>
+        <input type="text" id="loginId" placeholder="예: admin"/>
+        <label>비밀번호</label>
+        <!-- Enter키 누르면 login() 호출 -->
+        <input type="password" id="loginPw" placeholder="예: admin"
+               onkeydown="if(event.key==='Enter'){ login(); }"/>
+        <button onclick="login()">로그인</button>
+      </div>
+    </div>
+
+    <!-- (B) 메인 메뉴 (로그인 후) -->
+    <nav id="main-menu">
+      <button id="btnMonthly" onclick="showSection('monthly')">월간 달력</button>
+      <button id="btnWeekly" onclick="showSection('weekly')">주간 달력</button>
+      <button id="btnAdmin" onclick="showSection('admin')" style="display:none;">관리자 페이지</button>
+      <button onclick="logout()" style="background:#c0392b; color:#fff;">로그아웃</button>
+    </nav>
+
+    <!-- (C) 월간 달력 섹션 -->
+    <section id="monthlySection">
+      <div class="month-controls">
+        <button onclick="prevMonth()">&lt; 이전달</button>
+        <span id="monthLabel"></span>
+        <button onclick="nextMonth()">다음달 &gt;</button>
+      </div>
+      <div style="position:relative;">
+        <table class="month-table">
+          <thead>
+            <tr>
+              <th>일</th>
+              <th>월</th>
+              <th>화</th>
+              <th>수</th>
+              <th>목</th>
+              <th>금</th>
+              <th>토</th>
+            </tr>
+          </thead>
+          <tbody id="monthBody"></tbody>
+        </table>
+        <div id="monthOverlay"></div>
+      </div>
+    </section>
+
+    <!-- (D) 주간 달력 섹션 -->
+    <section id="weeklySection">
+      <div class="week-controls">
+        <button onclick="prevWeek()">&lt; 이전주</button>
+        <span id="weekLabel"></span>
+        <button onclick="nextWeek()">다음주 &gt;</button>
+      </div>
+      <div id="weekList" class="week-list"></div>
+    </section>
+
+    <!-- (E) 관리자 페이지 -->
+    <section id="adminSection">
+      <div class="admin-menu">
+        <button onclick="showAdminPane('userList')">유저 목록</button>
+        <button onclick="showAdminPane('userRegister')">유저 등록</button>
+        <button onclick="showAdminPane('scheduleList')">스케줄 목록</button>
+        <button onclick="showAdminPane('companyColor')">업체 색상 관리</button>
+      </div>
+
+      <!-- (E1) 유저 목록 -->
+      <div id="adminUserListPane" class="admin-pane">
+        <h4>유저 목록</h4>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>아이디</th>
+              <th>권한</th>
+              <th>업체</th>
+              <th>수정</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserListBody"></tbody>
+        </table>
+      </div>
+
+      <!-- (E2) 유저 등록 -->
+      <div id="adminUserRegisterPane" class="admin-pane">
+        <h4>유저 등록</h4>
+        <div class="admin-form-row">
+          <label>권한</label>
+          <select id="adminRegisterRole">
+            <option value="본사">본사(관리자)</option>
+            <option value="협력">협력(엔지니어)</option>
+          </select>
+        </div>
+        <div class="admin-form-row">
+          <label>아이디(이름)</label>
+          <input type="text" id="adminRegisterId"/>
+        </div>
+        <div class="admin-form-row">
+          <label>비밀번호</label>
+          <input type="password" id="adminRegisterPw"/>
+        </div>
+        <div class="admin-form-row">
+          <label>업체명</label>
+          <input type="text" id="adminRegisterCompany" placeholder="예: 본사, ○○업체 등"/>
+        </div>
+        <button onclick="createUser()">등록하기</button>
+      </div>
+
+      <!-- (E3) 스케줄 목록 -->
+      <div id="adminScheduleListPane" class="admin-pane">
+        <h4>스케줄 목록</h4>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>아이디</th>
+              <th>기간</th>
+              <th>호선</th>
+              <th>상세</th>
+              <th>수정</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="adminScheduleListBody"></tbody>
+        </table>
+
+        <h4>스케줄 등록</h4>
+        <div class="admin-form-row">
+          <label>사용자(아이디)</label>
+          <select id="adminScheduleUser"></select>
+        </div>
+        <div class="admin-form-row">
+          <label>시작일</label>
+          <input type="date" id="adminScheduleStart"/>
+        </div>
+        <div class="admin-form-row">
+          <label>종료일</label>
+          <input type="date" id="adminScheduleEnd"/>
+        </div>
+        <div class="admin-form-row">
+          <label>호선</label>
+          <input type="text" id="adminScheduleLine"/>
+        </div>
+        <div class="admin-form-row">
+          <label>상세내용</label>
+          <input type="text" id="adminScheduleDetail"/>
+        </div>
+        <div class="admin-form-row" style="display:flex; align-items:center; gap:4px;">
+          <input type="checkbox" id="adminScheduleUnavailable"/>
+          <label for="adminScheduleUnavailable" style="margin:0;">서비스 불가 일정</label>
+        </div>
+        <button onclick="createAdminSchedule()">등록</button>
+
+        <div style="margin-top:12px;">
+          <!-- 엑셀 다운로드/업로드 버튼 -->
+          <button onclick="downloadExcel()">엑셀 다운로드</button>
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel(event)"/>
+          <button onclick="document.getElementById('excelFileInput').click()">엑셀 업로드</button>
+        </div>
+      </div>
+
+      <!-- (E4) 업체 색상 관리 -->
+      <div id="adminCompanyColorPane" class="admin-pane">
+        <h4>업체 색상 관리</h4>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>업체명</th>
+              <th>색상</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="companyColorBody"></tbody>
+        </table>
+
+        <div class="admin-form-row">
+          <label>업체명 선택</label>
+          <select id="selectCompanyName"></select>
+        </div>
+        <div class="admin-form-row">
+          <label>색상</label>
+          <input type="color" id="inputCompanyColor" value="#ff0000"/>
+        </div>
+        <button onclick="saveCompanyColor()">추가/수정</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 하단 안내 문구 -->
+  <footer style="text-align:center; padding:10px; font-size:0.8em; color:#555;">
+    서비스 문의 및 개선 사항은 고객지원 서상훈 차장(031-229-1432)에게 문의하세요
+  </footer>
+
+  <!-- (F) 스케줄 등록/수정/삭제 모달 -->
+  <div id="modal-background">
+    <div class="modal" id="scheduleModal">
+      <h3>스케줄 등록/수정</h3>
+
+      <!-- (F1) 엔지니어(아이디) 선택 -->
+      <div class="modal-row" id="modalUserRow" style="display:none;">
+        <label>엔지니어(아이디)</label>
+        <select id="modalUserSelect"></select>
+      </div>
+
+      <!-- (F2) 날짜/호선/상세 -->
+      <div class="modal-row">
+        <label>시작일</label>
+        <input type="date" id="modalStartDate"/>
+      </div>
+      <div class="modal-row">
+        <label>종료일</label>
+        <input type="date" id="modalEndDate"/>
+      </div>
+      <div class="modal-row">
+        <label>호선</label>
+        <input type="text" id="modalLine"/>
+      </div>
+      <div class="modal-row">
+        <label>상세내용</label>
+        <textarea id="modalDetails" rows="2"></textarea>
+      </div>
+
+      <!-- (F3) 서비스 불가 체크 -->
+      <div class="modal-row" style="display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="modalUnavailable"/>
+        <label for="modalUnavailable" style="margin:0;">서비스 불가 일정</label>
+      </div>
+
+      <!-- (F4) 가용 엔지니어 표시 -->
+      <div class="modal-row">
+        <label>가용 엔지니어(확인 필요)</label>
+        <div id="availableEngineersList"
+             style="border:1px solid #ccc; padding:4px; height:60px; overflow:auto; font-size:0.8em;">
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button onclick="closeModal()">취소</button>
+        <button id="btnDeleteSchedule" onclick="deleteSchedule()" style="display:none;background:#c0392b;">삭제</button>
+        <button onclick="saveSchedule()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- (G) 유저 수정 모달 (관리자) -->
+  <div id="modalUserEditBg">
+    <div class="modal" id="userEditModal">
+      <h3>유저 수정/삭제</h3>
+      <div class="modal-row">
+        <label>아이디(이름)</label>
+        <input type="text" id="userEditId" readonly/>
+      </div>
+      <div class="modal-row">
+        <label>비밀번호</label>
+        <input type="text" id="userEditPw"/>
+      </div>
+      <div class="modal-row">
+        <label>권한</label>
+        <select id="userEditRole">
+          <option value="본사">본사(관리자)</option>
+          <option value="협력">협력(엔지니어)</option>
+        </select>
+      </div>
+      <div class="modal-row">
+        <label>업체명</label>
+        <input type="text" id="userEditCompany"/>
+      </div>
+      <div class="modal-buttons">
+        <button onclick="closeUserEditModal()">취소</button>
+        <button onclick="deleteUserFromModal()" style="background:#c0392b;">삭제</button>
+        <button onclick="applyUserEdit()">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SheetJS (XLSX) 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
+
+  <script>
+    /****************************************
+     1) Firebase 초기화
+    *****************************************/
+const firebaseConfig = {
+    apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+    authDomain: "sanghoon-d8f1c.firebaseapp.com",
+    databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+    projectId: "sanghoon-d8f1c",
+    storageBucket: "sanghoon-d8f1c.appspot.com",
+    messagingSenderId: "495391900753",
+    appId: "1:495391900753:web:b0d708eeca64fafe562470",
+    measurementId: "G-J2E22BW61H"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    /****************************************
+     2) 전역 변수
+    *****************************************/
+    let currentUser = null;  // 현재 로그인된 사용자
+    let users = {};          // 모든 유저 정보 (id -> {id, pw, role, company})
+    let schedules = [];      // 전체 스케줄
+    let companyColors = {};  // 업체별 색상
+
+    let currentMonthDate = new Date(); 
+    let currentWeekDate = new Date();
+
+    let editingScheduleId = null; // 모달에서 편집중인 스케줄 ID
+
+    let colorMap = {};
+    let colorList = ["#FF6347","#FFA500","#FFD700","#98FB98","#87CEFA","#FF69B4","#CD5C5C","#ADFF2F","#B0E0E6","#9370DB"];
+    let colorIndex=0;
+
+    /****************************************
+     3) admin 계정 자동 생성
+    *****************************************/
+    window.onload = () => {
+      ensureAdminUser();
+    };
+    function ensureAdminUser(){
+      db.ref("users/admin").once("value").then(snap=>{
+        if(!snap.exists()){
+          const adminData = { id:"admin", pw:"admin", role:"본사", company:"본사" };
+          db.ref("users/admin").set(adminData).then(()=>{
+            console.log("admin 계정 생성");
+          });
+        }
+      });
+    }
+
+    /****************************************
+     4) 로그인 / 로그아웃
+    *****************************************/
+    function login(){
+      const idVal = document.getElementById("loginId").value.trim();
+      const pwVal = document.getElementById("loginPw").value.trim();
+      if(!idVal || !pwVal){
+        alert("아이디/비밀번호를 입력하세요");
+        return;
+      }
+      db.ref("users/"+idVal).once("value").then(snap=>{
+        if(!snap.exists()){
+          alert("존재하지 않는 아이디");
+          return;
+        }
+        const userInfo = snap.val();
+        // 비밀번호 대소문자 구분X
+        if(userInfo.pw.toLowerCase() !== pwVal.toLowerCase()){
+          alert("비밀번호가 일치하지 않습니다");
+          return;
+        }
+        currentUser = userInfo;
+        alert(currentUser.id + "님 환영합니다.");
+
+        document.getElementById("login-container").style.display="none";
+        document.getElementById("main-menu").style.display="flex";
+        if(currentUser.role==="본사"){
+          document.getElementById("btnAdmin").style.display="inline-block";
+        } else {
+          document.getElementById("btnAdmin").style.display="none";
+        }
+        loadAllData().then(()=>{
+          showSection("monthly");
+        });
+      });
+    }
+    function logout(){
+      if(!confirm("로그아웃 하시겠습니까?"))return;
+      currentUser=null;
+      document.getElementById("login-container").style.display="block";
+      document.getElementById("main-menu").style.display="none";
+      hideAllSections();
+      // 로그인창 초기화
+      document.getElementById("loginId").value="";
+      document.getElementById("loginPw").value="";
+    }
+    function loadAllData(){
+      const p1=db.ref("users").once("value").then(snap=>{
+        if(snap.exists()) users=snap.val();
+      });
+      const p2=db.ref("schedules").once("value").then(snap=>{
+        if(snap.exists()) schedules=snap.val();
+      });
+      const p3=db.ref("companyColors").once("value").then(snap=>{
+        if(snap.exists()) companyColors=snap.val();
+      });
+      return Promise.all([p1,p2,p3]).then(()=>{
+        buildColorMap();
+      });
+    }
+
+    /****************************************
+     5) 업체별 색상 매핑
+    *****************************************/
+    function buildColorMap(){
+      colorMap={};
+      colorIndex=0;
+      // companyColors 먼저
+      for(const cName in companyColors){
+        colorMap[cName]=companyColors[cName];
+      }
+      // users에서 업체 추출
+      let compSet={};
+      for(const uid in users){
+        const c = users[uid].company || "기타";
+        compSet[c]=true;
+      }
+      for(const c in compSet){
+        if(!colorMap[c]){
+          if(colorIndex<colorList.length){
+            colorMap[c]=colorList[colorIndex];
+            colorIndex++;
+          } else {
+            colorMap[c]=randomColor();
+          }
+        }
+      }
+    }
+    function randomColor(){
+      return "#"+Math.floor(Math.random()*16777215).toString(16);
+    }
+
+    /****************************************
+     6) 섹션 전환
+    *****************************************/
+    function showSection(sec){
+      hideAllSections();
+      if(sec==="monthly"){
+        document.getElementById("monthlySection").classList.add("active");
+        drawMonthCalendar();
+        document.getElementById("btnMonthly").classList.add("active");
+      } else if(sec==="weekly"){
+        document.getElementById("weeklySection").classList.add("active");
+        drawWeekCalendar();
+        document.getElementById("btnWeekly").classList.add("active");
+      } else if(sec==="admin"){
+        document.getElementById("adminSection").classList.add("active");
+        document.getElementById("btnAdmin").classList.add("active");
+        showAdminPane("userList");
+      }
+    }
+    function hideAllSections(){
+      document.getElementById("monthlySection").classList.remove("active");
+      document.getElementById("weeklySection").classList.remove("active");
+      document.getElementById("adminSection").classList.remove("active");
+      document.getElementById("btnMonthly").classList.remove("active");
+      document.getElementById("btnWeekly").classList.remove("active");
+      document.getElementById("btnAdmin").classList.remove("active");
+    }
+
+    /****************************************
+     6-1) 스케줄 접근 권한 체크
+    *****************************************/
+    function canAccessSchedule(sch){
+      // 본사 -> 모든 스케줄 가능
+      if(currentUser.role==="본사") return true;
+      // 협력 -> 같은 업체만 접근 가능
+      const schUser = users[sch.userId];
+      if(!schUser) return false;
+      return (schUser.company===currentUser.company);
+    }
+
+    /****************************************
+     7) 월간 달력
+    *****************************************/
+    function drawMonthCalendar(){
+      const year=currentMonthDate.getFullYear();
+      const month=currentMonthDate.getMonth();
+      document.getElementById("monthLabel").textContent=`${year}년 ${month+1}월`;
+
+      const firstDay=new Date(year,month,1);
+      const lastDay=new Date(year,month+1,0);
+      const firstDow=firstDay.getDay();
+      const lastDate=lastDay.getDate();
+
+      const monthBody=document.getElementById("monthBody");
+      monthBody.innerHTML="";
+
+      let row=document.createElement("tr");
+      for(let i=0;i<firstDow;i++){
+        row.appendChild(document.createElement("td"));
+      }
+      for(let d=1; d<=lastDate; d++){
+        const td=document.createElement("td");
+        td.innerHTML=`<span class="day-number">${d}</span>`;
+        const dateStr=formatDate(year,month+1,d);
+        td.onclick=()=>{
+          openModal(null,dateStr);
+        };
+        row.appendChild(td);
+        if((firstDow+d)%7===0){
+          monthBody.appendChild(row);
+          row=document.createElement("tr");
+        }
+      }
+      if(row.children.length>0){
+        while(row.children.length<7){
+          row.appendChild(document.createElement("td"));
+        }
+        monthBody.appendChild(row);
+      }
+
+      // 스케줄 막대 표시
+      document.getElementById("monthOverlay").innerHTML="";
+      const rows=monthBody.querySelectorAll("tr");
+      rows.forEach(r=>{
+        const cells=r.querySelectorAll("td");
+        let rowDates=[];
+        for(let i=0;i<7;i++){
+          const daySpan=cells[i].querySelector(".day-number");
+          if(daySpan){
+            const dNum=parseInt(daySpan.textContent,10);
+            rowDates.push(formatDate(year,month+1,dNum));
+          } else {
+            rowDates.push(null);
+          }
+        }
+        const validD=rowDates.filter(x=>x);
+        if(validD.length<1)return;
+        const rowStart=validD[0];
+        const rowEnd=validD[validD.length-1];
+
+        // 이 주에 걸치는 스케줄 필터
+        const weekly=schedules.filter(sch=>{
+          if(!canAccessSchedule(sch)) return false;
+          return (sch.startDate<=rowEnd && sch.endDate>=rowStart);
+        });
+
+        let barCount=0;
+        weekly.forEach(sch=>{
+          const barStart=(sch.startDate<rowStart)?rowStart:sch.startDate;
+          const barEnd=(sch.endDate>rowEnd)?rowEnd:sch.endDate;
+
+          const startIdx=rowDates.findIndex(d=>d && d>=barStart);
+          const endIdx=(()=>{
+            let idx=-1;
+            for(let c=6;c>=0;c--){
+              if(rowDates[c] && rowDates[c]<=barEnd){
+                idx=c; break;
+              }
+            }
+            return idx;
+          })();
+          if(startIdx<0||endIdx<0)return;
+          const startCell=cells[startIdx];
+          const endCell=cells[endIdx];
+          if(!startCell||!endCell)return;
+
+          const overlayRect=document.getElementById("monthOverlay").getBoundingClientRect();
+          const startRect=startCell.getBoundingClientRect();
+          const endRect=endCell.getBoundingClientRect();
+
+          const leftPos=startRect.left-overlayRect.left+2;
+          const rightPos=endRect.right-overlayRect.left-2;
+          const width=rightPos-leftPos;
+          const topBase=startRect.top-overlayRect.top+18;
+          const topPos=topBase + (barCount*18);
+
+          const userObj=users[sch.userId]||{};
+          const comp=userObj.company||"기타";
+          const color= sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
+
+          const bar=document.createElement("div");
+          bar.className="schedule-bar";
+          bar.style.left=leftPos+"px";
+          bar.style.top=topPos+"px";
+          bar.style.width=width+"px";
+          bar.style.backgroundColor=color;
+          bar.textContent= sch.userId;
+          bar.onclick=(e)=>{
+            e.stopPropagation();
+            openModal(sch.id);
+          };
+          document.getElementById("monthOverlay").appendChild(bar);
+          barCount++;
+        });
+
+        // 줄 높이 늘리기
+        if(barCount>1){
+          const newRowHeight= 50 + (barCount-1)*18;
+          r.querySelectorAll("td").forEach(td=>{
+            td.style.height=newRowHeight+"px";
+          });
+        }
+      });
+    }
+    function prevMonth(){
+      currentMonthDate.setMonth(currentMonthDate.getMonth()-1);
+      drawMonthCalendar();
+    }
+    function nextMonth(){
+      currentMonthDate.setMonth(currentMonthDate.getMonth()+1);
+      drawMonthCalendar();
+    }
+
+    /****************************************
+     8) 주간 달력
+    *****************************************/
+    function drawWeekCalendar(){
+      const dow=currentWeekDate.getDay();
+      const sunday=new Date(currentWeekDate);
+      sunday.setDate(currentWeekDate.getDate()-dow);
+      const saturday=new Date(sunday);
+      saturday.setDate(sunday.getDate()+6);
+
+      document.getElementById("weekLabel").textContent=
+        `${formatDateForLabel(sunday)} ~ ${formatDateForLabel(saturday)}`;
+
+      const weekList=document.getElementById("weekList");
+      weekList.innerHTML="";
+
+      for(let i=0;i<7;i++){
+        const dDay=new Date(sunday);
+        dDay.setDate(sunday.getDate()+i);
+        const dateStr=formatDate(dDay.getFullYear(),dDay.getMonth()+1,dDay.getDate());
+
+        const dayBlock=document.createElement("div");
+        dayBlock.className="week-day-block";
+
+        const h4=document.createElement("h4");
+        h4.textContent=formatDateForLabel(dDay);
+        dayBlock.appendChild(h4);
+
+        const daySch=schedules.filter(sch=>{
+          if(!canAccessSchedule(sch)) return false;
+          return (sch.startDate<=dateStr && sch.endDate>=dateStr);
+        });
+        daySch.forEach(sch=>{
+          const userObj=users[sch.userId]||{};
+          const comp=userObj.company||"기타";
+          const c= sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
+
+          const item=document.createElement("div");
+          item.className="schedule-week-item";
+          item.onclick=(e)=>{
+            e.stopPropagation();
+            openModal(sch.id);
+          };
+          const bar=document.createElement("div");
+          bar.className="schedule-color-bar";
+          bar.style.backgroundColor=c;
+          const content=document.createElement("div");
+          content.className="schedule-week-content";
+          content.textContent=
+            `${sch.userId}(${sch.startDate}~${sch.endDate}) 호선:${sch.lineName||''} ${sch.details||''}`;
+
+          item.appendChild(bar);
+          item.appendChild(content);
+          dayBlock.appendChild(item);
+        });
+
+        dayBlock.onclick=()=>{
+          openModal(null,dateStr);
+        };
+        weekList.appendChild(dayBlock);
+      }
+    }
+    function prevWeek(){
+      currentWeekDate.setDate(currentWeekDate.getDate()-7);
+      drawWeekCalendar();
+    }
+    function nextWeek(){
+      currentWeekDate.setDate(currentWeekDate.getDate()+7);
+      drawWeekCalendar();
+    }
+
+    /****************************************
+     9) 스케줄 모달 (등록/수정/삭제) + 가용 엔지니어
+    *****************************************/
+    function openModal(scheduleId=null, dateStr=null){
+      editingScheduleId=scheduleId;
+      document.getElementById("modal-background").style.display="block";
+
+      const userRow=document.getElementById("modalUserRow");
+      const sel=document.getElementById("modalUserSelect");
+      sel.innerHTML="";
+
+      if(scheduleId){
+        // 수정
+        const sch=schedules.find(x=> x.id===scheduleId);
+        if(!sch)return;
+        if(!canAccessSchedule(sch)){
+          alert("해당 스케줄에 대한 권한이 없습니다.");
+          document.getElementById("modal-background").style.display="none";
+          return;
+        }
+        document.getElementById("modalStartDate").value= sch.startDate;
+        document.getElementById("modalEndDate").value= sch.endDate;
+        document.getElementById("modalLine").value= sch.lineName||"";
+        document.getElementById("modalDetails").value= sch.details||"";
+        document.getElementById("modalUnavailable").checked= !!sch.unavailable;
+
+        if(currentUser.role==="본사"){
+          userRow.style.display="";
+          for(const uid in users){
+            const opt=document.createElement("option");
+            opt.value=uid;
+            opt.textContent=uid;
+            sel.appendChild(opt);
+          }
+          // 기존 userId
+          for(let i=0;i<sel.options.length;i++){
+            if(sel.options[i].value===sch.userId){
+              sel.selectedIndex=i;
+              break;
+            }
+          }
+        } else {
+          userRow.style.display="none";
+        }
+        document.getElementById("btnDeleteSchedule").style.display="";
+      } else {
+        // 신규
+        document.getElementById("modalStartDate").value=dateStr||"";
+        document.getElementById("modalEndDate").value=dateStr||"";
+        document.getElementById("modalLine").value="";
+        document.getElementById("modalDetails").value="";
+        document.getElementById("modalUnavailable").checked=false;
+        document.getElementById("btnDeleteSchedule").style.display="none";
+
+        if(currentUser.role==="본사"){
+          userRow.style.display="";
+          for(const uid in users){
+            const opt=document.createElement("option");
+            opt.value=uid;
+            opt.textContent=uid;
+            sel.appendChild(opt);
+          }
+        } else {
+          userRow.style.display="";
+          for(const uid in users){
+            if(users[uid].company===currentUser.company){
+              const opt=document.createElement("option");
+              opt.value=uid;
+              opt.textContent=uid;
+              sel.appendChild(opt);
+            }
+          }
+        }
+      }
+
+      // 모달 열 때 가용 엔지니어 목록 갱신
+      updateAvailableEngineers(
+        document.getElementById("modalStartDate").value,
+        document.getElementById("modalEndDate").value
+      );
+    }
+    function closeModal(){
+      document.getElementById("modal-background").style.display="none";
+      editingScheduleId=null;
+    }
+    function saveSchedule(){
+      const sDate=document.getElementById("modalStartDate").value;
+      const eDate=document.getElementById("modalEndDate").value;
+      const lineVal=document.getElementById("modalLine").value.trim();
+      const detailsVal=document.getElementById("modalDetails").value.trim();
+      const isUnavailable=document.getElementById("modalUnavailable").checked;
+
+      if(!sDate||!eDate){
+        alert("시작/종료일을 입력하세요");
+        return;
+      }
+      if(sDate>eDate){
+        alert("종료일이 시작일보다 빠릅니다.");
+        return;
+      }
+
+      let targetUserId=currentUser.id;
+      if(document.getElementById("modalUserRow").style.display!=="none"){
+        targetUserId=document.getElementById("modalUserSelect").value;
+      }
+
+      if(editingScheduleId){
+        // 수정
+        const idx=schedules.findIndex(x=> x.id===editingScheduleId);
+        if(idx>-1){
+          if(!canAccessSchedule(schedules[idx])){
+            alert("수정 권한이 없습니다.");
+            return;
+          }
+          schedules[idx].userId= targetUserId;
+          schedules[idx].startDate= sDate;
+          schedules[idx].endDate= eDate;
+          schedules[idx].lineName= lineVal;
+          schedules[idx].details= detailsVal;
+          schedules[idx].unavailable= isUnavailable;
+        }
+      } else {
+        // 신규
+        const newId=Date.now();
+        schedules.push({
+          id:newId,
+          userId: targetUserId,
+          startDate: sDate,
+          endDate: eDate,
+          lineName: lineVal,
+          details: detailsVal,
+          unavailable: isUnavailable
+        });
+      }
+      db.ref("schedules").set(schedules).then(()=>{
+        closeModal();
+        refreshCalendar();
+      });
+    }
+    function deleteSchedule(){
+      if(!confirm("이 스케줄을 삭제하시겠습니까?"))return;
+      const idx=schedules.findIndex(x=> x.id===editingScheduleId);
+      if(idx<0)return;
+      if(!canAccessSchedule(schedules[idx])){
+        alert("삭제 권한이 없습니다.");
+        return;
+      }
+      schedules.splice(idx,1);
+      db.ref("schedules").set(schedules).then(()=>{
+        alert("삭제 완료");
+        closeModal();
+        refreshCalendar();
+      });
+    }
+    function refreshCalendar(){
+      if(document.getElementById("monthlySection").classList.contains("active")){
+        drawMonthCalendar();
+      }
+      if(document.getElementById("weeklySection").classList.contains("active")){
+        drawWeekCalendar();
+      }
+      if(document.getElementById("adminScheduleListPane").classList.contains("active")){
+        drawScheduleList();
+      }
+    }
+
+    // (가용 엔지니어) 특정 기간(sDate~eDate)에 일정 없는 엔지니어
+    function updateAvailableEngineers(sDate, eDate){
+      const listDiv=document.getElementById("availableEngineersList");
+      if(!sDate||!eDate){
+        listDiv.textContent="시작/종료일을 먼저 입력하세요.";
+        return;
+      }
+      // 후보: 본사는 전체 유저, 협력은 같은 업체
+      const candidateIds=[];
+      for(const uid in users){
+        if(currentUser.role==="본사" || users[uid].company===currentUser.company){
+          candidateIds.push(uid);
+        }
+      }
+      const available=[];
+      candidateIds.forEach(uid=>{
+        // 이 uid가 sDate~eDate와 겹치는 스케줄 있는지 검사
+        const conflict=schedules.some(sch=>{
+          if(sch.userId!==uid) return false;
+          // 기간 겹침
+          return (sch.startDate<=eDate && sch.endDate>=sDate);
+        });
+        if(!conflict) available.push(uid);
+      });
+      if(available.length<1){
+        listDiv.textContent="가용 엔지니어 없음";
+      } else {
+        listDiv.textContent= available.join(", ");
+      }
+    }
+
+    /****************************************
+     10) 관리자 페이지
+    *****************************************/
+    function showAdminPane(pane){
+      document.getElementById("adminUserListPane").classList.remove("active");
+      document.getElementById("adminUserRegisterPane").classList.remove("active");
+      document.getElementById("adminScheduleListPane").classList.remove("active");
+      document.getElementById("adminCompanyColorPane").classList.remove("active");
+
+      if(pane==="userList"){
+        document.getElementById("adminUserListPane").classList.add("active");
+        drawUserList();
+      } else if(pane==="userRegister"){
+        document.getElementById("adminUserRegisterPane").classList.add("active");
+      } else if(pane==="scheduleList"){
+        document.getElementById("adminScheduleListPane").classList.add("active");
+        drawScheduleList();
+        populateScheduleUserSelect();
+      } else if(pane==="companyColor"){
+        document.getElementById("adminCompanyColorPane").classList.add("active");
+        drawCompanyColorList();
+      }
+    }
+
+    // (A) 유저 목록
+    function drawUserList(){
+      const tbody=document.getElementById("adminUserListBody");
+      tbody.innerHTML="";
+      for(const uid in users){
+        const u=users[uid];
+        const tr=document.createElement("tr");
+        const tdId=document.createElement("td");
+        tdId.textContent=u.id;
+        const tdRole=document.createElement("td");
+        tdRole.textContent=u.role;
+        const tdComp=document.createElement("td");
+        tdComp.textContent=u.company||"";
+
+        const tdEdit=document.createElement("td");
+        const editBtn=document.createElement("button");
+        editBtn.className="admin-btn";
+        editBtn.textContent="수정";
+        editBtn.onclick=()=> openUserEditModal(uid);
+        tdEdit.appendChild(editBtn);
+
+        const tdDel=document.createElement("td");
+        const delBtn=document.createElement("button");
+        delBtn.className="admin-btn";
+        delBtn.textContent="삭제";
+        delBtn.onclick=()=> deleteUser(uid);
+        tdDel.appendChild(delBtn);
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdRole);
+        tr.appendChild(tdComp);
+        tr.appendChild(tdEdit);
+        tr.appendChild(tdDel);
+        tbody.appendChild(tr);
+      }
+    }
+    function openUserEditModal(uid){
+      const u=users[uid];
+      if(!u)return;
+      document.getElementById("modalUserEditBg").style.display="block";
+      document.getElementById("userEditId").value=u.id;
+      document.getElementById("userEditPw").value=u.pw;
+      document.getElementById("userEditRole").value=u.role;
+      document.getElementById("userEditCompany").value=u.company||"";
+    }
+    function closeUserEditModal(){
+      document.getElementById("modalUserEditBg").style.display="none";
+    }
+    function applyUserEdit(){
+      const uid=document.getElementById("userEditId").value;
+      const pw=document.getElementById("userEditPw").value.trim();
+      const role=document.getElementById("userEditRole").value;
+      const comp=document.getElementById("userEditCompany").value.trim();
+
+      if(!uid||!pw){
+        alert("아이디/비밀번호 필수");
+        return;
+      }
+      if(!users[uid])return;
+
+      users[uid].pw=pw;
+      users[uid].role=role;
+      users[uid].company=comp;
+      db.ref("users/"+uid).set(users[uid]).then(()=>{
+        alert("유저 수정 완료");
+        closeUserEditModal();
+        loadAllData().then(()=>{
+          drawUserList();
+        });
+      });
+    }
+    function deleteUserFromModal(){
+      const uid=document.getElementById("userEditId").value;
+      if(!confirm(uid+" 유저 삭제?"))return;
+      db.ref("users/"+uid).remove().then(()=>{
+        schedules= schedules.filter(s=> s.userId!==uid);
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("삭제 완료");
+          closeUserEditModal();
+          loadAllData().then(()=>{
+            drawUserList();
+          });
+        });
+      });
+    }
+    function deleteUser(uid){
+      if(!confirm(uid+" 유저 삭제?"))return;
+      db.ref("users/"+uid).remove().then(()=>{
+        schedules= schedules.filter(s=> s.userId!==uid);
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("삭제 완료");
+          loadAllData().then(()=>{
+            drawUserList();
+          });
+        });
+      });
+    }
+
+    // (B) 유저 등록
+    function createUser(){
+      const role=document.getElementById("adminRegisterRole").value;
+      const newId=document.getElementById("adminRegisterId").value.trim();
+      const newPw=document.getElementById("adminRegisterPw").value.trim();
+      const newComp=document.getElementById("adminRegisterCompany").value.trim()||"";
+      if(!newId||!newPw){
+        alert("아이디/비밀번호 필수");
+        return;
+      }
+      db.ref("users/"+newId).once("value").then(snap=>{
+        if(snap.exists()){
+          alert("이미 존재하는 아이디");
+          return;
+        }
+        const userData={
+          id:newId,
+          pw:newPw,
+          role:role,
+          company:newComp
+        };
+        db.ref("users/"+newId).set(userData).then(()=>{
+          alert("등록 완료");
+          document.getElementById("adminRegisterId").value="";
+          document.getElementById("adminRegisterPw").value="";
+          document.getElementById("adminRegisterCompany").value="";
+          loadAllData().then(()=>{
+            showAdminPane("userList");
+          });
+        });
+      });
+    }
+
+    // (C) 스케줄 목록
+    function drawScheduleList(){
+      const tbody=document.getElementById("adminScheduleListBody");
+      tbody.innerHTML="";
+      schedules.forEach(sch=>{
+        const tr=document.createElement("tr");
+        const tdUser=document.createElement("td");
+        tdUser.textContent=sch.userId;
+        const tdPeriod=document.createElement("td");
+        tdPeriod.textContent= sch.startDate+"~"+sch.endDate;
+        const tdLine=document.createElement("td");
+        tdLine.textContent= sch.lineName||"";
+        const tdDet=document.createElement("td");
+        tdDet.textContent= sch.details||"";
+
+        const tdEdit=document.createElement("td");
+        const editBtn=document.createElement("button");
+        editBtn.className="admin-btn";
+        editBtn.textContent="수정";
+        editBtn.onclick=()=> editAdminSchedule(sch.id);
+        tdEdit.appendChild(editBtn);
+
+        const tdDel=document.createElement("td");
+        const delBtn=document.createElement("button");
+        delBtn.className="admin-btn";
+        delBtn.textContent="삭제";
+        delBtn.onclick=()=> deleteAdminSchedule(sch.id);
+        tdDel.appendChild(delBtn);
+
+        tr.appendChild(tdUser);
+        tr.appendChild(tdPeriod);
+        tr.appendChild(tdLine);
+        tr.appendChild(tdDet);
+        tr.appendChild(tdEdit);
+        tr.appendChild(tdDel);
+        tbody.appendChild(tr);
+      });
+    }
+    function populateScheduleUserSelect(){
+      const sel=document.getElementById("adminScheduleUser");
+      sel.innerHTML="";
+      for(const uid in users){
+        const opt=document.createElement("option");
+        opt.value=uid;
+        opt.textContent= uid + " ("+(users[uid].company||"")+")";
+        sel.appendChild(opt);
+      }
+    }
+    function createAdminSchedule(){
+      const uid=document.getElementById("adminScheduleUser").value;
+      const sDate=document.getElementById("adminScheduleStart").value;
+      const eDate=document.getElementById("adminScheduleEnd").value;
+      const lName=document.getElementById("adminScheduleLine").value.trim();
+      const detVal=document.getElementById("adminScheduleDetail").value.trim();
+      const unavail=document.getElementById("adminScheduleUnavailable").checked;
+
+      if(!uid||!sDate||!eDate){
+        alert("사용자/시작/종료일 필수");
+        return;
+      }
+      if(sDate>eDate){
+        alert("종료일이 시작일보다 빠릅니다.");
+        return;
+      }
+      const newId=Date.now();
+      schedules.push({
+        id:newId,
+        userId:uid,
+        startDate:sDate,
+        endDate:eDate,
+        lineName:lName,
+        details:detVal,
+        unavailable:unavail
+      });
+      db.ref("schedules").set(schedules).then(()=>{
+        alert("등록 완료");
+        document.getElementById("adminScheduleStart").value="";
+        document.getElementById("adminScheduleEnd").value="";
+        document.getElementById("adminScheduleLine").value="";
+        document.getElementById("adminScheduleDetail").value="";
+        document.getElementById("adminScheduleUnavailable").checked=false;
+        drawScheduleList();
+        refreshCalendar();
+      });
+    }
+    function editAdminSchedule(sid){
+      const sch=schedules.find(x=>x.id===sid);
+      if(!sch)return;
+      // 간단히 prompt
+      const newUid=prompt("사용자아이디", sch.userId);
+      if(!newUid)return;
+      const newSDate=prompt("시작일(YYYY-MM-DD)", sch.startDate);
+      if(!newSDate)return;
+      const newEDate=prompt("종료일(YYYY-MM-DD)", sch.endDate);
+      if(!newEDate)return;
+      const newLine=prompt("호선", sch.lineName||"");
+      if(newLine===null)return;
+      const newDet=prompt("상세내용", sch.details||"");
+      if(newDet===null)return;
+      const newUnavail=confirm("서비스 불가 일정입니까? (확인=예 / 취소=아니오)");
+
+      if(newSDate>newEDate){
+        alert("종료일이 시작일보다 빠릅니다.");
+        return;
+      }
+      sch.userId=newUid;
+      sch.startDate=newSDate;
+      sch.endDate=newEDate;
+      sch.lineName=newLine;
+      sch.details=newDet;
+      sch.unavailable=newUnavail;
+      db.ref("schedules").set(schedules).then(()=>{
+        alert("수정 완료");
+        drawScheduleList();
+        loadAllData().then(()=>{
+          refreshCalendar();
+        });
+      });
+    }
+    function deleteAdminSchedule(sid){
+      if(!confirm("스케줄 삭제?"))return;
+      schedules=schedules.filter(x=>x.id!==sid);
+      db.ref("schedules").set(schedules).then(()=>{
+        alert("삭제 완료");
+        drawScheduleList();
+        refreshCalendar();
+      });
+    }
+
+    /****************************************
+     11) 업체 색상 관리
+    *****************************************/
+    function drawCompanyColorList(){
+      const tbody=document.getElementById("companyColorBody");
+      tbody.innerHTML="";
+
+      const sel=document.getElementById("selectCompanyName");
+      sel.innerHTML="";
+
+      let compSet={};
+      for(const uid in users){
+        const c=users[uid].company||"기타";
+        compSet[c]=true;
+      }
+      for(const cName in companyColors){
+        compSet[cName]=true;
+      }
+      for(const cName in compSet){
+        const opt=document.createElement("option");
+        opt.value=cName;
+        opt.textContent=cName;
+        sel.appendChild(opt);
+      }
+
+      for(const cName in companyColors){
+        const cVal=companyColors[cName];
+        const tr=document.createElement("tr");
+        const tdName=document.createElement("td");
+        tdName.textContent=cName;
+        const tdColor=document.createElement("td");
+        const box=document.createElement("div");
+        box.style.background=cVal;
+        box.style.width="30px";
+        box.style.height="15px";
+        box.style.margin="0 auto";
+        tdColor.appendChild(box);
+
+        const tdDel=document.createElement("td");
+        const delBtn=document.createElement("button");
+        delBtn.className="admin-btn";
+        delBtn.textContent="삭제";
+        delBtn.onclick=()=>deleteCompanyColor(cName);
+        tdDel.appendChild(delBtn);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdColor);
+        tr.appendChild(tdDel);
+        tbody.appendChild(tr);
+      }
+    }
+    function saveCompanyColor(){
+      const name=document.getElementById("selectCompanyName").value.trim();
+      const col=document.getElementById("inputCompanyColor").value.trim();
+      if(!name){
+        alert("업체명을 선택하세요");
+        return;
+      }
+      if(!col){
+        alert("색상을 입력하세요");
+        return;
+      }
+      companyColors[name]=col;
+      db.ref("companyColors").set(companyColors).then(()=>{
+        alert("업체 색상 저장 완료");
+        document.getElementById("inputCompanyColor").value="#ff0000";
+        loadAllData().then(()=>{
+          drawCompanyColorList();
+        });
+      });
+    }
+    function deleteCompanyColor(cName){
+      if(!confirm(cName+" 색상정보를 삭제하시겠습니까?"))return;
+      delete companyColors[cName];
+      db.ref("companyColors").set(companyColors).then(()=>{
+        alert("삭제 완료");
+        loadAllData().then(()=>{
+          drawCompanyColorList();
+        });
+      });
+    }
+
+    /****************************************
+     12) 엑셀 다운로드/업로드
+    *****************************************/
+    function downloadExcel(){
+      const worksheet=XLSX.utils.json_to_sheet(schedules);
+      const workbook=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Schedules");
+      XLSX.writeFile(workbook, "schedules.xlsx");
+    }
+    function uploadExcel(event){
+      const file=event.target.files[0];
+      if(!file)return;
+      const reader=new FileReader();
+      reader.onload=function(e){
+        const data=new Uint8Array(e.target.result);
+        const workbook=XLSX.read(data,{type:"array"});
+        const sheetName=workbook.SheetNames[0];
+        const worksheet=workbook.Sheets[sheetName];
+        const jsonData=XLSX.utils.sheet_to_json(worksheet);
+
+        schedules=jsonData;
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("엑셀 업로드 완료");
+          drawScheduleList();
+          refreshCalendar();
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    /****************************************
+     13) 날짜 포맷 함수
+    *****************************************/
+    function formatDate(y,m,d){
+      const mm=String(m).padStart(2,"0");
+      const dd=String(d).padStart(2,"0");
+      return `${y}-${mm}-${dd}`;
+    }
+    function formatDateForLabel(dateObj){
+      const y=dateObj.getFullYear();
+      const m=String(dateObj.getMonth()+1).padStart(2,"0");
+      const d=String(dateObj.getDate()).padStart(2,"0");
+      return `${y}-${m}-${d}`;
+    }
+  </script>
+</body>
+</html>
