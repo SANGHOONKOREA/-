@@ -671,7 +671,6 @@
       <h3>스케줄 등록/수정</h3>
 
       <!-- (F1) 엔지니어(아이디) 선택 -->
-      <!-- === 변경 부분: "+" 버튼 추가, "additionalEngineerRows" 컨테이너 추가 === -->
       <div class="modal-row" id="modalUserRow" style="display:none;">
         <label>엔지니어(아이디)</label>
         <div style="display:flex; gap:4px; align-items:center;">
@@ -680,7 +679,6 @@
         </div>
       </div>
       <div id="additionalEngineerRows" style="margin-bottom:8px;"></div>
-      <!-- === /변경 부분 === -->
 
       <!-- (F2) 날짜/호선/상세 -->
       <div class="modal-row">
@@ -768,7 +766,7 @@
      1) Firebase 초기화
     *****************************************/
     const firebaseConfig = {
-      apiKey: "AIzaSyCoOg2HPjk-...",
+      apiKey: "AIzaSy...",
       authDomain: "sanghoon-d8f1c.firebaseapp.com",
       databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
       projectId: "sanghoon-d8f1c",
@@ -797,9 +795,6 @@
     let colorList = ["#FF6347","#FFA500","#FFD700","#98FB98","#87CEFA","#FF69B4","#CD5C5C","#ADFF2F","#B0E0E6","#9370DB"];
     let colorIndex=0;
 
-    // === 추가: 엔지니어 select를 여러개 추가/삭제할 때 사용
-    // #additionalEngineerRows 에 들어있는 (select) DOM을 저장/추적하거나,
-    // 아니면 그냥 DOM 탐색으로 처리할 수 있습니다. 여기서는 DOM 탐색 방식 사용.
     /****************************************
      3) admin 계정 자동 생성
     *****************************************/
@@ -1157,22 +1152,27 @@
      9) 스케줄 모달 (등록/수정/삭제) + 가용 엔지니어
     *****************************************/
 
-    // === (A) 공통: select에 엔지니어 목록 채우는 함수
+    // === 변경점: buildEngineerSelectOptions + updateAvailableEngineers 에서
+    //            user.role==="본사"는 제외 처리
     function buildEngineerSelectOptions(selectEl, selectedValue=null){
       selectEl.innerHTML = "";
       if(!currentUser) return;
-      // 본사 -> 전체 사용자
-      if(currentUser.role==="본사"){
-        for(const uid in users){
+
+      // (공통 로직) "본사" 권한의 유저는 스케줄 대상에서 제외
+      // => role==="협력"인 유저만 추가
+      for(const uid in users){
+        const u=users[uid];
+        if(u.role !== "협력") continue;  // 본사 제외
+
+        if(currentUser.role==="본사"){
+          // 본사 로그인 -> 모든 "협력" 가능
           const opt=document.createElement("option");
           opt.value=uid;
           opt.textContent=uid;
           selectEl.appendChild(opt);
-        }
-      } else {
-        // 협력 -> 같은 업체만
-        for(const uid in users){
-          if(users[uid].company===currentUser.company){
+        } else {
+          // 협력 로그인 -> 같은 업체 + "협력"인 유저만
+          if(u.company===currentUser.company){
             const opt=document.createElement("option");
             opt.value=uid;
             opt.textContent=uid;
@@ -1180,6 +1180,7 @@
           }
         }
       }
+
       // 선택값 세팅
       if(selectedValue){
         for(let i=0;i<selectEl.options.length;i++){
@@ -1191,7 +1192,6 @@
       }
     }
 
-    // === (B) "+" 버튼으로 추가되는 엔지니어 선택행
     function addEngineerRow(){
       const container = document.getElementById("additionalEngineerRows");
       const row = document.createElement("div");
@@ -1299,7 +1299,7 @@
       // 메인 select
       let mainUserId = null;
       if(document.getElementById("modalUserRow").style.display!=="none"){
-        mainUserId = document.getElementById("modalUserSelect").value;
+        mainUserId=document.getElementById("modalUserSelect").value;
       } else {
         // 협력 로그인일 때 본인 아이디만
         mainUserId = currentUser.id;
@@ -1324,7 +1324,7 @@
           schedules[idx].details= detailsVal;
           schedules[idx].unavailable= isUnavailable;
         }
-        // 그리고 추가로 선택된 엔지니어들에 대해 새 스케줄 생성
+        // 추가로 선택된 엔지니어들에 대해 새 스케줄 생성
         extraSelects.forEach(sel=>{
           const uid = sel.value;
           if(!uid) return;
@@ -1399,23 +1399,33 @@
       }
     }
 
-    // (가용 엔지니어) 특정 기간(sDate~eDate)에 일정이 겹치는 엔지니어 제외
+    // === 변경점: updateAvailableEngineers 에서도 role==="본사" 제외
     function updateAvailableEngineers(sDate, eDate){
       const listDiv=document.getElementById("availableEngineersList");
       if(!sDate||!eDate){
         listDiv.textContent="시작/종료일을 먼저 입력하세요.";
         return;
       }
-      // 후보: 본사는 전체 유저, 협력은 같은 업체
+      // 후보: 본사는 "협력" 전체, 협력은 자기 업체의 "협력"만
       const candidateIds=[];
       for(const uid in users){
-        if(currentUser.role==="본사" || users[uid].company===currentUser.company){
+        const u=users[uid];
+        // "본사"인 유저는 무조건 제외
+        if(u.role!=="협력") continue;
+
+        if(currentUser.role==="본사"){
+          // 본사 -> 모든 협력
           candidateIds.push(uid);
+        } else {
+          // 협력 -> 같은 업체만
+          if(u.company===currentUser.company){
+            candidateIds.push(uid);
+          }
         }
       }
+
       const available=[];
       candidateIds.forEach(uid=>{
-        // 이 uid가 sDate~eDate 기간에 스케줄이 겹치는지 검사
         const conflict=schedules.some(sch=>{
           if(sch.userId!==uid) return false;
           return (sch.startDate<=eDate && sch.endDate>=sDate);
@@ -1626,9 +1636,13 @@
       const sel=document.getElementById("adminScheduleUser");
       sel.innerHTML="";
       for(const uid in users){
+        const u=users[uid];
+        // === 변경: "본사"는 제외, 즉 role==="협력"만 보이도록
+        if(u.role !== "협력") continue;
+
         const opt=document.createElement("option");
         opt.value=uid;
-        opt.textContent= uid + " ("+(users[uid].company||"")+")";
+        opt.textContent= uid + " ("+(u.company||"")+")";
         sel.appendChild(opt);
       }
     }
@@ -1673,7 +1687,7 @@
       const sch=schedules.find(x=>x.id===sid);
       if(!sch)return;
       // 간단히 prompt로 수정 예시
-      const newUid=prompt("사용자아이디", sch.userId);
+      const newUid=prompt("사용자아이디(협력만 가능)", sch.userId);
       if(!newUid)return;
       const newSDate=prompt("시작일(YYYY-MM-DD)", sch.startDate);
       if(!newSDate)return;
@@ -1684,6 +1698,12 @@
       const newDet=prompt("상세내용", sch.details||"");
       if(newDet===null)return;
       const newUnavail=confirm("서비스 불가 일정입니까? (확인=예 / 취소=아니오)");
+
+      // 여기서도 "본사"일 경우는 제외해야 하지만, 간단 예시로 대체
+      if(users[newUid] && users[newUid].role!=="협력"){
+        alert("본사 계정에는 스케줄 지정 불가");
+        return;
+      }
 
       if(newSDate>newEDate){
         alert("종료일이 시작일보다 빠릅니다.");
