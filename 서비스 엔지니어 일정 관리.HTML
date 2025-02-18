@@ -537,6 +537,8 @@
         <button onclick="showAdminPane('userRegister')">유저 등록</button>
         <button onclick="showAdminPane('scheduleList')">스케줄 목록</button>
         <button onclick="showAdminPane('companyColor')">업체 색상 관리</button>
+        <!-- 변경 히스토리 버튼 -->
+        <button onclick="showAdminPane('history')">변경 히스토리</button>
       </div>
 
       <!-- (E1) 유저 목록 -->
@@ -656,6 +658,32 @@
           <input type="color" id="inputCompanyColor" value="#ff0000"/>
         </div>
         <button onclick="saveCompanyColor()">추가/수정</button>
+      </div>
+
+      <!-- (E5) 변경 히스토리 -->
+      <div id="adminHistoryPane" class="admin-pane">
+        <h4>변경 히스토리</h4>
+        <!-- 히스토리 최대 개수 설정 -->
+        <div class="admin-form-row">
+          <label>히스토리 최대 개수</label>
+          <input type="number" id="historyLimitInput" style="width:120px;" />
+        </div>
+        <button onclick="setHistoryLimit()">설정 저장</button>
+
+        <table class="admin-table" style="margin-top:10px;">
+          <thead>
+            <tr>
+              <!-- 시간 폭 축소, 호선 폭 확대 -->
+              <th style="width:80px;">시간</th>
+              <th>아이디</th>
+              <th>시작일</th>
+              <th>종료일</th>
+              <th style="width:150px;">호선</th>
+              <th>구분</th>
+            </tr>
+          </thead>
+          <tbody id="adminHistoryBody"></tbody>
+        </table>
       </div>
     </section>
   </div>
@@ -781,19 +809,21 @@
     /****************************************
      2) 전역 변수
     *****************************************/
-    let currentUser = null;  // 현재 로그인된 사용자
-    let users = {};          // 모든 유저 정보 (id -> {id, pw, role, company})
-    let schedules = [];      // 전체 스케줄
-    let companyColors = {};  // 업체별 색상
+    let currentUser = null;      // 현재 로그인된 사용자
+    let users = {};              // 모든 유저 정보 (id -> {id, pw, role, company})
+    let schedules = [];          // 전체 스케줄
+    let companyColors = {};      // 업체별 색상
+    let colorMap = {};           // 최종 업체->색상 맵
+    let colorList = ["#FF6347","#FFA500","#FFD700","#98FB98","#87CEFA","#FF69B4","#CD5C5C","#ADFF2F","#B0E0E6","#9370DB"];
+    let colorIndex = 0;
 
-    let currentMonthDate = new Date(); 
+    let currentMonthDate = new Date();
     let currentWeekDate = new Date();
-
     let editingScheduleId = null; // 모달에서 편집중인 스케줄 ID
 
-    let colorMap = {};
-    let colorList = ["#FF6347","#FFA500","#FFD700","#98FB98","#87CEFA","#FF69B4","#CD5C5C","#ADFF2F","#B0E0E6","#9370DB"];
-    let colorIndex=0;
+    // [히스토리 추가]
+    let histories = [];          // 변경 히스토리(전체)
+    let historyLimit = 100;      // 기본 히스토리 최대 개수
 
     /****************************************
      3) admin 계정 자동 생성
@@ -849,26 +879,46 @@
       });
     }
     function logout(){
-      if(!confirm("로그아웃 하시겠습니까?"))return;
-      currentUser=null;
+      if(!confirm("로그아웃 하시겠습니까?")) return;
+      currentUser = null;
       document.getElementById("login-container").style.display="block";
       document.getElementById("main-menu").style.display="none";
       hideAllSections();
       // 로그인창 초기화
-      document.getElementById("loginId").value="";
-      document.getElementById("loginPw").value="";
+      document.getElementById("loginId").value = "";
+      document.getElementById("loginPw").value = "";
     }
+
+    // 전체 DB 데이터 불러오기(초기)
     function loadAllData(){
-      const p1=db.ref("users").once("value").then(snap=>{
-        if(snap.exists()) users=snap.val();
+      const p1 = db.ref("users").once("value").then(snap=>{
+        if(snap.exists()) users = snap.val();
       });
-      const p2=db.ref("schedules").once("value").then(snap=>{
-        if(snap.exists()) schedules=snap.val();
+      const p2 = db.ref("schedules").once("value").then(snap=>{
+        if(snap.exists()) schedules = snap.val();
       });
-      const p3=db.ref("companyColors").once("value").then(snap=>{
-        if(snap.exists()) companyColors=snap.val();
+      const p3 = db.ref("companyColors").once("value").then(snap=>{
+        if(snap.exists()) companyColors = snap.val();
       });
-      return Promise.all([p1,p2,p3]).then(()=>{
+      const p4 = db.ref("historyLimit").once("value").then(snap=>{
+        if(snap.exists()) {
+          historyLimit = snap.val();
+        }
+      });
+      // 첫 로드 시점에 전체 history도 가져옴(단, 이후엔 showAdminPane('history') 때마다 재조회)
+      const p5 = db.ref("history").once("value").then(snap=>{
+        if(snap.exists()){
+          let temp = [];
+          snap.forEach(child=>{
+            temp.push(Object.assign({key: child.key}, child.val()));
+          });
+          histories = temp;
+        } else {
+          histories = [];
+        }
+      });
+
+      return Promise.all([p1,p2,p3,p4,p5]).then(()=>{
         buildColorMap();
       });
     }
@@ -877,25 +927,25 @@
      5) 업체별 색상 매핑
     *****************************************/
     function buildColorMap(){
-      colorMap={};
-      colorIndex=0;
+      colorMap = {};
+      colorIndex = 0;
       // companyColors 먼저
       for(const cName in companyColors){
-        colorMap[cName]=companyColors[cName];
+        colorMap[cName] = companyColors[cName];
       }
       // users에서 업체 추출
-      let compSet={};
+      let compSet = {};
       for(const uid in users){
         const c = users[uid].company || "기타";
-        compSet[c]=true;
+        compSet[c] = true;
       }
       for(const c in compSet){
         if(!colorMap[c]){
-          if(colorIndex<colorList.length){
-            colorMap[c]=colorList[colorIndex];
+          if(colorIndex < colorList.length){
+            colorMap[c] = colorList[colorIndex];
             colorIndex++;
           } else {
-            colorMap[c]=randomColor();
+            colorMap[c] = randomColor();
           }
         }
       }
@@ -948,33 +998,33 @@
      7) 월간 달력
     *****************************************/
     function drawMonthCalendar(){
-      const year=currentMonthDate.getFullYear();
-      const month=currentMonthDate.getMonth();
-      document.getElementById("monthLabel").textContent=`${year}년 ${month+1}월`;
+      const year = currentMonthDate.getFullYear();
+      const month = currentMonthDate.getMonth();
+      document.getElementById("monthLabel").textContent = `${year}년 ${month+1}월`;
 
-      const firstDay=new Date(year,month,1);
-      const lastDay=new Date(year,month+1,0);
-      const firstDow=firstDay.getDay();
-      const lastDate=lastDay.getDate();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month+1, 0);
+      const firstDow = firstDay.getDay();
+      const lastDate = lastDay.getDate();
 
-      const monthBody=document.getElementById("monthBody");
-      monthBody.innerHTML="";
+      const monthBody = document.getElementById("monthBody");
+      monthBody.innerHTML = "";
 
-      let row=document.createElement("tr");
-      for(let i=0;i<firstDow;i++){
+      let row = document.createElement("tr");
+      for(let i=0; i<firstDow; i++){
         row.appendChild(document.createElement("td"));
       }
       for(let d=1; d<=lastDate; d++){
-        const td=document.createElement("td");
-        td.innerHTML=`<span class="day-number">${d}</span>`;
-        const dateStr=formatDate(year,month+1,d);
-        td.onclick=()=>{
-          openModal(null,dateStr);
+        const td = document.createElement("td");
+        td.innerHTML = `<span class="day-number">${d}</span>`;
+        const dateStr = formatDate(year, month+1, d);
+        td.onclick = ()=>{
+          openModal(null, dateStr);
         };
         row.appendChild(td);
-        if((firstDow+d)%7===0){
+        if((firstDow + d) % 7 === 0){
           monthBody.appendChild(row);
-          row=document.createElement("tr");
+          row = document.createElement("tr");
         }
       }
       if(row.children.length>0){
@@ -985,38 +1035,38 @@
       }
 
       // 스케줄 막대 표시
-      document.getElementById("monthOverlay").innerHTML="";
-      const rows=monthBody.querySelectorAll("tr");
+      document.getElementById("monthOverlay").innerHTML = "";
+      const rows = monthBody.querySelectorAll("tr");
       rows.forEach(r=>{
-        const cells=r.querySelectorAll("td");
-        let rowDates=[];
-        for(let i=0;i<7;i++){
-          const daySpan=cells[i].querySelector(".day-number");
+        const cells = r.querySelectorAll("td");
+        let rowDates = [];
+        for(let i=0; i<7; i++){
+          const daySpan = cells[i]?.querySelector(".day-number");
           if(daySpan){
-            const dNum=parseInt(daySpan.textContent,10);
+            const dNum = parseInt(daySpan.textContent,10);
             rowDates.push(formatDate(year,month+1,dNum));
           } else {
             rowDates.push(null);
           }
         }
-        const validD=rowDates.filter(x=>x);
-        if(validD.length<1)return;
-        const rowStart=validD[0];
-        const rowEnd=validD[validD.length-1];
+        const validD = rowDates.filter(x=>x);
+        if(validD.length<1) return;
+        const rowStart = validD[0];
+        const rowEnd = validD[validD.length-1];
 
         // 이 주에 걸치는 스케줄 필터
-        const weekly=schedules.filter(sch=>{
+        const weekly = schedules.filter(sch=>{
           if(!canAccessSchedule(sch)) return false;
           return (sch.startDate<=rowEnd && sch.endDate>=rowStart);
         });
 
-        let barCount=0;
+        let barCount = 0;
         weekly.forEach(sch=>{
-          const barStart=(sch.startDate<rowStart)?rowStart:sch.startDate;
-          const barEnd=(sch.endDate>rowEnd)?rowEnd:sch.endDate;
+          const barStart = (sch.startDate<rowStart)?rowStart:sch.startDate;
+          const barEnd = (sch.endDate>rowEnd)?rowEnd:sch.endDate;
 
-          const startIdx=rowDates.findIndex(d=>d && d>=barStart);
-          const endIdx=(()=>{
+          const startIdx = rowDates.findIndex(d=>d && d>=barStart);
+          const endIdx = (()=>{
             let idx=-1;
             for(let c=6;c>=0;c--){
               if(rowDates[c] && rowDates[c]<=barEnd){
@@ -1025,33 +1075,33 @@
             }
             return idx;
           })();
-          if(startIdx<0||endIdx<0)return;
-          const startCell=cells[startIdx];
-          const endCell=cells[endIdx];
-          if(!startCell||!endCell)return;
+          if(startIdx<0 || endIdx<0) return;
+          const startCell = cells[startIdx];
+          const endCell = cells[endIdx];
+          if(!startCell || !endCell) return;
 
-          const overlayRect=document.getElementById("monthOverlay").getBoundingClientRect();
-          const startRect=startCell.getBoundingClientRect();
-          const endRect=endCell.getBoundingClientRect();
+          const overlayRect = document.getElementById("monthOverlay").getBoundingClientRect();
+          const startRect = startCell.getBoundingClientRect();
+          const endRect = endCell.getBoundingClientRect();
 
-          const leftPos=startRect.left-overlayRect.left+2;
-          const rightPos=endRect.right-overlayRect.left-2;
-          const width=rightPos-leftPos;
-          const topBase=startRect.top-overlayRect.top+18;
-          const topPos=topBase + (barCount*18);
+          const leftPos = startRect.left - overlayRect.left + 2;
+          const rightPos = endRect.right - overlayRect.left - 2;
+          const width = rightPos - leftPos;
+          const topBase = startRect.top - overlayRect.top + 18;
+          const topPos = topBase + (barCount*18);
 
-          const userObj=users[sch.userId]||{};
-          const comp=userObj.company||"기타";
-          const color= sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
+          const userObj = users[sch.userId] || {};
+          const comp = userObj.company || "기타";
+          const color = sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
 
-          const bar=document.createElement("div");
-          bar.className="schedule-bar";
-          bar.style.left=leftPos+"px";
-          bar.style.top=topPos+"px";
-          bar.style.width=width+"px";
-          bar.style.backgroundColor=color;
-          bar.textContent= sch.userId;
-          bar.onclick=(e)=>{
+          const bar = document.createElement("div");
+          bar.className = "schedule-bar";
+          bar.style.left = leftPos+"px";
+          bar.style.top = topPos+"px";
+          bar.style.width = width+"px";
+          bar.style.backgroundColor = color;
+          bar.textContent = sch.userId;
+          bar.onclick = (e)=>{
             e.stopPropagation();
             openModal(sch.id);
           };
@@ -1063,7 +1113,7 @@
         if(barCount>1){
           const newRowHeight= 50 + (barCount-1)*18;
           r.querySelectorAll("td").forEach(td=>{
-            td.style.height=newRowHeight+"px";
+            td.style.height = newRowHeight+"px";
           });
         }
       });
@@ -1081,51 +1131,51 @@
      8) 주간 달력
     *****************************************/
     function drawWeekCalendar(){
-      const dow=currentWeekDate.getDay();
-      const sunday=new Date(currentWeekDate);
+      const dow = currentWeekDate.getDay();
+      const sunday = new Date(currentWeekDate);
       sunday.setDate(currentWeekDate.getDate()-dow);
-      const saturday=new Date(sunday);
+      const saturday = new Date(sunday);
       saturday.setDate(sunday.getDate()+6);
 
-      document.getElementById("weekLabel").textContent=
+      document.getElementById("weekLabel").textContent =
         `${formatDateForLabel(sunday)} ~ ${formatDateForLabel(saturday)}`;
 
-      const weekList=document.getElementById("weekList");
-      weekList.innerHTML="";
+      const weekList = document.getElementById("weekList");
+      weekList.innerHTML = "";
 
-      for(let i=0;i<7;i++){
-        const dDay=new Date(sunday);
+      for(let i=0; i<7; i++){
+        const dDay = new Date(sunday);
         dDay.setDate(sunday.getDate()+i);
-        const dateStr=formatDate(dDay.getFullYear(),dDay.getMonth()+1,dDay.getDate());
+        const dateStr = formatDate(dDay.getFullYear(), dDay.getMonth()+1, dDay.getDate());
 
-        const dayBlock=document.createElement("div");
-        dayBlock.className="week-day-block";
+        const dayBlock = document.createElement("div");
+        dayBlock.className = "week-day-block";
 
-        const h4=document.createElement("h4");
-        h4.textContent=formatDateForLabel(dDay);
+        const h4 = document.createElement("h4");
+        h4.textContent = formatDateForLabel(dDay);
         dayBlock.appendChild(h4);
 
-        const daySch=schedules.filter(sch=>{
+        const daySch = schedules.filter(sch=>{
           if(!canAccessSchedule(sch)) return false;
           return (sch.startDate<=dateStr && sch.endDate>=dateStr);
         });
         daySch.forEach(sch=>{
-          const userObj=users[sch.userId]||{};
-          const comp=userObj.company||"기타";
-          const c= sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
+          const userObj = users[sch.userId] || {};
+          const comp = userObj.company || "기타";
+          const c = sch.unavailable ? "#FF0000" : (colorMap[comp]||"#999");
 
-          const item=document.createElement("div");
-          item.className="schedule-week-item";
-          item.onclick=(e)=>{
+          const item = document.createElement("div");
+          item.className = "schedule-week-item";
+          item.onclick = (e)=>{
             e.stopPropagation();
             openModal(sch.id);
           };
-          const bar=document.createElement("div");
-          bar.className="schedule-color-bar";
-          bar.style.backgroundColor=c;
-          const content=document.createElement("div");
-          content.className="schedule-week-content";
-          content.textContent=
+          const bar = document.createElement("div");
+          bar.className = "schedule-color-bar";
+          bar.style.backgroundColor = c;
+          const content = document.createElement("div");
+          content.className = "schedule-week-content";
+          content.textContent =
             `${sch.userId}(${sch.startDate}~${sch.endDate}) 호선:${sch.lineName||''} ${sch.details||''}`;
 
           item.appendChild(bar);
@@ -1133,8 +1183,8 @@
           dayBlock.appendChild(item);
         });
 
-        dayBlock.onclick=()=>{
-          openModal(null,dateStr);
+        dayBlock.onclick = ()=>{
+          openModal(null, dateStr);
         };
         weekList.appendChild(dayBlock);
       }
@@ -1151,39 +1201,32 @@
     /****************************************
      9) 스케줄 모달 (등록/수정/삭제) + 가용 엔지니어
     *****************************************/
-
-    // === 변경점: buildEngineerSelectOptions + updateAvailableEngineers 에서
-    //            user.role==="본사"는 제외 처리
     function buildEngineerSelectOptions(selectEl, selectedValue=null){
       selectEl.innerHTML = "";
       if(!currentUser) return;
 
-      // (공통 로직) "본사" 권한의 유저는 스케줄 대상에서 제외
-      // => role==="협력"인 유저만 추가
       for(const uid in users){
-        const u=users[uid];
+        const u = users[uid];
         if(u.role !== "협력") continue;  // 본사 제외
 
         if(currentUser.role==="본사"){
-          // 본사 로그인 -> 모든 "협력" 가능
-          const opt=document.createElement("option");
-          opt.value=uid;
-          opt.textContent=uid;
+          // 본사 로그인 -> 모든 협력
+          const opt = document.createElement("option");
+          opt.value = uid;
+          opt.textContent = uid;
           selectEl.appendChild(opt);
         } else {
-          // 협력 로그인 -> 같은 업체 + "협력"인 유저만
+          // 협력 로그인 -> 같은 업체만
           if(u.company===currentUser.company){
-            const opt=document.createElement("option");
-            opt.value=uid;
-            opt.textContent=uid;
+            const opt = document.createElement("option");
+            opt.value = uid;
+            opt.textContent = uid;
             selectEl.appendChild(opt);
           }
         }
       }
-
-      // 선택값 세팅
       if(selectedValue){
-        for(let i=0;i<selectEl.options.length;i++){
+        for(let i=0; i<selectEl.options.length; i++){
           if(selectEl.options[i].value===selectedValue){
             selectEl.selectedIndex=i;
             break;
@@ -1191,7 +1234,6 @@
         }
       }
     }
-
     function addEngineerRow(){
       const container = document.getElementById("additionalEngineerRows");
       const row = document.createElement("div");
@@ -1200,16 +1242,14 @@
       row.style.gap="4px";
       row.style.marginTop="4px";
 
-      // 새 <select> 생성
       const newSelect = document.createElement("select");
       buildEngineerSelectOptions(newSelect);
 
-      // "-" 버튼
       const removeBtn = document.createElement("button");
       removeBtn.textContent = "-";
       removeBtn.style.backgroundColor="#c0392b";
       removeBtn.style.color="#fff";
-      removeBtn.onclick = ()=> {
+      removeBtn.onclick = ()=>{
         container.removeChild(row);
       };
 
@@ -1219,31 +1259,28 @@
     }
 
     function openModal(scheduleId=null, dateStr=null){
-      editingScheduleId=scheduleId;
+      editingScheduleId = scheduleId;
       document.getElementById("modal-background").style.display="block";
 
-      // 메인 userRow
-      const userRow=document.getElementById("modalUserRow");
-      const sel=document.getElementById("modalUserSelect");
-      // 추가된 엔지니어 row 초기화
+      const userRow = document.getElementById("modalUserRow");
+      const sel = document.getElementById("modalUserSelect");
       const extraContainer = document.getElementById("additionalEngineerRows");
-      extraContainer.innerHTML="";
+      extraContainer.innerHTML = "";
 
       if(scheduleId){
-        // 수정
-        const sch=schedules.find(x=> x.id===scheduleId);
-        if(!sch)return;
+        // (수정)
+        const sch = schedules.find(x=> x.id===scheduleId);
+        if(!sch) return;
         if(!canAccessSchedule(sch)){
           alert("해당 스케줄에 대한 권한이 없습니다.");
           document.getElementById("modal-background").style.display="none";
           return;
         }
-        // 날짜 / 호선 / 상세 / 불가 체크
-        document.getElementById("modalStartDate").value= sch.startDate;
-        document.getElementById("modalEndDate").value= sch.endDate;
-        document.getElementById("modalLine").value= sch.lineName||"";
-        document.getElementById("modalDetails").value= sch.details||"";
-        document.getElementById("modalUnavailable").checked= !!sch.unavailable;
+        document.getElementById("modalStartDate").value = sch.startDate;
+        document.getElementById("modalEndDate").value = sch.endDate;
+        document.getElementById("modalLine").value = sch.lineName||"";
+        document.getElementById("modalDetails").value = sch.details||"";
+        document.getElementById("modalUnavailable").checked = !!sch.unavailable;
 
         if(currentUser.role==="본사"){
           userRow.style.display="";
@@ -1253,12 +1290,12 @@
         }
         document.getElementById("btnDeleteSchedule").style.display="";
       } else {
-        // 신규
-        document.getElementById("modalStartDate").value=dateStr||"";
-        document.getElementById("modalEndDate").value=dateStr||"";
-        document.getElementById("modalLine").value="";
-        document.getElementById("modalDetails").value="";
-        document.getElementById("modalUnavailable").checked=false;
+        // (신규)
+        document.getElementById("modalStartDate").value = dateStr||"";
+        document.getElementById("modalEndDate").value = dateStr||"";
+        document.getElementById("modalLine").value = "";
+        document.getElementById("modalDetails").value = "";
+        document.getElementById("modalUnavailable").checked = false;
         document.getElementById("btnDeleteSchedule").style.display="none";
 
         if(currentUser.role==="본사"){
@@ -1269,8 +1306,6 @@
           buildEngineerSelectOptions(sel);
         }
       }
-
-      // 모달 열 때 가용 엔지니어 목록 갱신
       updateAvailableEngineers(
         document.getElementById("modalStartDate").value,
         document.getElementById("modalEndDate").value
@@ -1278,58 +1313,105 @@
     }
     function closeModal(){
       document.getElementById("modal-background").style.display="none";
-      editingScheduleId=null;
+      editingScheduleId = null;
     }
+
+    /****************************************
+     9-1) 변경 히스토리 기록 함수
+    *****************************************/
+    function recordHistory(actionType, userId, scheduleObj){
+      // scheduleObj에서 필요한 정보만 추출
+      const data = {
+        action: actionType,         // "추가" or "삭제" or "변경"
+        userId: userId,             // 작업을 수행한 사람
+        timestamp: new Date().toISOString(),  // 시점
+        schedule: {
+          startDate: scheduleObj.startDate,
+          endDate: scheduleObj.endDate,
+          lineName: scheduleObj.lineName || "",
+          details: scheduleObj.details || ""
+        }
+      };
+      const newRef = db.ref("history").push();
+      // push() 후 -> then(enforceHistoryLimit)
+      return newRef.set(data).then(()=>{
+        return enforceHistoryLimit();  // Promise
+      });
+    }
+    // 히스토리 최대 개수 초과 시 오래된 pushKey부터 삭제
+    function enforceHistoryLimit(){
+      return db.ref("history").once("value").then(snap=>{
+        let arr = [];
+        snap.forEach(child=>{
+          arr.push({key: child.key, ...child.val()});
+        });
+        // push key는 시간 순서대로 생성되므로 오름차순 정렬하면 오래된 것이 앞
+        arr.sort((a,b)=> a.key.localeCompare(b.key));
+        const exceed = arr.length - historyLimit;
+        if(exceed>0){
+          let removePromises=[];
+          for(let i=0; i<exceed; i++){
+            removePromises.push( db.ref("history/"+arr[i].key).remove() );
+          }
+          return Promise.all(removePromises);
+        }
+      });
+    }
+
     function saveSchedule(){
-      const sDate=document.getElementById("modalStartDate").value;
-      const eDate=document.getElementById("modalEndDate").value;
-      const lineVal=document.getElementById("modalLine").value.trim();
-      const detailsVal=document.getElementById("modalDetails").value.trim();
-      const isUnavailable=document.getElementById("modalUnavailable").checked;
+      const sDate = document.getElementById("modalStartDate").value;
+      const eDate = document.getElementById("modalEndDate").value;
+      const lineVal = document.getElementById("modalLine").value.trim();
+      const detailsVal = document.getElementById("modalDetails").value.trim();
+      const isUnavailable = document.getElementById("modalUnavailable").checked;
 
       if(!sDate||!eDate){
         alert("시작/종료일을 입력하세요");
         return;
       }
-      if(sDate>eDate){
+      if(sDate > eDate){
         alert("종료일이 시작일보다 빠릅니다.");
         return;
       }
 
-      // 메인 select
       let mainUserId = null;
       if(document.getElementById("modalUserRow").style.display!=="none"){
-        mainUserId=document.getElementById("modalUserSelect").value;
+        mainUserId = document.getElementById("modalUserSelect").value;
       } else {
-        // 협력 로그인일 때 본인 아이디만
         mainUserId = currentUser.id;
       }
-
-      // 추가 select들
       const extraContainer = document.getElementById("additionalEngineerRows");
       const extraSelects = extraContainer.querySelectorAll("select");
 
+      // === (1) 기존 스케줄 수정 시 -> "변경"
       if(editingScheduleId){
-        // (수정) 기존 스케줄 1개는 업데이트
-        const idx=schedules.findIndex(x=> x.id===editingScheduleId);
+        const idx = schedules.findIndex(x=> x.id===editingScheduleId);
         if(idx>-1){
           if(!canAccessSchedule(schedules[idx])){
             alert("수정 권한이 없습니다.");
             return;
           }
-          schedules[idx].userId= mainUserId;
-          schedules[idx].startDate= sDate;
-          schedules[idx].endDate= eDate;
-          schedules[idx].lineName= lineVal;
-          schedules[idx].details= detailsVal;
-          schedules[idx].unavailable= isUnavailable;
+          // 기존 스케줄 정보 갱신
+          schedules[idx].userId = mainUserId;
+          schedules[idx].startDate = sDate;
+          schedules[idx].endDate = eDate;
+          schedules[idx].lineName = lineVal;
+          schedules[idx].details = detailsVal;
+          schedules[idx].unavailable = isUnavailable;
+
+          // 수정 → 기록 ("변경")
+          // (이미 존재하는 스케줄이므로 schedules[idx] 그대로 전달)
+          var changePromise = recordHistory("변경", currentUser.id, schedules[idx]);
         }
-        // 추가로 선택된 엔지니어들에 대해 새 스케줄 생성
+
+        // 추가 select -> 새 스케줄 추가 + 히스토리("추가")
+        let promises = [];
+        if(changePromise) promises.push(changePromise);
         extraSelects.forEach(sel=>{
           const uid = sel.value;
           if(!uid) return;
-          const newId=Date.now()+Math.floor(Math.random()*100000); 
-          schedules.push({
+          const newId = Date.now()+Math.floor(Math.random()*100000);
+          const newSch = {
             id:newId,
             userId: uid,
             startDate: sDate,
@@ -1337,12 +1419,22 @@
             lineName: lineVal,
             details: detailsVal,
             unavailable: isUnavailable
+          };
+          schedules.push(newSch);
+          promises.push( recordHistory("추가", currentUser.id, newSch) );
+        });
+
+        db.ref("schedules").set(schedules).then(()=>{
+          Promise.all(promises).then(()=>{
+            closeModal();
+            refreshCalendar();
           });
         });
-      } else {
-        // (신규) 메인 select 1명
-        const newId=Date.now();
-        schedules.push({
+      }
+      // === (2) 신규 스케줄 -> "추가"
+      else {
+        const newId = Date.now();
+        const newSch = {
           id:newId,
           userId: mainUserId,
           startDate: sDate,
@@ -1350,13 +1442,18 @@
           lineName: lineVal,
           details: detailsVal,
           unavailable: isUnavailable
-        });
-        // 추가 select 들
+        };
+        schedules.push(newSch);
+
+        // 메인 스케줄 추가
+        let promises = [ recordHistory("추가", currentUser.id, newSch) ];
+
+        // 추가 select
         extraSelects.forEach(sel=>{
           const uid = sel.value;
           if(!uid) return;
-          const newId2=Date.now()+Math.floor(Math.random()*100000);
-          schedules.push({
+          const newId2 = Date.now()+Math.floor(Math.random()*100000);
+          const newSch2 = {
             id:newId2,
             userId: uid,
             startDate: sDate,
@@ -1364,29 +1461,40 @@
             lineName: lineVal,
             details: detailsVal,
             unavailable: isUnavailable
+          };
+          schedules.push(newSch2);
+          promises.push( recordHistory("추가", currentUser.id, newSch2) );
+        });
+
+        db.ref("schedules").set(schedules).then(()=>{
+          Promise.all(promises).then(()=>{
+            closeModal();
+            refreshCalendar();
           });
         });
       }
-      db.ref("schedules").set(schedules).then(()=>{
-        closeModal();
-        refreshCalendar();
-      });
     }
+
     function deleteSchedule(){
       if(!confirm("이 스케줄을 삭제하시겠습니까?"))return;
-      const idx=schedules.findIndex(x=> x.id===editingScheduleId);
+      const idx = schedules.findIndex(x=> x.id===editingScheduleId);
       if(idx<0)return;
       if(!canAccessSchedule(schedules[idx])){
         alert("삭제 권한이 없습니다.");
         return;
       }
-      schedules.splice(idx,1);
-      db.ref("schedules").set(schedules).then(()=>{
-        alert("삭제 완료");
-        closeModal();
-        refreshCalendar();
+      // 기록 -> "삭제"
+      const deletedSch = schedules[idx];
+      recordHistory("삭제", currentUser.id, deletedSch).then(()=>{
+        schedules.splice(idx,1);
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("삭제 완료");
+          closeModal();
+          refreshCalendar();
+        });
       });
     }
+
     function refreshCalendar(){
       if(document.getElementById("monthlySection").classList.contains("active")){
         drawMonthCalendar();
@@ -1399,43 +1507,37 @@
       }
     }
 
-    // === 변경점: updateAvailableEngineers 에서도 role==="본사" 제외
     function updateAvailableEngineers(sDate, eDate){
-      const listDiv=document.getElementById("availableEngineersList");
+      const listDiv = document.getElementById("availableEngineersList");
       if(!sDate||!eDate){
-        listDiv.textContent="시작/종료일을 먼저 입력하세요.";
+        listDiv.textContent = "시작/종료일을 먼저 입력하세요.";
         return;
       }
-      // 후보: 본사는 "협력" 전체, 협력은 자기 업체의 "협력"만
-      const candidateIds=[];
+      const candidateIds = [];
       for(const uid in users){
-        const u=users[uid];
-        // "본사"인 유저는 무조건 제외
-        if(u.role!=="협력") continue;
+        const u = users[uid];
+        if(u.role!=="협력") continue; // 본사 제외
 
         if(currentUser.role==="본사"){
-          // 본사 -> 모든 협력
           candidateIds.push(uid);
         } else {
-          // 협력 -> 같은 업체만
           if(u.company===currentUser.company){
             candidateIds.push(uid);
           }
         }
       }
-
-      const available=[];
+      const available = [];
       candidateIds.forEach(uid=>{
-        const conflict=schedules.some(sch=>{
+        const conflict = schedules.some(sch=>{
           if(sch.userId!==uid) return false;
           return (sch.startDate<=eDate && sch.endDate>=sDate);
         });
         if(!conflict) available.push(uid);
       });
       if(available.length<1){
-        listDiv.textContent="가용 엔지니어 없음";
+        listDiv.textContent = "가용 엔지니어 없음";
       } else {
-        listDiv.textContent= available.join(", ");
+        listDiv.textContent = available.join(", ");
       }
     }
 
@@ -1447,6 +1549,7 @@
       document.getElementById("adminUserRegisterPane").classList.remove("active");
       document.getElementById("adminScheduleListPane").classList.remove("active");
       document.getElementById("adminCompanyColorPane").classList.remove("active");
+      document.getElementById("adminHistoryPane").classList.remove("active");
 
       if(pane==="userList"){
         document.getElementById("adminUserListPane").classList.add("active");
@@ -1461,34 +1564,46 @@
         document.getElementById("adminCompanyColorPane").classList.add("active");
         drawCompanyColorList();
       }
+      // [히스토리] 탭 선택 시, DB에서 최신 정보 다시 읽고 목록 표시
+      else if(pane==="history"){
+        db.ref("history").once("value").then(snap=>{
+          let temp = [];
+          snap.forEach(child=>{
+            temp.push({ key: child.key, ...child.val() });
+          });
+          histories = temp;
+          drawHistoryList();
+          document.getElementById("adminHistoryPane").classList.add("active");
+        });
+      }
     }
 
     // (A) 유저 목록
     function drawUserList(){
-      const tbody=document.getElementById("adminUserListBody");
-      tbody.innerHTML="";
+      const tbody = document.getElementById("adminUserListBody");
+      tbody.innerHTML = "";
       for(const uid in users){
-        const u=users[uid];
-        const tr=document.createElement("tr");
-        const tdId=document.createElement("td");
-        tdId.textContent=u.id;
-        const tdRole=document.createElement("td");
-        tdRole.textContent=u.role;
-        const tdComp=document.createElement("td");
-        tdComp.textContent=u.company||"";
+        const u = users[uid];
+        const tr = document.createElement("tr");
+        const tdId = document.createElement("td");
+        tdId.textContent = u.id;
+        const tdRole = document.createElement("td");
+        tdRole.textContent = u.role;
+        const tdComp = document.createElement("td");
+        tdComp.textContent = u.company||"";
 
-        const tdEdit=document.createElement("td");
-        const editBtn=document.createElement("button");
-        editBtn.className="admin-btn";
-        editBtn.textContent="수정";
-        editBtn.onclick=()=> openUserEditModal(uid);
+        const tdEdit = document.createElement("td");
+        const editBtn = document.createElement("button");
+        editBtn.className = "admin-btn";
+        editBtn.textContent = "수정";
+        editBtn.onclick = ()=> openUserEditModal(uid);
         tdEdit.appendChild(editBtn);
 
-        const tdDel=document.createElement("td");
-        const delBtn=document.createElement("button");
-        delBtn.className="admin-btn";
-        delBtn.textContent="삭제";
-        delBtn.onclick=()=> deleteUser(uid);
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "admin-btn";
+        delBtn.textContent = "삭제";
+        delBtn.onclick = ()=> deleteUser(uid);
         tdDel.appendChild(delBtn);
 
         tr.appendChild(tdId);
@@ -1500,22 +1615,22 @@
       }
     }
     function openUserEditModal(uid){
-      const u=users[uid];
+      const u = users[uid];
       if(!u)return;
       document.getElementById("modalUserEditBg").style.display="block";
-      document.getElementById("userEditId").value=u.id;
-      document.getElementById("userEditPw").value=u.pw;
-      document.getElementById("userEditRole").value=u.role;
-      document.getElementById("userEditCompany").value=u.company||"";
+      document.getElementById("userEditId").value = u.id;
+      document.getElementById("userEditPw").value = u.pw;
+      document.getElementById("userEditRole").value = u.role;
+      document.getElementById("userEditCompany").value = u.company||"";
     }
     function closeUserEditModal(){
       document.getElementById("modalUserEditBg").style.display="none";
     }
     function applyUserEdit(){
-      const uid=document.getElementById("userEditId").value;
-      const pw=document.getElementById("userEditPw").value.trim();
-      const role=document.getElementById("userEditRole").value;
-      const comp=document.getElementById("userEditCompany").value.trim();
+      const uid = document.getElementById("userEditId").value;
+      const pw = document.getElementById("userEditPw").value.trim();
+      const role = document.getElementById("userEditRole").value;
+      const comp = document.getElementById("userEditCompany").value.trim();
 
       if(!uid||!pw){
         alert("아이디/비밀번호 필수");
@@ -1523,9 +1638,9 @@
       }
       if(!users[uid])return;
 
-      users[uid].pw=pw;
-      users[uid].role=role;
-      users[uid].company=comp;
+      users[uid].pw = pw;
+      users[uid].role = role;
+      users[uid].company = comp;
       db.ref("users/"+uid).set(users[uid]).then(()=>{
         alert("유저 수정 완료");
         closeUserEditModal();
@@ -1535,10 +1650,10 @@
       });
     }
     function deleteUserFromModal(){
-      const uid=document.getElementById("userEditId").value;
+      const uid = document.getElementById("userEditId").value;
       if(!confirm(uid+" 유저 삭제?"))return;
       db.ref("users/"+uid).remove().then(()=>{
-        schedules= schedules.filter(s=> s.userId!==uid);
+        schedules = schedules.filter(s=> s.userId!==uid);
         db.ref("schedules").set(schedules).then(()=>{
           alert("삭제 완료");
           closeUserEditModal();
@@ -1551,7 +1666,7 @@
     function deleteUser(uid){
       if(!confirm(uid+" 유저 삭제?"))return;
       db.ref("users/"+uid).remove().then(()=>{
-        schedules= schedules.filter(s=> s.userId!==uid);
+        schedules = schedules.filter(s=> s.userId!==uid);
         db.ref("schedules").set(schedules).then(()=>{
           alert("삭제 완료");
           loadAllData().then(()=>{
@@ -1563,10 +1678,10 @@
 
     // (B) 유저 등록
     function createUser(){
-      const role=document.getElementById("adminRegisterRole").value;
-      const newId=document.getElementById("adminRegisterId").value.trim();
-      const newPw=document.getElementById("adminRegisterPw").value.trim();
-      const newComp=document.getElementById("adminRegisterCompany").value.trim()||"";
+      const role = document.getElementById("adminRegisterRole").value;
+      const newId = document.getElementById("adminRegisterId").value.trim();
+      const newPw = document.getElementById("adminRegisterPw").value.trim();
+      const newComp = document.getElementById("adminRegisterCompany").value.trim()||"";
       if(!newId||!newPw){
         alert("아이디/비밀번호 필수");
         return;
@@ -1576,11 +1691,11 @@
           alert("이미 존재하는 아이디");
           return;
         }
-        const userData={
-          id:newId,
-          pw:newPw,
-          role:role,
-          company:newComp
+        const userData = {
+          id: newId,
+          pw: newPw,
+          role: role,
+          company: newComp
         };
         db.ref("users/"+newId).set(userData).then(()=>{
           alert("등록 완료");
@@ -1596,31 +1711,31 @@
 
     // (C) 스케줄 목록
     function drawScheduleList(){
-      const tbody=document.getElementById("adminScheduleListBody");
-      tbody.innerHTML="";
+      const tbody = document.getElementById("adminScheduleListBody");
+      tbody.innerHTML = "";
       schedules.forEach(sch=>{
-        const tr=document.createElement("tr");
-        const tdUser=document.createElement("td");
-        tdUser.textContent=sch.userId;
-        const tdPeriod=document.createElement("td");
-        tdPeriod.textContent= sch.startDate+"~"+sch.endDate;
-        const tdLine=document.createElement("td");
-        tdLine.textContent= sch.lineName||"";
-        const tdDet=document.createElement("td");
-        tdDet.textContent= sch.details||"";
+        const tr = document.createElement("tr");
+        const tdUser = document.createElement("td");
+        tdUser.textContent = sch.userId;
+        const tdPeriod = document.createElement("td");
+        tdPeriod.textContent = sch.startDate+"~"+sch.endDate;
+        const tdLine = document.createElement("td");
+        tdLine.textContent = sch.lineName||"";
+        const tdDet = document.createElement("td");
+        tdDet.textContent = sch.details||"";
 
-        const tdEdit=document.createElement("td");
-        const editBtn=document.createElement("button");
-        editBtn.className="admin-btn";
-        editBtn.textContent="수정";
-        editBtn.onclick=()=> editAdminSchedule(sch.id);
+        const tdEdit = document.createElement("td");
+        const editBtn = document.createElement("button");
+        editBtn.className = "admin-btn";
+        editBtn.textContent = "수정";
+        editBtn.onclick = ()=> editAdminSchedule(sch.id);
         tdEdit.appendChild(editBtn);
 
-        const tdDel=document.createElement("td");
-        const delBtn=document.createElement("button");
-        delBtn.className="admin-btn";
-        delBtn.textContent="삭제";
-        delBtn.onclick=()=> deleteAdminSchedule(sch.id);
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "admin-btn";
+        delBtn.textContent = "삭제";
+        delBtn.onclick = ()=> deleteAdminSchedule(sch.id);
         tdDel.appendChild(delBtn);
 
         tr.appendChild(tdUser);
@@ -1633,26 +1748,25 @@
       });
     }
     function populateScheduleUserSelect(){
-      const sel=document.getElementById("adminScheduleUser");
-      sel.innerHTML="";
+      const sel = document.getElementById("adminScheduleUser");
+      sel.innerHTML = "";
       for(const uid in users){
-        const u=users[uid];
-        // === 변경: "본사"는 제외, 즉 role==="협력"만 보이도록
-        if(u.role !== "협력") continue;
+        const u = users[uid];
+        if(u.role !== "협력") continue; // 본사 제외
 
-        const opt=document.createElement("option");
-        opt.value=uid;
-        opt.textContent= uid + " ("+(u.company||"")+")";
+        const opt = document.createElement("option");
+        opt.value = uid;
+        opt.textContent = uid + " ("+(u.company||"")+")";
         sel.appendChild(opt);
       }
     }
     function createAdminSchedule(){
-      const uid=document.getElementById("adminScheduleUser").value;
-      const sDate=document.getElementById("adminScheduleStart").value;
-      const eDate=document.getElementById("adminScheduleEnd").value;
-      const lName=document.getElementById("adminScheduleLine").value.trim();
-      const detVal=document.getElementById("adminScheduleDetail").value.trim();
-      const unavail=document.getElementById("adminScheduleUnavailable").checked;
+      const uid = document.getElementById("adminScheduleUser").value;
+      const sDate = document.getElementById("adminScheduleStart").value;
+      const eDate = document.getElementById("adminScheduleEnd").value;
+      const lName = document.getElementById("adminScheduleLine").value.trim();
+      const detVal = document.getElementById("adminScheduleDetail").value.trim();
+      const unavail = document.getElementById("adminScheduleUnavailable").checked;
 
       if(!uid||!sDate||!eDate){
         alert("사용자/시작/종료일 필수");
@@ -1662,74 +1776,88 @@
         alert("종료일이 시작일보다 빠릅니다.");
         return;
       }
-      const newId=Date.now();
-      schedules.push({
+      const newId = Date.now();
+      const newSch = {
         id:newId,
-        userId:uid,
-        startDate:sDate,
-        endDate:eDate,
-        lineName:lName,
-        details:detVal,
-        unavailable:unavail
-      });
-      db.ref("schedules").set(schedules).then(()=>{
-        alert("등록 완료");
-        document.getElementById("adminScheduleStart").value="";
-        document.getElementById("adminScheduleEnd").value="";
-        document.getElementById("adminScheduleLine").value="";
-        document.getElementById("adminScheduleDetail").value="";
-        document.getElementById("adminScheduleUnavailable").checked=false;
-        drawScheduleList();
-        refreshCalendar();
+        userId: uid,
+        startDate: sDate,
+        endDate: eDate,
+        lineName: lName,
+        details: detVal,
+        unavailable: unavail
+      };
+      schedules.push(newSch);
+
+      // 스케줄 등록 → "추가" 기록
+      recordHistory("추가", currentUser.id, newSch).then(()=>{
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("등록 완료");
+          document.getElementById("adminScheduleStart").value="";
+          document.getElementById("adminScheduleEnd").value="";
+          document.getElementById("adminScheduleLine").value="";
+          document.getElementById("adminScheduleDetail").value="";
+          document.getElementById("adminScheduleUnavailable").checked=false;
+          drawScheduleList();
+          refreshCalendar();
+        });
       });
     }
     function editAdminSchedule(sid){
-      const sch=schedules.find(x=>x.id===sid);
-      if(!sch)return;
-      // 간단히 prompt로 수정 예시
-      const newUid=prompt("사용자아이디(협력만 가능)", sch.userId);
+      const sch = schedules.find(x=>x.id===sid);
+      if(!sch) return;
+      // prompt 예시(실무에서는 별도 모달로 처리)
+      const newUid = prompt("사용자아이디(협력만 가능)", sch.userId);
       if(!newUid)return;
-      const newSDate=prompt("시작일(YYYY-MM-DD)", sch.startDate);
+      const newSDate = prompt("시작일(YYYY-MM-DD)", sch.startDate);
       if(!newSDate)return;
-      const newEDate=prompt("종료일(YYYY-MM-DD)", sch.endDate);
+      const newEDate = prompt("종료일(YYYY-MM-DD)", sch.endDate);
       if(!newEDate)return;
-      const newLine=prompt("호선", sch.lineName||"");
+      const newLine = prompt("호선", sch.lineName||"");
       if(newLine===null)return;
-      const newDet=prompt("상세내용", sch.details||"");
+      const newDet = prompt("상세내용", sch.details||"");
       if(newDet===null)return;
-      const newUnavail=confirm("서비스 불가 일정입니까? (확인=예 / 취소=아니오)");
+      const newUnavail = confirm("서비스 불가 일정입니까? (확인=예 / 취소=아니오)");
 
-      // 여기서도 "본사"일 경우는 제외해야 하지만, 간단 예시로 대체
       if(users[newUid] && users[newUid].role!=="협력"){
         alert("본사 계정에는 스케줄 지정 불가");
         return;
       }
-
       if(newSDate>newEDate){
         alert("종료일이 시작일보다 빠릅니다.");
         return;
       }
-      sch.userId=newUid;
-      sch.startDate=newSDate;
-      sch.endDate=newEDate;
-      sch.lineName=newLine;
-      sch.details=newDet;
-      sch.unavailable=newUnavail;
-      db.ref("schedules").set(schedules).then(()=>{
-        alert("수정 완료");
-        drawScheduleList();
-        loadAllData().then(()=>{
-          refreshCalendar();
+      sch.userId = newUid;
+      sch.startDate = newSDate;
+      sch.endDate = newEDate;
+      sch.lineName = newLine;
+      sch.details = newDet;
+      sch.unavailable = newUnavail;
+
+      // 수정 → "변경" 기록
+      recordHistory("변경", currentUser.id, sch).then(()=>{
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("수정 완료");
+          loadAllData().then(()=>{
+            drawScheduleList();
+            refreshCalendar();
+          });
         });
       });
     }
     function deleteAdminSchedule(sid){
       if(!confirm("스케줄 삭제?"))return;
-      schedules=schedules.filter(x=>x.id!==sid);
-      db.ref("schedules").set(schedules).then(()=>{
-        alert("삭제 완료");
-        drawScheduleList();
-        refreshCalendar();
+      const idx = schedules.findIndex(x=>x.id===sid);
+      if(idx<0) return;
+
+      // 삭제 전 히스토리 기록
+      const delObj = schedules[idx];
+      recordHistory("삭제", currentUser.id, delObj).then(()=>{
+        schedules.splice(idx,1);
+        db.ref("schedules").set(schedules).then(()=>{
+          alert("삭제 완료");
+          drawScheduleList();
+          refreshCalendar();
+        });
       });
     }
 
@@ -1737,45 +1865,45 @@
      11) 업체 색상 관리
     *****************************************/
     function drawCompanyColorList(){
-      const tbody=document.getElementById("companyColorBody");
-      tbody.innerHTML="";
+      const tbody = document.getElementById("companyColorBody");
+      tbody.innerHTML = "";
 
-      const sel=document.getElementById("selectCompanyName");
-      sel.innerHTML="";
+      const sel = document.getElementById("selectCompanyName");
+      sel.innerHTML = "";
 
-      let compSet={};
+      let compSet = {};
       for(const uid in users){
-        const c=users[uid].company||"기타";
-        compSet[c]=true;
+        const c = users[uid].company||"기타";
+        compSet[c] = true;
       }
       for(const cName in companyColors){
-        compSet[cName]=true;
+        compSet[cName] = true;
       }
       for(const cName in compSet){
-        const opt=document.createElement("option");
-        opt.value=cName;
-        opt.textContent=cName;
+        const opt = document.createElement("option");
+        opt.value = cName;
+        opt.textContent = cName;
         sel.appendChild(opt);
       }
 
       for(const cName in companyColors){
-        const cVal=companyColors[cName];
-        const tr=document.createElement("tr");
-        const tdName=document.createElement("td");
-        tdName.textContent=cName;
-        const tdColor=document.createElement("td");
-        const box=document.createElement("div");
-        box.style.background=cVal;
+        const cVal = companyColors[cName];
+        const tr = document.createElement("tr");
+        const tdName = document.createElement("td");
+        tdName.textContent = cName;
+        const tdColor = document.createElement("td");
+        const box = document.createElement("div");
+        box.style.background = cVal;
         box.style.width="30px";
         box.style.height="15px";
         box.style.margin="0 auto";
         tdColor.appendChild(box);
 
-        const tdDel=document.createElement("td");
-        const delBtn=document.createElement("button");
-        delBtn.className="admin-btn";
-        delBtn.textContent="삭제";
-        delBtn.onclick=()=>deleteCompanyColor(cName);
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.className = "admin-btn";
+        delBtn.textContent = "삭제";
+        delBtn.onclick = ()=>deleteCompanyColor(cName);
         tdDel.appendChild(delBtn);
 
         tr.appendChild(tdName);
@@ -1785,8 +1913,8 @@
       }
     }
     function saveCompanyColor(){
-      const name=document.getElementById("selectCompanyName").value.trim();
-      const col=document.getElementById("inputCompanyColor").value.trim();
+      const name = document.getElementById("selectCompanyName").value.trim();
+      const col = document.getElementById("inputCompanyColor").value.trim();
       if(!name){
         alert("업체명을 선택하세요");
         return;
@@ -1795,7 +1923,7 @@
         alert("색상을 입력하세요");
         return;
       }
-      companyColors[name]=col;
+      companyColors[name] = col;
       db.ref("companyColors").set(companyColors).then(()=>{
         alert("업체 색상 저장 완료");
         document.getElementById("inputCompanyColor").value="#ff0000";
@@ -1819,23 +1947,23 @@
      12) 엑셀 다운로드/업로드
     *****************************************/
     function downloadExcel(){
-      const worksheet=XLSX.utils.json_to_sheet(schedules);
-      const workbook=XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(schedules);
+      const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Schedules");
       XLSX.writeFile(workbook, "schedules.xlsx");
     }
     function uploadExcel(event){
-      const file=event.target.files[0];
+      const file = event.target.files[0];
       if(!file)return;
-      const reader=new FileReader();
-      reader.onload=function(e){
-        const data=new Uint8Array(e.target.result);
-        const workbook=XLSX.read(data,{type:"array"});
-        const sheetName=workbook.SheetNames[0];
-        const worksheet=workbook.Sheets[sheetName];
-        const jsonData=XLSX.utils.sheet_to_json(worksheet);
+      const reader = new FileReader();
+      reader.onload = function(e){
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data,{type:"array"});
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        schedules=jsonData;
+        schedules = jsonData;
         db.ref("schedules").set(schedules).then(()=>{
           alert("엑셀 업로드 완료");
           drawScheduleList();
@@ -1849,15 +1977,66 @@
      13) 날짜 포맷 함수
     *****************************************/
     function formatDate(y,m,d){
-      const mm=String(m).padStart(2,"0");
-      const dd=String(d).padStart(2,"0");
+      const mm = String(m).padStart(2,"0");
+      const dd = String(d).padStart(2,"0");
       return `${y}-${mm}-${dd}`;
     }
     function formatDateForLabel(dateObj){
-      const y=dateObj.getFullYear();
-      const m=String(dateObj.getMonth()+1).padStart(2,"0");
-      const d=String(dateObj.getDate()).padStart(2,"0");
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth()+1).padStart(2,"0");
+      const d = String(dateObj.getDate()).padStart(2,"0");
       return `${y}-${m}-${d}`;
+    }
+
+    /****************************************
+     14) 변경 히스토리 목록
+    *****************************************/
+    function drawHistoryList(){
+      document.getElementById("historyLimitInput").value = historyLimit;
+
+      const tbody = document.getElementById("adminHistoryBody");
+      tbody.innerHTML = "";
+      // timestamp 역순(최신순)
+      const sorted = [...histories].sort((a,b)=>{
+        return (b.timestamp || "").localeCompare(a.timestamp || "");
+      });
+      sorted.forEach(h=>{
+        const tr = document.createElement("tr");
+        const tdTime = document.createElement("td");
+        tdTime.style.width = "80px";
+        tdTime.textContent = (h.timestamp || "").replace("T"," ").substring(0,19);
+        const tdUser = document.createElement("td");
+        tdUser.textContent = h.userId || "";
+        const tdSDate = document.createElement("td");
+        tdSDate.textContent = h.schedule?.startDate || "";
+        const tdEDate = document.createElement("td");
+        tdEDate.textContent = h.schedule?.endDate || "";
+        const tdLine = document.createElement("td");
+        tdLine.style.width = "150px";
+        tdLine.textContent = h.schedule?.lineName || "";
+        const tdAct = document.createElement("td");
+        tdAct.textContent = h.action || "";
+
+        tr.appendChild(tdTime);
+        tr.appendChild(tdUser);
+        tr.appendChild(tdSDate);
+        tr.appendChild(tdEDate);
+        tr.appendChild(tdLine);
+        tr.appendChild(tdAct);
+        tbody.appendChild(tr);
+      });
+    }
+    function setHistoryLimit(){
+      const val = parseInt(document.getElementById("historyLimitInput").value,10);
+      if(isNaN(val) || val<1){
+        alert("1 이상의 숫자를 입력하세요.");
+        return;
+      }
+      historyLimit = val;
+      db.ref("historyLimit").set(val).then(()=>{
+        alert("히스토리 최대 개수 설정 완료");
+        enforceHistoryLimit(); // 혹시 이미 초과되어 있으면 정리
+      });
     }
   </script>
 </body>
