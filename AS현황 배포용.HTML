@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>AS 현황 관리 (통합 + AI 요약)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- XLSX (SheetJS) for Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --font-size-base: 14px;
+      --sidebar-bg: #1e3d59;
+      --sidebar-bg2: #183046;
+      --sidebar-btn: #315b8a;
+      --primary-color: #315b8a;
+      --secondary-color: #1e3d59;
+      --background-color: #f5f7fa;
+      --border-color: #d1d5db;
+      --highlight-color: #e0eaf3;
+      --text-color: #2d3e50;
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: sans-serif;
+      font-size: var(--font-size-base);
+      display: flex; height: 100vh; overflow: hidden;
+      background: var(--background-color); color: var(--text-color);
+    }
+    .hidden { display: none; }
+
+    /* 로그인 모달 */
+    #loginModal {
+      display:block; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #loginModal .modal-content {
+      background:#fff; margin:10% auto; width:300px; border-radius:6px;
+      padding:10px; position:relative;
+    }
+    #loginModal h2 { margin:0 0 10px; }
+    #loginModal .form-group { margin-bottom:8px; }
+    #loginModal .form-group label { font-weight:600; margin-bottom:2px; display:block; }
+    #loginModal .form-group input {
+      width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;
+    }
+    #loginModal .btn-row {
+      display:flex; justify-content:flex-end; gap:8px; margin-top:10px;
+    }
+    #loginModal button {
+      background:var(--primary-color); color:#fff; border:none; border-radius:4px;
+      cursor:pointer; font-size:0.85em; padding:6px 10px;
+    }
+
+    /* 사이드바 */
+    .sidebar {
+      width: 240px; background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg2) 100%);
+      padding: 10px; overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    .sidebar .mode-buttons {
+      display: flex; gap: 5px; margin-bottom: 10px;
+    }
+    .sidebar button {
+      display: block; width: 100%; padding: 8px; margin-bottom: 5px;
+      background: var(--sidebar-btn); color: #fff;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 0.95em;
+      transition: 0.2s all; text-align: left;
+    }
+    .sidebar button:hover {
+      background: #2b4f7a; transform: translateY(-2px);
+    }
+    .sidebar h3 {
+      color:#fff; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.3);
+      font-size:1em; font-weight:600; padding-bottom:4px;
+    }
+    .sidebar .item-list { display: flex; flex-direction: column; gap:4px; }
+    .sidebar .bottom-area { margin-top: 20px; }
+    .user-manage-btn {
+      background:#6c757d;
+    }
+    .user-manage-btn:hover {
+      background:#5a6268;
+    }
+
+    /* 메인 */
+    .container {
+      flex:1; display:flex; flex-direction:column; overflow:hidden;
+    }
+    .header {
+      background:#fff; padding:10px; box-shadow:0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header h1 { font-size:1.2em; color:var(--primary-color); }
+    #connectionStatus { font-weight:bold; margin-top:5px; }
+
+    /* 상태 집계 */
+    .status-summary {
+      display:flex; gap: 10px; padding: 5px;
+      background: #fff; border-bottom:1px solid var(--border-color);
+    }
+    .status-card {
+      background:#fafafa; border:1px solid var(--border-color); border-radius:4px;
+      padding:4px 6px; flex:1; text-align:center;
+    }
+    .status-card h3 { font-size:0.9em; margin-bottom:3px; }
+    .status-card .count { font-weight:bold; font-size:1em; }
+
+    /* 필터 */
+    .filters {
+      display:flex; flex-wrap:wrap; gap:10px; padding:5px;
+      background:#fafafa; border-bottom:1px solid var(--border-color);
+    }
+    .filters .filter-group {
+      display:flex; flex-direction:column; font-size:0.9em;
+    }
+    .filters label { font-weight:600; margin-bottom:2px; }
+    .filters input, .filters select {
+      padding:4px; border:1px solid var(--border-color); border-radius:4px;
+      font-size:0.9em; width:120px;
+    }
+
+    /* 테이블 영역 */
+    .table-container {
+      flex:1; overflow:auto; background:#fff; margin:0; padding:0;
+      border-top:1px solid var(--border-color); position:relative;
+    }
+    table {
+      border-collapse: separate; border-spacing: 0; width:100%;
+      min-width: 2000px; font-size:var(--font-size-base);
+    }
+    th, td {
+      border:1px solid var(--border-color);
+      padding:6px; text-align:left; position:relative;
+      transition: background 0.2s;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    th {
+      background:var(--primary-color); color:#fff; font-weight:500;
+      position:sticky; top:0; z-index:10; user-select:none; cursor:default;
+    }
+    tr:hover td { background:var(--highlight-color); }
+
+    /* 행 높이 조절 */
+    .row-resizer {
+      position: absolute; left:0; bottom:0; width:100%; height:5px;
+      background:rgba(0,0,0,0.1); cursor:row-resize;
+      opacity:0; transition:0.2s;
+    }
+    tr:hover .row-resizer { opacity:1; }
+
+    /* 열 폭 조절 */
+    .col-resizer {
+      position:absolute; right:0; top:0; width:5px; height:100%;
+      cursor:col-resize; user-select:none;
+    }
+    .col-resizer:hover { background:rgba(255,255,255,0.3); }
+
+    /* 하단 버튼 */
+    .bottom-controls {
+      display:flex; flex-wrap:wrap; gap:8px; padding:8px;
+      background:#fff; border-top:1px solid var(--border-color);
+    }
+    .bottom-controls button {
+      background:var(--primary-color); color:#fff; border:none;
+      border-radius:4px; cursor:pointer; font-size:0.9em;
+      padding:6px 10px; transition:0.2s all;
+    }
+    .bottom-controls button:hover {
+      background:#2b4f7a; transform: translateY(-2px);
+    }
+
+    /* 히스토리 모달 */
+    #historyModal {
+      display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #historyModal .modal-content {
+      background:#fff; margin:5% auto; width:80%; max-width:1000px; border-radius:8px;
+      max-height:80%; overflow-y:auto; position:relative; padding:10px;
+    }
+    #historyModal .close {
+      position:absolute; right:15px; top:10px; font-size:18px; cursor:pointer;
+    }
+    #historyModal h2 { margin-top:0; margin-bottom:5px; font-size:1em; }
+    #historyModal .history-list { list-style:disc; margin-left:25px; }
+
+    /* 사용자 관리 모달 */
+    #userModal {
+      display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #userModal .modal-content {
+      background:#fff; margin:5% auto; width:400px; border-radius:6px;
+      padding:10px; position:relative;
+    }
+    #userModal .close { position:absolute; right:10px; top:10px; cursor:pointer; font-size:18px; }
+    #userModal h2 { margin:0 0 10px; font-size:1em; }
+    #userModal .form-group { margin-bottom:8px; }
+    #userModal .form-group label { display:block; font-weight:600; margin-bottom:2px; }
+    #userModal input[type="text"], #userModal input[type="password"] {
+      width:100%; padding:6px; border:1px solid #ccc; border-radius:4px;
+    }
+    #userModal .btn-row {
+      display:flex; gap:8px; justify-content:flex-end; margin-top:10px;
+    }
+    #userModal .btn-row button {
+      background:var(--primary-color); color:#fff; border:none; border-radius:4px;
+      cursor:pointer; font-size:0.85em; padding:6px 10px;
+    }
+
+    /* 엑셀 업로드 모달 */
+    #excelModal {
+      display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #excelModal .modal-content {
+      background:#fff; margin:10% auto; width:300px; border-radius:6px; padding:10px; position:relative;
+      text-align:center;
+    }
+    #excelModal .btn-row {
+      display:flex; gap:8px; justify-content:center; margin-top:10px;
+    }
+    #excelModal button {
+      background:var(--primary-color); color:#fff; border:none; border-radius:4px;
+      cursor:pointer; font-size:0.85em; padding:6px 10px;
+    }
+
+    /* 세부 열 최소폭 */
+    th[data-field="공번"], td[data-field="공번"] { min-width: 100px; }
+    th[data-field="공사"], td[data-field="공사"] { min-width: 50px; }
+    th[data-field="imo"], td[data-field="imo"] { min-width: 90px; }
+    th[data-field="hull"], td[data-field="hull"] { min-width: 80px; }
+    th[data-field="shipName"], td[data-field="shipName"] { min-width: 150px; }
+    th[data-field="repMail"], td[data-field="repMail"] { min-width: 150px; }
+    th[data-field="shipType"], td[data-field="shipType"] { min-width: 60px; }
+    th[data-field="scale"], td[data-field="scale"] { min-width: 80px; }
+    th[data-field="구분"], td[data-field="구분"] { min-width: 20px; }
+    th[data-field="shipowner"], td[data-field="shipowner"] { min-width: 180px; }
+    th[data-field="major"], td[data-field="major"] { min-width: 100px; }
+    th[data-field="group"], td[data-field="group"] { min-width: 30px; }
+    th[data-field="shipyard"], td[data-field="shipyard"] { min-width: 80px; }
+    th[data-field="contract"], td[data-field="contract"] { min-width: 80px; }
+    th[data-field="asType"], td[data-field="asType"] { min-width: 80px; }
+    th[data-field="delivery"], td[data-field="delivery"] { min-width: 110px; }
+    th[data-field="warranty"], td[data-field="warranty"] { min-width: 110px; }
+    th[data-field="prevManager"], td[data-field="prevManager"] { min-width: 70px; }
+    th[data-field="manager"], td[data-field="manager"] { min-width: 70px; }
+    th[data-field="현황"], td[data-field="현황"] { min-width: 400px; }
+    th[data-field="동작여부"], td[data-field="동작여부"] { min-width: 70px; }
+    th[data-field="조치계획"], td[data-field="조치계획"] { min-width: 150px; }
+    th[data-field="접수내용"], td[data-field="접수내용"] { min-width: 150px; }
+    th[data-field="조치결과"], td[data-field="조치결과"] { min-width: 150px; }
+    th[data-field="AS접수일자"], td[data-field="AS접수일자"] { min-width: 110px; }
+    th[data-field="기술적종료일"], td[data-field="기술적종료일"] { min-width: 110px; }
+    th[data-field="지연 사유"], td[data-field="지연 사유"] { min-width: 300px; }
+
+    /* 내용 모달 */
+    #contentModal {
+      display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #contentModal .modal-content {
+      background:#fff; margin:5% auto; width:600px; border-radius:6px;
+      padding:10px; position:relative;
+    }
+    #contentModal .close {
+      position:absolute; right:15px; top:10px; font-size:18px; cursor:pointer;
+    }
+    #contentModal h2 {
+      margin-top:0; margin-bottom:10px; font-size:1em;
+    }
+    #contentText {
+      white-space: pre-wrap;
+      line-height: 1.4;
+      font-size: 0.95em;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    /* (신규) 선사별 AI 요약 모달 */
+    #ownerAIModal {
+      display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.3);
+    }
+    #ownerAIModal .modal-content {
+      background:#fff; margin:5% auto; width:600px; border-radius:6px;
+      padding:10px; position:relative; max-height:70%; overflow-y:auto;
+    }
+    #ownerAIModal .close {
+      position:absolute; right:15px; top:10px; font-size:18px; cursor:pointer;
+    }
+    #ownerAISummaryText {
+      white-space: pre-wrap;
+      line-height:1.4; 
+      font-size:0.95em;
+      border:1px solid #ccc; 
+      padding:8px; 
+      border-radius:4px;
+      margin-top:10px;
+      min-height:200px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1) 로그인 모달 -->
+  <div id="loginModal">
+    <div class="modal-content">
+      <h2>사용자 로그인</h2>
+      <div class="form-group">
+        <label>사용자명</label>
+        <input type="text" id="loginUser">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="loginPw">
+      </div>
+      <div class="btn-row">
+        <button id="loginConfirmBtn">로그인</button>
+      </div>
+      <p id="loginError" style="color:red; margin-top:5px; font-size:0.85em;"></p>
+    </div>
+  </div>
+
+  <!-- 2) 사이드바 -->
+  <div class="sidebar hidden" id="sidebar">
+    <div class="mode-buttons">
+      <button id="btnManager" class="active">담당자</button>
+      <button id="btnOwner">선주사</button>
+    </div>
+    <h3 id="listTitle">담당자 목록</h3>
+    <div class="item-list" id="itemList"></div>
+    <div class="bottom-area">
+      <button class="user-manage-btn" id="userManageBtn">사용자 관리</button>
+    </div>
+  </div>
+
+  <!-- 3) 메인 컨테이너 -->
+  <div class="container hidden" id="mainContainer">
+    <div class="header">
+      <h1>AS 현황 관리</h1>
+      <div id="connectionStatus">연결 상태: 확인 중...</div>
+    </div>
+
+    <!-- 동작여부 집계 -->
+    <div class="status-summary">
+      <div class="status-card">
+        <h3>정상A</h3>
+        <div class="count" id="count정상A">0</div>
+      </div>
+      <div class="status-card">
+        <h3>정상B</h3>
+        <div class="count" id="count정상B">0</div>
+      </div>
+      <div class="status-card">
+        <h3>유상정상</h3>
+        <div class="count" id="count유상정상">0</div>
+      </div>
+      <div class="status-card">
+        <h3>부분동작</h3>
+        <div class="count" id="count부분동작">0</div>
+      </div>
+      <div class="status-card">
+        <h3>동작불가</h3>
+        <div class="count" id="count동작불가">0</div>
+      </div>
+    </div>
+
+    <!-- 필터 영역 -->
+    <div class="filters">
+      <div class="filter-group">
+        <label>IMO NO.</label>
+        <input type="text" id="filterIMO" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>HULL NO.</label>
+        <input type="text" id="filterHull" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>SHIPNAME</label>
+        <input type="text" id="filterName" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>SHIPOWNER</label>
+        <input type="text" id="filterOwner" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>주요선사</label>
+        <input type="text" id="filterMajor" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>그룹</label>
+        <select id="filterGroup" onchange="renderTable()">
+          <option value="">전체</option>
+          <option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="4">4</option>
+          <option value="5">5</option><option value="6">6</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>AS 구분</label>
+        <select id="filterAsType" onchange="renderTable()">
+          <option value="">전체</option>
+          <option value="무상">무상</option>
+          <option value="유상">유상</option>
+          <option value="위탁">위탁</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>현 담당</label>
+        <input type="text" id="filterManager" oninput="renderTable()">
+      </div>
+      <div class="filter-group">
+        <label>동작여부</label>
+        <select id="filterActive" onchange="renderTable()">
+          <option value="">전체</option>
+          <option value="정상A">정상A</option>
+          <option value="정상B">정상B</option>
+          <option value="유상정상">유상정상</option>
+          <option value="부분동작">부분동작</option>
+          <option value="동작불가">동작불가</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-container" id="tableContainer">
+      <table id="asTable">
+        <thead>
+          <tr>
+            <th style="width:30px;"><input type="checkbox" id="selectAll"></th>
+            <th data-field="공번">공번<div class="col-resizer"></div></th>
+            <th data-field="공사">공사<div class="col-resizer"></div></th>
+            <th data-field="imo">IMO NO.<div class="col-resizer"></div></th>
+            <th data-field="hull">HULL NO.<div class="col-resizer"></div></th>
+            <th data-field="shipName">SHIPNAME<div class="col-resizer"></div></th>
+            <th data-field="repMail">호선 대표메일<div class="col-resizer"></div></th>
+            <th data-field="shipType">SHIP TYPE<div class="col-resizer"></div></th>
+            <th data-field="scale">SCALE<div class="col-resizer"></div></th>
+            <th data-field="구분">구분<div class="col-resizer"></div></th>
+            <th data-field="shipowner">SHIPOWNER<div class="col-resizer"></div></th>
+            <th data-field="major">주요선사<div class="col-resizer"></div></th>
+            <th data-field="group">그룹<div class="col-resizer"></div></th>
+            <th data-field="shipyard">SHIPYARD<div class="col-resizer"></div></th>
+            <th data-field="contract">계약<div class="col-resizer"></div></th>
+            <th data-field="asType">AS 구분<div class="col-resizer"></div></th>
+            <th data-field="delivery">인도일<div class="col-resizer"></div></th>
+            <th data-field="warranty">보증종료일<div class="col-resizer"></div></th>
+            <th data-field="prevManager">전 담당<div class="col-resizer"></div></th>
+            <th data-field="manager">현 담당<div class="col-resizer"></div></th>
+            <th data-field="현황">현황<div class="col-resizer"></div></th>
+            <th data-field="동작여부">동작여부<div class="col-resizer"></div></th>
+
+            <th data-field="조치계획">조치계획<div class="col-resizer"></div></th>
+            <th data-field="접수내용">접수내용<div class="col-resizer"></div></th>
+            <th data-field="조치결과">조치결과<div class="col-resizer"></div></th>
+            <th data-field="AS접수일자">AS접수일자<div class="col-resizer"></div></th>
+            <th data-field="기술적종료일">기술적종료일<div class="col-resizer"></div></th>
+
+            <!-- AI 요약 버튼 -->
+            <th>AI 요약</th>
+
+            <!-- 경과일 / 정상지연 / 지연 사유 -->
+            <th data-field="경과일">경과일<div class="col-resizer"></div></th>
+            <th data-field="정상지연">정상지연<div class="col-resizer"></div></th>
+            <th data-field="지연 사유">지연 사유<div class="col-resizer"></div></th>
+          </tr>
+        </thead>
+        <tbody id="asBody"></tbody>
+      </table>
+    </div>
+
+    <div class="bottom-controls">
+      <button id="addRowBtn">행 추가</button>
+      <button id="deleteRowBtn">선택 행 삭제</button>
+      <button id="saveBtn">저장</button>
+      <button id="loadBtn">불러오기</button>
+      <button id="downloadExcelBtn">엑셀 다운로드</button>
+      <input type="file" id="uploadExcelInput" style="display:none;" accept=".xlsx,.xls">
+      <button id="uploadExcelBtn">엑셀 업로드</button>
+
+      <input type="file" id="uploadAsStatusInput" style="display:none;" accept=".xlsx,.xls">
+      <button id="uploadAsStatusBtn">AS 현황 업로드</button>
+      <button id="historyBtn">히스토리 조회</button>
+      <button id="clearHistoryBtn">히스토리 전체 삭제</button>
+      <button id="ownerAISummaryBtn" style="background:#6c757d;">선사별 AI 요약</button>
+    </div>
+  </div>
+
+  <!-- 4) 히스토리 모달 -->
+  <div id="historyModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeHistoryModal()">&times;</span>
+      <h2>변경 이력</h2>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </div>
+
+  <!-- 5) 사용자 관리 모달 -->
+  <div id="userModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUserModal()">&times;</span>
+      <h2>사용자 관리</h2>
+      <div id="userList" style="border:1px solid #ccc; padding:6px; margin-bottom:10px; max-height:150px; overflow:auto;"></div>
+      <div class="btn-row">
+        <button id="deleteSelectedUsersBtn">선택 사용자 삭제</button>
+      </div>
+      <hr style="margin:10px 0;">
+      <h3>새 사용자 추가</h3>
+      <div class="form-group">
+        <label>사용자명</label>
+        <input type="text" id="newUserName">
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="newUserPw">
+      </div>
+      <div class="btn-row">
+        <button id="addUserConfirmBtn">추가</button>
+        <button onclick="closeUserModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6) 엑셀 업로드 모달 -->
+  <div id="excelModal">
+    <div class="modal-content">
+      <h3>엑셀 업로드 방식 선택</h3>
+      <div class="btn-row">
+        <button id="excelReplaceBtn">기존 삭제 후 업로드</button>
+        <button id="excelAppendBtn">추가만</button>
+        <button id="excelCancelBtn">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7) 내용 보기 모달 -->
+  <div id="contentModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeContentModal()">&times;</span>
+      <h2>전체 내용</h2>
+      <div id="contentText"></div>
+    </div>
+  </div>
+
+  <!-- 8) 선사별 AI 요약 모달 -->
+  <div id="ownerAIModal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('ownerAIModal').style.display='none';">&times;</span>
+      <h2>선사별 접수내용/조치결과 요약</h2>
+      <p style="font-size:0.85em; color:#666;">(현재 필터의 선사(SHIPOWNER) 기준으로 AI 요약)</p>
+      <div id="ownerAISummaryText">로딩 전...</div>
+    </div>
+  </div>
+
+  <!-- =========
+       메인 스크립트 
+       ========= -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+  <script>
+  /************************************************************
+   * 0) 전역 변수
+   ************************************************************/
+  let db = null;        // Firebase Database
+  let asData = [];      // AS 전체 데이터
+  let currentUser = null;
+  let adminAuthorized = false;
+  let currentMode = 'manager';
+  let sortField = '';
+  let sortAsc = true;
+
+  const asPath = 'as-service/data';
+  const histPath = 'as-service/history';
+  const userPath = 'as-service/users';
+
+  /************************************************************
+   * 1) Firebase 초기화: Netlify Functions로 키 숨기기
+   *    (fetch('/.netlify/functions/firebaseConfig'))
+   ************************************************************/
+  async function initFirebase(){
+    try {
+      const res = await fetch('/.netlify/functions/firebaseConfig');
+      if(!res.ok){
+        throw new Error('Firebase Config 호출 실패');
+      }
+      const data = await res.json();
+      if(!data.config){
+        throw new Error('Firebase config 없음');
+      }
+      // 클라이언트에서 Firebase 초기화
+      firebase.initializeApp(data.config);
+      db = firebase.database();
+      document.getElementById('connectionStatus').textContent="Firebase 연결됨 (서버리스)";
+      document.getElementById('connectionStatus').style.color="green";
+    } catch(e){
+      console.error(e);
+      document.getElementById('connectionStatus').textContent="Firebase 연결 실패";
+      document.getElementById('connectionStatus').style.color="red";
+    }
+  }
+
+  /************************************************************
+   * 2) Gemini 호출: Netlify Functions로 키 숨기기
+   *    (fetch('/.netlify/functions/gemini'))
+   ************************************************************/
+  async function callGeminiForSummary(contentText){
+    try {
+      const res = await fetch('/.netlify/functions/gemini', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ contentText })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        console.error("Gemini API error:", data);
+        return "";
+      }
+      return data.summary || "요약 실패";
+    } catch(err){
+      console.error("Gemini fetch error:", err);
+      return "";
+    }
+  }
+
+  /************************************************************
+   * 페이지 로드 시
+   ************************************************************/
+  window.onload = async ()=>{
+    // (A) Firebase init
+    await initFirebase();
+
+    // (B) 로그인 상태 체크
+    const loggedIn = sessionStorage.getItem("loggedIn");
+    if(loggedIn==="true"){
+      document.getElementById('loginModal').style.display='none';
+      document.getElementById('sidebar').classList.remove('hidden');
+      document.getElementById('mainContainer').classList.remove('hidden');
+      loadData();
+    } else {
+      document.getElementById('loginModal').style.display='block';
+    }
+
+    // 엔터키 로그인
+    document.getElementById('loginPw').addEventListener('keydown', e=>{
+      if(e.key==='Enter') doLogin();
+    });
+  };
+
+  /************************************************************
+   * 3) 로그인
+   ************************************************************/
+  async function doLogin(){
+    const un = document.getElementById('loginUser').value.trim();
+    const pw = document.getElementById('loginPw').value.trim();
+    if(!un || !pw){
+      document.getElementById('loginError').textContent="사용자명/비번 입력 필수.";
+      return;
+    }
+    // Firebase 사용자 체크
+    const snap = await db.ref(userPath).once('value');
+    const val = snap.val()||{};
+    const arr = Object.values(val);
+    const found = arr.find(u=>u.username===un && u.password===pw);
+    if(found){
+      currentUser = found;
+      sessionStorage.setItem('loggedIn','true');
+      document.getElementById('loginModal').style.display='none';
+      document.getElementById('sidebar').classList.remove('hidden');
+      document.getElementById('mainContainer').classList.remove('hidden');
+      loadData();
+    } else {
+      document.getElementById('loginError').textContent="로그인 실패. 사용자/비번 확인.";
+    }
+  }
+  document.getElementById('loginConfirmBtn').addEventListener('click', doLogin);
+
+  /************************************************************
+   * 4) 불러오기/저장
+   ************************************************************/
+  async function loadData(){
+    const snap = await db.ref(asPath).once('value');
+    const val = snap.val()||{};
+    asData = Object.values(val);
+    renderTable();
+  }
+  document.getElementById('loadBtn').addEventListener('click', loadData);
+
+  document.getElementById('saveBtn').addEventListener('click', async ()=>{
+    if(!confirm("전체 데이터를 저장하시겠습니까?")) return;
+    const updates = {};
+    asData.forEach(r=>{
+      updates[r.uid] = r;
+    });
+    await db.ref(asPath).set(updates);
+    alert("전체 저장 완료");
+    addHistory("전체 저장");
+  });
+
+  /************************************************************
+   * 5) 행 추가/삭제
+   ************************************************************/
+  document.getElementById('addRowBtn').addEventListener('click',()=>{
+    const uid = db.ref().push().key;
+    const obj = {
+      uid,
+      공번:'', 공사:'', imo:'', hull:'', shipName:'', repMail:'',
+      shipType:'', scale:'', 구분:'', shipowner:'', major:'', group:'',
+      shipyard:'', contract:'', asType:'유상', delivery:'', warranty:'',
+      prevManager:'', manager:'', 현황:'', 동작여부:'정상A',
+      조치계획:'', 접수내용:'', 조치결과:'',
+      AS접수일자:'', 기술적종료일:'', 정상지연:'', '지연 사유':''
+    };
+    asData.unshift(obj);
+    renderTable();
+  });
+  document.getElementById('deleteRowBtn').addEventListener('click',()=>{
+    const cks=document.querySelectorAll('.rowSelectChk:checked');
+    if(!cks.length){ alert("삭제할 행을 선택하세요."); return; }
+    if(!confirm("정말 삭제?")) return;
+    cks.forEach(chk=>{
+      const uid=chk.dataset.uid;
+      asData=asData.filter(x=>x.uid!==uid);
+    });
+    renderTable();
+    document.getElementById('selectAll').checked=false;
+  });
+  document.getElementById('selectAll').addEventListener('change',(e)=>{
+    const cks=document.querySelectorAll('.rowSelectChk');
+    cks.forEach(ck=>ck.checked=e.target.checked);
+  });
+
+  /************************************************************
+   * 6) 정렬/필터/테이블
+   ************************************************************/
+  let resizingCol=null, startX=0, startW=0;
+  document.addEventListener('mousedown',(e)=>{
+    if(e.target.classList.contains('col-resizer')){
+      resizingCol=e.target.parentElement;
+      startX=e.pageX;
+      startW=resizingCol.offsetWidth;
+      document.addEventListener('mousemove',doColResize);
+      document.addEventListener('mouseup',stopColResize);
+      e.preventDefault();
+    }
+  });
+  function doColResize(e){
+    if(!resizingCol) return;
+    const dx=e.pageX-startX;
+    resizingCol.style.width=(startW+dx)+'px';
+  }
+  function stopColResize(){
+    document.removeEventListener('mousemove',doColResize);
+    document.removeEventListener('mouseup',stopColResize);
+    resizingCol=null;
+  }
+
+  function renderTable(){
+    // 정렬
+    if(sortField){
+      asData.sort((a,b)=>{
+        const aa=a[sortField]||'';
+        const bb=b[sortField]||'';
+        if(aa<bb) return sortAsc? -1:1;
+        if(aa>bb) return sortAsc? 1:-1;
+        return 0;
+      });
+    }
+
+    // 필터
+    const fIMO    = document.getElementById('filterIMO').value.trim().toLowerCase();
+    const fHull   = document.getElementById('filterHull').value.trim().toLowerCase();
+    const fName   = document.getElementById('filterName').value.trim().toLowerCase();
+    const fOwner  = document.getElementById('filterOwner').value.trim().toLowerCase();
+    const fMajor  = document.getElementById('filterMajor').value.trim().toLowerCase();
+    const fGroup  = document.getElementById('filterGroup').value;
+    const fAsType = document.getElementById('filterAsType').value;
+    const fMgr    = document.getElementById('filterManager').value.trim().toLowerCase();
+    const fActive = document.getElementById('filterActive').value;
+
+    let counts={정상A:0, 정상B:0, 유상정상:0, 부분동작:0, 동작불가:0};
+
+    const tbody=document.getElementById('asBody');
+    tbody.innerHTML='';
+
+    asData.forEach(row=>{
+      const imoVal=(row.imo||'').toLowerCase();
+      const hullVal=(row.hull||'').toLowerCase();
+      const nameVal=(row.shipName||'').toLowerCase();
+      const ownVal=(row.shipowner||'').toLowerCase();
+      const majVal=(row.major||'').toLowerCase();
+      const mgrVal=(row.manager||'').toLowerCase();
+      const actVal=(row.동작여부||'');
+
+      // 필터 적용
+      if(fIMO && !imoVal.includes(fIMO)) return;
+      if(fHull && !hullVal.includes(fHull)) return;
+      if(fName && !nameVal.includes(fName)) return;
+      if(fOwner && !ownVal.includes(fOwner)) return;
+      if(fMajor && !majVal.includes(fMajor)) return;
+      if(fGroup && row.group!==fGroup) return;
+      if(fAsType && row.asType!==fAsType) return;
+      if(fMgr && !mgrVal.includes(fMgr)) return;
+      if(fActive && actVal!==fActive) return;
+
+      if(counts[row.동작여부]!==undefined){
+        counts[row.동작여부]++;
+      }
+
+      const tr=document.createElement('tr');
+      // 체크박스
+      let td=document.createElement('td');
+      const chk=document.createElement('input');
+      chk.type='checkbox';
+      chk.classList.add('rowSelectChk');
+      chk.dataset.uid=row.uid;
+      td.appendChild(chk);
+      tr.appendChild(td);
+
+      function onCellChange(e){
+        const fld=e.target.dataset.field;
+        const oldVal=row[fld]||'';
+        let newVal='';
+        if(e.target.type==='checkbox'){
+          newVal=e.target.checked ? 'Y':'';
+        } else {
+          newVal=e.target.value;
+        }
+        if(oldVal===newVal) return;
+        row[fld]=newVal;
+        // 경과일 등 반영
+        if(['정상지연','AS접수일자','기술적종료일'].includes(fld)){
+          renderTable();
+        }
+      }
+      function makeCell(val,fld){
+        const c=document.createElement('td');
+        c.dataset.field=fld;
+
+        // 날짜
+        if(['delivery','warranty','기술적종료일','AS접수일자'].includes(fld)){
+          const inp=document.createElement('input');
+          inp.type='date';
+          inp.value=val||'';
+          inp.dataset.uid=row.uid;
+          inp.dataset.field=fld;
+          inp.addEventListener('change',onCellChange);
+          c.appendChild(inp);
+        }
+        else if(fld==='asType'){
+          const sel=document.createElement('select');
+          ['유상','무상','위탁'].forEach(op=>{
+            const o=document.createElement('option');
+            o.value=op; o.textContent=op;
+            sel.appendChild(o);
+          });
+          sel.value=val||'유상';
+          sel.dataset.uid=row.uid;
+          sel.dataset.field=fld;
+          sel.addEventListener('change',onCellChange);
+          c.appendChild(sel);
+        }
+        else if(fld==='동작여부'){
+          const sel=document.createElement('select');
+          ['정상A','정상B','유상정상','부분동작','동작불가'].forEach(op=>{
+            const o=document.createElement('option');
+            o.value=op; o.textContent=op;
+            sel.appendChild(o);
+          });
+          sel.value=val||'정상A';
+          sel.dataset.uid=row.uid;
+          sel.dataset.field=fld;
+          sel.addEventListener('change',onCellChange);
+          c.appendChild(sel);
+        }
+        else if(fld==='imo'){
+          const inp=document.createElement('input');
+          inp.type='text';
+          inp.value=val||'';
+          inp.style.width='75%';
+          inp.dataset.uid=row.uid;
+          inp.dataset.field=fld;
+          inp.addEventListener('change',onCellChange);
+          c.appendChild(inp);
+
+          const linkIcon=document.createElement('span');
+          linkIcon.textContent=' 🔎';
+          linkIcon.style.cursor='pointer';
+          linkIcon.title='새 창에서 조회';
+          linkIcon.addEventListener('click',()=>{
+            const vv=inp.value.trim();
+            if(vv){
+              window.open('https://www.vesselfinder.com/vessels/details/'+encodeURIComponent(vv),'_blank');
+            }
+          });
+          c.appendChild(linkIcon);
+        }
+        else if(['조치계획','접수내용','조치결과'].includes(fld)){
+          const inp=document.createElement('input');
+          inp.type='text';
+          inp.value=val||'';
+          inp.style.width='95%';
+          inp.readOnly=true;
+          inp.dataset.uid=row.uid;
+          inp.dataset.field=fld;
+          c.addEventListener('click',()=>openContentModal(val||''));
+          c.appendChild(inp);
+        }
+        else {
+          const inp=document.createElement('input');
+          inp.type='text';
+          inp.value=val||'';
+          inp.style.width='95%';
+          inp.dataset.uid=row.uid;
+          inp.dataset.field=fld;
+          inp.addEventListener('change',onCellChange);
+          c.appendChild(inp);
+        }
+        return c;
+      }
+      function makeElapsedCell(r){
+        const c=document.createElement('td');
+        c.dataset.field="경과일";
+        if(r.기술적종료일){
+          c.textContent="";
+        } else {
+          const asDate=r.AS접수일자||"";
+          if(!asDate){
+            c.textContent="";
+          } else {
+            const today=new Date();
+            const asD=new Date(asDate+"T00:00");
+            if(asD.toString()==='Invalid Date'){
+              c.textContent="";
+            } else {
+              const diff=Math.floor((today-asD)/(1000*3600*24));
+              c.textContent= diff<0 ? "0일": diff+"일";
+              if(!r.정상지연){
+                if(diff>=90){
+                  c.style.backgroundColor='red';
+                  c.style.color='#fff';
+                } else if(diff>=60){
+                  c.style.backgroundColor='orange';
+                } else if(diff>=30){
+                  c.style.backgroundColor='yellow';
+                }
+              }
+            }
+          }
+        }
+        return c;
+      }
+      function makeNormalDelayCell(r){
+        const c=document.createElement('td');
+        c.dataset.field="정상지연";
+        const check=document.createElement('input');
+        check.type='checkbox';
+        check.dataset.uid=row.uid;
+        check.dataset.field="정상지연";
+        check.checked=(r.정상지연==="Y");
+        check.addEventListener('change',onCellChange);
+        c.appendChild(check);
+        return c;
+      }
+      function makeDelayReasonCell(r){
+        const c=document.createElement('td');
+        c.dataset.field="지연 사유";
+        const inp=document.createElement('input');
+        inp.type='text';
+        inp.value=r["지연 사유"]||'';
+        inp.style.width='95%';
+        inp.dataset.uid=row.uid;
+        inp.dataset.field="지연 사유";
+        inp.addEventListener('change',onCellChange);
+        c.appendChild(inp);
+        return c;
+      }
+
+      tr.appendChild(makeCell(row.공번,'공번'));
+      tr.appendChild(makeCell(row.공사,'공사'));
+      tr.appendChild(makeCell(row.imo,'imo'));
+      tr.appendChild(makeCell(row.hull,'hull'));
+      tr.appendChild(makeCell(row.shipName,'shipName'));
+      tr.appendChild(makeCell(row.repMail,'repMail'));
+      tr.appendChild(makeCell(row.shipType,'shipType'));
+      tr.appendChild(makeCell(row.scale,'scale'));
+      tr.appendChild(makeCell(row.구분,'구분'));
+      tr.appendChild(makeCell(row.shipowner,'shipowner'));
+      tr.appendChild(makeCell(row.major,'major'));
+      tr.appendChild(makeCell(row.group,'group'));
+      tr.appendChild(makeCell(row.shipyard,'shipyard'));
+      tr.appendChild(makeCell(row.contract,'contract'));
+      tr.appendChild(makeCell(row.asType,'asType'));
+      tr.appendChild(makeCell(row.delivery,'delivery'));
+      tr.appendChild(makeCell(row.warranty,'warranty'));
+      tr.appendChild(makeCell(row.prevManager,'prevManager'));
+      tr.appendChild(makeCell(row.manager,'manager'));
+      tr.appendChild(makeCell(row.현황,'현황'));
+
+      const activeCell=makeCell(row.동작여부,'동작여부');
+      tr.appendChild(activeCell);
+
+      tr.appendChild(makeCell(row.조치계획,'조치계획'));
+      tr.appendChild(makeCell(row.접수내용,'접수내용'));
+      tr.appendChild(makeCell(row.조치결과,'조치결과'));
+      tr.appendChild(makeCell(row.AS접수일자,'AS접수일자'));
+      tr.appendChild(makeCell(row.기술적종료일,'기술적종료일'));
+
+      // AI 요약 버튼
+      const aiTd=document.createElement('td');
+      const aiBtn=document.createElement('button');
+      aiBtn.textContent="AI 요약";
+      aiBtn.style.background="#6c757d";
+      aiBtn.style.color="#fff";
+      aiBtn.style.cursor="pointer";
+      aiBtn.addEventListener('click',()=>summarizeAndUpdateRow(row.uid));
+      aiTd.appendChild(aiBtn);
+      tr.appendChild(aiTd);
+
+      tr.appendChild(makeElapsedCell(row));
+      tr.appendChild(makeNormalDelayCell(row));
+      tr.appendChild(makeDelayReasonCell(row));
+
+      // 색상 강조
+      if(row.warranty){
+        const wDate=new Date(row.warranty+"T00:00");
+        const today=new Date(new Date().toLocaleDateString());
+        if(wDate<today && row.asType!=='유상'){
+          tr.cells[17].style.backgroundColor='yellow';
+        }
+      }
+      if(row.기술적종료일 && ["정상B","부분동작","동작불가"].includes(row.동작여부)){
+        activeCell.style.backgroundColor='yellow';
+      }
+      if(row.접수내용 && !row.기술적종료일 && ["정상A","유상정상"].includes(row.동작여부)){
+        activeCell.style.backgroundColor='lightgreen';
+      }
+
+      // 행 높이조절
+      const rowRes=document.createElement('div');
+      rowRes.className='row-resizer';
+      rowRes.addEventListener('mousedown',(ev)=>{
+        startRowResize(ev,tr);
+      });
+      tr.appendChild(rowRes);
+
+      tbody.appendChild(tr);
+    });
+    document.getElementById('count정상A').textContent=counts.정상A;
+    document.getElementById('count정상B').textContent=counts.정상B;
+    document.getElementById('count유상정상').textContent=counts.유상정상;
+    document.getElementById('count부분동작').textContent=counts.부분동작;
+    document.getElementById('count동작불가').textContent=counts.동작불가;
+
+    updateSidebarList();
+  }
+
+  let resizingRow=null, startY=0, startH=0;
+  function startRowResize(e,tr){
+    resizingRow=tr;
+    startY=e.pageY;
+    startH=tr.offsetHeight;
+    document.addEventListener('mousemove',doRowResize);
+    document.addEventListener('mouseup',stopRowResize);
+    e.preventDefault();
+  }
+  function doRowResize(e){
+    if(!resizingRow) return;
+    const dy=e.pageY-startY;
+    const newH=startH+dy;
+    if(newH>20) resizingRow.style.height=newH+'px';
+  }
+  function stopRowResize(){
+    document.removeEventListener('mousemove',doRowResize);
+    document.removeEventListener('mouseup',stopRowResize);
+    resizingRow=null;
+  }
+
+  /************************************************************
+   * 7) Excel 다운로드/업로드
+   ************************************************************/
+  document.getElementById('downloadExcelBtn').addEventListener('click',()=>{
+    const arr=asData.map(d=>({
+      공번:d.공번, 공사:d.공사, IMO:d.imo, HULL:d.hull,
+      SHIPNAME:d.shipName, '호선 대표메일':d.repMail, 'SHIP TYPE':d.shipType,
+      SCALE:d.scale, 구분:d.구분, SHIPOWNER:d.shipowner, 주요선사:d.major,
+      그룹:d.group, SHIPYARD:d.shipyard, 계약:d.contract, 'AS 구분':d.asType,
+      인도일:d.delivery, 보증종료일:d.warranty, '전 담당':d.prevManager,
+      '현 담당':d.manager, 현황:d.현황, 동작여부:d.동작여부,
+      조치계획:d.조치계획, 접수내용:d.접수내용, 조치결과:d.조치결과,
+      AS접수일자:d.AS접수일자, 기술적종료일:d.기술적종료일,
+      정상지연:d.정상지연, '지연 사유':d['지연 사유']
+    }));
+    const ws=XLSX.utils.json_to_sheet(arr);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"AS_Data");
+    XLSX.writeFile(wb,"AS_Data.xlsx");
+  });
+
+  document.getElementById('uploadExcelBtn').addEventListener('click',()=>{
+    document.getElementById('excelModal').style.display='block';
+  });
+  document.getElementById('excelReplaceBtn').addEventListener('click',()=>{
+    document.getElementById('excelModal').style.display='none';
+    proceedExcelUpload('replace');
+  });
+  document.getElementById('excelAppendBtn').addEventListener('click',()=>{
+    document.getElementById('excelModal').style.display='none';
+    proceedExcelUpload('append');
+  });
+  document.getElementById('excelCancelBtn').addEventListener('click',()=>{
+    document.getElementById('excelModal').style.display='none';
+  });
+
+  function proceedExcelUpload(mode){
+    document.getElementById('uploadExcelInput').click();
+    document.getElementById('uploadExcelInput').onchange=e=>{
+      const file=e.target.files[0];
+      if(!file)return;
+      readExcelFile(file,mode);
+      e.target.value='';
+    };
+  }
+  function readExcelFile(file,mode){
+    const reader=new FileReader();
+    reader.onload=function(evt){
+      const data=new Uint8Array(evt.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true,dateNF:'yyyy-mm-dd'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(sheet,{defval:''});
+      let newData=[];
+      json.forEach(r=>{
+        const uid=db.ref().push().key;
+        function parseDate(v){
+          if(typeof v==='object'&&v instanceof Date){
+            return toYMD(v);
+          }
+          if(typeof v==='string'){
+            let s=v.trim().replace(/\//g,'-').replace(/\./g,'-');
+            if(s==='#N/A'||s==='0'||s==='') return '';
+            if(s.includes('-')){
+              const parts=s.split('-');
+              if(parts.length===3){
+                let yy=parts[0].padStart(4,'0');
+                let mm=parts[1].padStart(2,'0');
+                let dd=parts[2].padStart(2,'0');
+                return `${yy}-${mm}-${dd}`;
+              }
+            }
+            return s;
+          }
+          return '';
+        }
+        function parseCell(v){
+          if(typeof v==='number') return String(v);
+          if(v==='#N/A') return '';
+          return v;
+        }
+        const delivery=parseDate(r['인도일']||'');
+        const warranty=parseDate(r['보증종료일']||'');
+        const asReceipt=parseDate(r['AS접수일자']||'');
+        const techEnd=parseDate(r['기술적종료일']||'');
+        const normalDelay=(r['정상지연']==='Y')?'Y':'';
+        const delayReason=r['지연 사유']||'';
+
+        newData.push({
+          uid,
+          공번:parseCell(r['공번']),
+          공사:parseCell(r['공사']),
+          imo:parseCell(r['IMO']),
+          hull:parseCell(r['HULL']),
+          shipName:parseCell(r['SHIPNAME']),
+          repMail:parseCell(r['호선 대표메일']),
+          shipType:parseCell(r['SHIP TYPE']),
+          scale:parseCell(r['SCALE']),
+          구분:parseCell(r['구분']),
+          shipowner:parseCell(r['SHIPOWNER']),
+          major:parseCell(r['주요선사']),
+          group:String(parseCell(r['그룹'])||''),
+          shipyard:parseCell(r['SHIPYARD']),
+          contract:parseCell(r['계약']),
+          asType:parseCell(r['AS 구분'])||'유상',
+          delivery, warranty,
+          prevManager:parseCell(r['전 담당']),
+          manager:parseCell(r['현 담당']),
+          현황:parseCell(r['현황']),
+          동작여부:parseCell(r['동작여부'])||'정상A',
+          조치계획:parseCell(r['조치계획']),
+          접수내용:parseCell(r['접수내용']),
+          조치결과:parseCell(r['조치결과']),
+          AS접수일자:asReceipt,
+          기술적종료일:techEnd,
+          정상지연:normalDelay,
+          '지연 사유':delayReason
+        });
+      });
+      if(mode==='replace'){
+        db.ref(asPath).remove().then(()=>{
+          newData.forEach(obj=>{
+            db.ref(asPath+'/'+obj.uid).set(obj);
+          });
+          asData=newData;
+          renderTable();
+          alert(`엑셀 업로드(교체) 완료 (총 ${json.length}건)`);
+        });
+      } else {
+        newData.forEach(obj=>{
+          db.ref(asPath+'/'+obj.uid).set(obj);
+        });
+        asData=asData.concat(newData);
+        renderTable();
+        alert(`엑셀 업로드(추가) 완료 (총 ${json.length}건)`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function toYMD(dt){
+    const y=dt.getFullYear();
+    const m=('0'+(dt.getMonth()+1)).slice(-2);
+    const d=('0'+dt.getDate()).slice(-2);
+    return `${y}-${m}-${d}`;
+  }
+
+  // AS 현황 업로드
+  document.getElementById('uploadAsStatusBtn').addEventListener('click',()=>{
+    document.getElementById('uploadAsStatusInput').click();
+  });
+  document.getElementById('uploadAsStatusInput').addEventListener('change',e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    readAsStatusFile(file);
+    e.target.value='';
+  });
+  function readAsStatusFile(file){
+    const reader=new FileReader();
+    reader.onload=function(evt){
+      const data=new Uint8Array(evt.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true,dateNF:'yyyy-mm-dd'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(sheet,{defval:''});
+      const map={};
+
+      function dateToYMD(ms){
+        if(!ms) return '';
+        let d=new Date(ms);
+        if(isNaN(d.getTime())) return '';
+        let yy=d.getFullYear();
+        let mm=('0'+(d.getMonth()+1)).slice(-2);
+        let dd=('0'+d.getDate()).slice(-2);
+        return `${yy}-${mm}-${dd}`;
+      }
+      for(let row of json){
+        const asStatus=(row['AS진행상태']||'').trim();
+        if(asStatus==='접수취소')continue;
+        const project=(row['수익프로젝트']||'').trim();
+        if(!project)continue;
+        const asDateRaw=row['AS접수일자']||'';
+        const asDateObj=new Date(asDateRaw.replace(/[./]/g,'-')+"T00:00");
+        const asDateMS=asDateObj.getTime();
+
+        const plan=row['조치계획']||'';
+        const rec=row['접수내용']||'';
+        const res=row['조치결과']||'';
+        const tEnd=row['기술적종료일자']||'';
+
+        if(!map[project]){
+          map[project]={asDate:asDateMS,plan,rec,res,tEnd};
+        } else {
+          if(asDateMS>map[project].asDate){
+            map[project]={asDate:asDateMS,plan,rec,res,tEnd};
+          }
+        }
+      }
+      let updateCount=0;
+      mapKeys: for(let project in map){
+        const item=map[project];
+        const row=asData.find(x=>x.공번===project);
+        if(row){
+          row.조치계획=item.plan;
+          row.접수내용=item.rec;
+          row.조치결과=item.res;
+          row.기술적종료일=parseDateString(item.tEnd);
+          row.AS접수일자=dateToYMD(item.asDate);
+
+          db.ref(asPath+'/'+row.uid+'/조치계획').set(row.조치계획);
+          db.ref(asPath+'/'+row.uid+'/접수내용').set(row.접수내용);
+          db.ref(asPath+'/'+row.uid+'/조치결과').set(row.조치결과);
+          db.ref(asPath+'/'+row.uid+'/기술적종료일').set(row.기술적종료일);
+          db.ref(asPath+'/'+row.uid+'/AS접수일자').set(row.AS접수일자);
+
+          addHistory(`AS 현황 업로드 - [${row.uid}] (공번=${project})`);
+          updateCount++;
+        }
+      }
+      renderTable();
+      alert(`AS 현황 업로드 완료 (총 ${updateCount}건 업데이트)`);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  function parseDateString(str){
+    if(!str)return'';
+    let v=str.trim().replace(/[./]/g,'-');
+    let d=new Date(v+"T00:00");
+    if(!isNaN(d.getTime())){
+      const yy=d.getFullYear();
+      const mm=('0'+(d.getMonth()+1)).slice(-2);
+      const dd=('0'+d.getDate()).slice(-2);
+      return `${yy}-${mm}-${dd}`;
+    }
+    return '';
+  }
+
+  /************************************************************
+   * 8) 히스토리
+   ************************************************************/
+  document.getElementById('historyBtn').addEventListener('click',showHistoryModal);
+  document.getElementById('clearHistoryBtn').addEventListener('click',clearHistory);
+
+  function addHistory(msg){
+    const k=db.ref(histPath).push().key;
+    const t=new Date().toISOString();
+    db.ref(histPath+'/'+k).set({time:t,msg});
+  }
+  async function showHistoryModal(){
+    const snap=await db.ref(histPath).once('value');
+    const val=snap.val()||{};
+    let arr=Object.values(val).sort((a,b)=> new Date(b.time)-new Date(a.time));
+    const hl=document.getElementById('historyList');
+    hl.innerHTML='';
+    arr.forEach(it=>{
+      const li=document.createElement('li');
+      li.textContent=`[${it.time}] ${it.msg}`;
+      hl.appendChild(li);
+    });
+    document.getElementById('historyModal').style.display='block';
+  }
+  function closeHistoryModal(){
+    document.getElementById('historyModal').style.display='none';
+  }
+  async function clearHistory(){
+    if(!confirm("히스토리 전체 삭제?"))return;
+    await db.ref(histPath).remove();
+    document.getElementById('historyList').innerHTML='';
+    alert("히스토리 삭제 완료");
+  }
+
+  /************************************************************
+   * 9) 사이드바 (담당자/선주사)
+   ************************************************************/
+  document.getElementById('btnManager').addEventListener('click',()=>switchSideMode('manager'));
+  document.getElementById('btnOwner').addEventListener('click',()=>switchSideMode('owner'));
+
+  function switchSideMode(mode){
+    currentMode=mode;
+    document.getElementById('btnManager').classList.remove('active');
+    document.getElementById('btnOwner').classList.remove('active');
+
+    document.getElementById('filterIMO').value='';
+    document.getElementById('filterHull').value='';
+    document.getElementById('filterName').value='';
+    document.getElementById('filterOwner').value='';
+    document.getElementById('filterMajor').value='';
+    document.getElementById('filterGroup').value='';
+    document.getElementById('filterAsType').value='';
+    document.getElementById('filterManager').value='';
+    document.getElementById('filterActive').value='';
+
+    if(mode==='manager'){
+      document.getElementById('btnManager').classList.add('active');
+      document.getElementById('listTitle').textContent='담당자 목록';
+    } else {
+      document.getElementById('btnOwner').classList.add('active');
+      document.getElementById('listTitle').textContent='선주사 목록';
+    }
+    updateSidebarList();
+    renderTable();
+  }
+
+  function updateSidebarList(){
+    const listDiv=document.getElementById('itemList');
+    listDiv.innerHTML='';
+    if(currentMode==='manager'){
+      const mgrMap={};
+      let allTotal=0, allProgress=0;
+      asData.forEach(d=>{
+        const mgr=d.manager||'';
+        if(!mgr)return;
+        if(!mgrMap[mgr])mgrMap[mgr]={total:0,progress:0};
+        mgrMap[mgr].total++;
+        allTotal++;
+        if(d.접수내용 && !d.기술적종료일){
+          mgrMap[mgr].progress++;
+          allProgress++;
+        }
+      });
+      const allBtn=document.createElement('button');
+      allBtn.style.display='flex';
+      allBtn.style.justifyContent='space-between';
+      const allLeft=document.createElement('span');
+      allLeft.textContent=`전체(${allTotal})`;
+      const allRight=document.createElement('span');
+      allRight.textContent=`AS진행(${allProgress})`;
+      allBtn.appendChild(allLeft);
+      allBtn.appendChild(allRight);
+      allBtn.onclick=()=>{
+        document.getElementById('filterManager').value='';
+        renderTable();
+      };
+      listDiv.appendChild(allBtn);
+
+      let arr=Object.entries(mgrMap).map(([k,v])=>({mgr:k,...v}));
+      arr.sort((a,b)=>b.total-a.total);
+      arr.forEach(item=>{
+        const btn=document.createElement('button');
+        btn.style.display='flex';
+        btn.style.justifyContent='space-between';
+        const left=document.createElement('span');
+        left.textContent=`${item.mgr}(${item.total})`;
+        const right=document.createElement('span');
+        right.textContent=`AS진행(${item.progress})`;
+        btn.appendChild(left);
+        btn.appendChild(right);
+
+        btn.onclick=()=>{
+          document.getElementById('filterManager').value=item.mgr;
+          renderTable();
+        };
+        listDiv.appendChild(btn);
+      });
+
+    } else {
+      const owMap={};
+      let allTotal=0, allProgress=0;
+      asData.forEach(d=>{
+        const ow=d.shipowner||'';
+        if(!ow)return;
+        if(!owMap[ow])owMap[ow]={total:0,progress:0};
+        owMap[ow].total++;
+        allTotal++;
+        if(d.접수내용 && !d.기술적종료일){
+          owMap[ow].progress++;
+          allProgress++;
+        }
+      });
+      const allBtn=document.createElement('button');
+      allBtn.style.display='flex';
+      allBtn.style.justifyContent='space-between';
+      const allLeft=document.createElement('span');
+      allLeft.textContent=`전체(${allTotal})`;
+      const allRight=document.createElement('span');
+      allRight.textContent=`AS진행(${allProgress})`;
+      allBtn.appendChild(allLeft);
+      allBtn.appendChild(allRight);
+      allBtn.onclick=()=>{
+        document.getElementById('filterOwner').value='';
+        renderTable();
+      };
+      listDiv.appendChild(allBtn);
+
+      let arr=Object.entries(owMap).map(([k,v])=>({owner:k,...v}));
+      arr.sort((a,b)=>b.total-a.total);
+      arr.forEach(item=>{
+        const btn=document.createElement('button');
+        btn.style.display='flex';
+        btn.style.justifyContent='space-between';
+        const left=document.createElement('span');
+        left.textContent=`${item.owner}(${item.total})`;
+        const right=document.createElement('span');
+        right.textContent=`AS진행(${item.progress})`;
+        btn.appendChild(left);
+        btn.appendChild(right);
+
+        btn.onclick=()=>{
+          document.getElementById('filterOwner').value=item.owner;
+          renderTable();
+        };
+        listDiv.appendChild(btn);
+      });
+    }
+  }
+
+  /************************************************************
+   * 10) 사용자 관리
+   ************************************************************/
+  document.getElementById('userManageBtn').addEventListener('click',openUserModal);
+  function openUserModal(){
+    if(!adminAuthorized){
+      const pw=prompt("관리자 비밀번호:");
+      if(pw!=='snsys1234'){
+        alert("관리자 비밀번호가 다릅니다.");
+        return;
+      }
+      adminAuthorized=true;
+    }
+    db.ref(userPath).once('value').then(snap=>{
+      const val=snap.val()||{};
+      userData=Object.entries(val).map(([k,v])=>({uid:k,...v}));
+      renderUserList();
+      document.getElementById('userModal').style.display='block';
+    });
+  }
+  function closeUserModal(){
+    document.getElementById('userModal').style.display='none';
+  }
+  let userData=[];
+  function renderUserList(){
+    const listDiv=document.getElementById('userList');
+    listDiv.innerHTML='';
+    userData.forEach(u=>{
+      const row=document.createElement('div');
+      row.style.marginBottom='4px';
+      const chk=document.createElement('input');
+      chk.type='checkbox';
+      chk.dataset.uid=u.uid;
+      chk.style.marginRight='6px';
+      row.appendChild(chk);
+
+      const txt=document.createElement('span');
+      txt.textContent=`사용자명: ${u.username}, 비번: ${u.password}`;
+      row.appendChild(txt);
+
+      listDiv.appendChild(row);
+    });
+  }
+  document.getElementById('deleteSelectedUsersBtn').addEventListener('click',()=>{
+    const cks=document.querySelectorAll('#userList input[type=checkbox]:checked');
+    if(!cks.length){
+      alert("삭제할 사용자를 선택하세요.");
+      return;
+    }
+    if(!confirm("선택한 사용자들을 삭제하시겠습니까?"))return;
+    cks.forEach(chk=>{
+      const uid=chk.dataset.uid;
+      db.ref(userPath+'/'+uid).remove();
+    });
+    db.ref(userPath).once('value').then(snap=>{
+      const val=snap.val()||{};
+      userData=Object.entries(val).map(([k,v])=>({uid:k,...v}));
+      renderUserList();
+    });
+  });
+  document.getElementById('addUserConfirmBtn').addEventListener('click',()=>{
+    const uname=document.getElementById('newUserName').value.trim();
+    const upw=document.getElementById('newUserPw').value.trim();
+    if(!uname||!upw){
+      alert("사용자명/비번 필수 입력");
+      return;
+    }
+    const key=db.ref(userPath).push().key;
+    db.ref(userPath+'/'+key).set({username:uname,password:upw}).then(()=>{
+      alert("사용자 등록 완료");
+      document.getElementById('newUserName').value='';
+      document.getElementById('newUserPw').value='';
+      db.ref(userPath).once('value').then(snap=>{
+        const val=snap.val()||{};
+        userData=Object.entries(val).map(([k,v])=>({uid:k,...v}));
+        renderUserList();
+      });
+    });
+  });
+
+  /************************************************************
+   * 11) AI 요약
+   ************************************************************/
+  async function summarizeAndUpdateRow(uid){
+    const row=asData.find(x=>x.uid===uid);
+    if(!row){ alert("대상 행 없음"); return; }
+    const text="[한국어 요약]\n\n[접수내용]\n"+(row.접수내용||"없음")+"\n\n[조치결과]\n"+(row.조치결과||"없음");
+    const summary=await callGeminiForSummary(text);
+    if(!summary){
+      alert("AI 요약 실패");
+      return;
+    }
+    row.현황=summary;
+    await db.ref(asPath+'/'+uid+'/현황').set(summary);
+    addHistory(`AI 요약 완료 - [${uid}]`);
+    renderTable();
+    alert("AI 요약 결과가 현황에 반영되었습니다.");
+  }
+
+  /************************************************************
+   * 12) 내용 모달
+   ************************************************************/
+  function openContentModal(text){
+    document.getElementById('contentText').textContent=text;
+    document.getElementById('contentModal').style.display='block';
+  }
+  function closeContentModal(){
+    document.getElementById('contentModal').style.display='none';
+  }
+
+  /************************************************************
+   * 13) 선사별 AI 요약
+   ************************************************************/
+  document.getElementById('ownerAISummaryBtn').addEventListener('click',openOwnerAIModal);
+  async function openOwnerAIModal(){
+    const filterVal=document.getElementById('filterOwner').value.trim();
+    if(!filterVal){
+      alert("SHIPOWNER 필터 먼저 입력/선택");
+      return;
+    }
+    const targetRows=asData.filter(r=>(r.shipowner||'').toLowerCase().includes(filterVal.toLowerCase()));
+    if(!targetRows.length){
+      alert("해당 선사로 필터된 항목 없음");
+      return;
+    }
+    let combined=`선사명:${filterVal}\n\n`;
+    combined+=`총 ${targetRows.length}건\n\n`;
+    targetRows.forEach(r=>{
+      combined+=`SHIPNAME:${r.shipName||'N/A'}\n[접수내용]\n${r.접수내용||''}\n\n[조치결과]\n${r.조치결과||''}\n\n----\n`;
+    });
+
+    const finalSummary=await callGeminiForSummary(combined);
+    document.getElementById('ownerAISummaryText').textContent=finalSummary||"요약 실패";
+    document.getElementById('ownerAIModal').style.display='block';
+  }
+
+  /************************************************************
+   * 14) 테이블 가로 스크롤, 열폭 자동맞춤
+   ************************************************************/
+  window.addEventListener('DOMContentLoaded',()=>{
+    const styleElem=document.createElement('style');
+    styleElem.textContent=`
+      .table-container {
+        overflow-x:auto !important;
+        white-space:nowrap !important;
+      }
+      #asTable {
+        display:inline-table !important;
+        width:auto !important;
+        min-width:0 !important;
+        table-layout:auto !important;
+      }
+    `;
+    document.head.appendChild(styleElem);
+  });
+  document.addEventListener('dblclick',(e)=>{
+    const colRes=e.target.closest('.col-resizer');
+    if(colRes){
+      const th=colRes.parentElement;
+      if(th) autoFitColumn(th);
+    } else {
+      const th=e.target.closest('th');
+      if(th) autoFitColumn(th);
+    }
+  });
+  function autoFitColumn(th){
+    const table=document.getElementById('asTable');
+    if(!table) return;
+    const colIndex=[...th.parentElement.children].indexOf(th);
+    let maxWidth=0;
+    const rows=table.rows;
+    for(let i=0;i<rows.length;i++){
+      const cell=rows[i].cells[colIndex];
+      if(!cell) continue;
+      let textContent='';
+      const widget=cell.querySelector('input,select,span');
+      if(widget){
+        if(widget.tagName==='SELECT'){
+          textContent=widget.options[widget.selectedIndex]?.text||'';
+        } else if(widget.tagName==='INPUT'){
+          textContent=widget.value||'';
+        } else if(widget.tagName==='SPAN'){
+          textContent=widget.textContent||'';
+        }
+      } else {
+        textContent=cell.innerText||cell.textContent||'';
+      }
+      const span=document.createElement('span');
+      span.style.position='absolute';
+      span.style.visibility='hidden';
+      span.style.whiteSpace='nowrap';
+      span.style.font='14px sans-serif';
+      span.textContent=textContent;
+      document.body.appendChild(span);
+      const w=span.offsetWidth+16;
+      document.body.removeChild(span);
+      if(w>maxWidth) maxWidth=w;
+    }
+    th.style.width=maxWidth+'px';
+  }
+  </script>
+</body>
+</html>
