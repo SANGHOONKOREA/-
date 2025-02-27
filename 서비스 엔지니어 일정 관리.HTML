@@ -349,81 +349,37 @@
       </div>
 
       <!-- 관리자 스케줄 목록 (기간별 조회 추가) -->
-      <div id="adminScheduleListPane" class="admin-pane">
-        <h4>스케줄 목록</h4>
-        <!-- 기간별 조회 컨트롤 -->
-        <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
-          <label>조회 시작일</label>
-          <input type="date" id="adminQueryStart">
-          <label>조회 종료일</label>
-          <input type="date" id="adminQueryEnd">
-          <button onclick="drawScheduleList()">조회</button>
-        </div>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>아이디</th>
-              <th>기간</th>
-              <th>Ship Name</th>
-              <th>IMO No.</th>
-              <th>Hull No.</th>
-              <th>지역</th>
-              <th>담당자</th>
-              <th>상세</th>
-              <th style="text-align:left;">서비스 불가 일정</th>
-              <th>수정</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody id="adminScheduleListBody"></tbody>
-        </table>
+<div id="adminScheduleListPane" class="admin-pane">
+  <h4>스케줄 목록</h4>
+  <!-- 기간별 조회 컨트롤 -->
+  <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
+    <label>조회 시작일</label>
+    <input type="date" id="adminQueryStart">
+    <label>조회 종료일</label>
+    <input type="date" id="adminQueryEnd">
+    <button onclick="drawScheduleList()">조회</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="admin-table" style="min-width:800px;">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>기간</th>
+          <th>Ship Name</th>
+          <th>IMO No.</th>
+          <th>Hull No.</th>
+          <th>지역</th>
+          <th>담당자</th>
+          <th>상세</th>
+          <th style="text-align:left;">서비스 불가 일정</th>
+          <th>수정</th>
+          <th>삭제</th>
+        </tr>
+      </thead>
+      <tbody id="adminScheduleListBody"></tbody>
+    </table>
 
-        <h4>스케줄 등록</h4>
-        <div class="admin-form-row">
-          <label>사용자(아이디)</label>
-          <select id="adminScheduleUser"></select>
-        </div>
-        <div class="admin-form-row">
-          <label>시작일</label>
-          <input type="date" id="adminScheduleStart"/>
-        </div>
-        <div class="admin-form-row">
-          <label>종료일</label>
-          <input type="date" id="adminScheduleEnd"/>
-        </div>
-        <!-- [수정] IMO No.와 Ship Name 순서를 바꾸고 Ship Name으로 명칭 변경 -->
-        <div class="admin-form-row">
-          <label>IMO No.</label>
-          <input type="text" id="adminScheduleIMONo"/>
-        </div>
-        <div class="admin-form-row">
-          <label>Ship Name</label>
-          <input type="text" id="adminScheduleLine"/>
-        </div>
-        <div class="admin-form-row">
-          <label>Hull No.</label>
-          <input type="text" id="adminScheduleHullNo"/>
-        </div>
-        <!-- [추가] 본사 담당자 선택 -->
-        <div class="admin-form-row">
-          <label>본사 담당자</label>
-          <select id="adminScheduleManager"></select>
-        </div>
-        <div class="admin-form-row">
-          <label>지역</label>
-          <input type="text" id="adminScheduleRegion"/>
-        </div>
-        <div class="admin-form-row">
-          <label>상세내용</label>
-          <input type="text" id="adminScheduleDetail"/>
-        </div>
-        <div class="admin-form-row" style="display:flex; align-items:center; gap:4px;">
-          <input type="checkbox" id="adminScheduleUnavailable">
-          <label for="adminScheduleUnavailable" style="margin:0;">서비스 불가 일정</label>
-        </div>
-        <button onclick="createAdminSchedule()">등록</button>
-
-        <div style="margin-top:12px;">
+         <div style="margin-top:12px;">
           <button onclick="downloadExcel()">엑셀 다운로드</button>
           <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel(event)"/>
           <button onclick="document.getElementById('excelFileInput').click()">엑셀 업로드</button>
@@ -541,7 +497,7 @@
   </div>
 
   <footer style="text-align:center; padding:10px; font-size:0.8em; color:#555;">
-    서비스 문의 및 개선 사항은 고객지원 서상훈 차장(031-229-1432)에게 문의하세요
+    서비스 문의 및 개선 사항 : 서상훈 차장(031-229-1432)
   </footer>
 
   <!-- 스케줄 등록/수정 모달 -->
