@@ -14,7 +14,7 @@
       font-family: "Malgun Gothic", sans-serif;
       font-size: 14px; background: #f7f7f7; color: #333;
     }
-    /* 헤더는 최대폭 480px로 중앙 배치, 제목은 가운데 정렬, 우측에 AI서비스 링크 배치 */
+    /* 헤더 - 최대폭 480px, 가운데 배치, 오른쪽에 AI서비스 버튼 */
     header {
       background: #2c3e50;
       color: #ecf0f1;
@@ -36,7 +36,7 @@
       transform: translateY(-50%);
       background: #e67e22;
       color: #fff;
-      padding: 8px 12px;
+      padding: 8px 10px; /* 수평 padding 축소 */
       border-radius: 4px;
       text-decoration: none;
       font-size: 0.9em;
@@ -52,9 +52,12 @@
       margin-left: 4px;
     }
     #container {
-      max-width: 480px; margin: 0 auto;
-      background: #fff; min-height: 100vh;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1); position: relative;
+      max-width: 480px; 
+      margin: 0 auto;
+      background: #fff; 
+      min-height: 100vh;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1); 
+      position: relative;
     }
     @media (max-width:480px) {
       body { font-size: 13px; }
@@ -80,7 +83,6 @@
       cursor: pointer; transition: background 0.2s;
     }
     .login-form button:hover { background: #34495e; }
-    /* 추가: 로그인 화면에 비밀번호 변경 버튼 */
     .login-form .reset-pw {
       background: #c0392b;
       margin-top: 8px;
@@ -89,9 +91,11 @@
        3) 메인 메뉴
     ------------------------------*/
     #main-menu {
-      display: none; border-top: 1px solid #ddd;
+      display: none; 
+      border-top: 1px solid #ddd;
       border-bottom: 1px solid #ddd;
-      background: #fafafa; overflow-x: auto;
+      background: #fafafa; 
+      overflow-x: auto;
     }
     #main-menu button {
       flex: 1; padding: 10px;
@@ -278,15 +282,33 @@
       display: block; font-size: 0.75em; font-weight: bold;
       margin-bottom: 2px; color: #555;
     }
+    /* 모달 버튼 영역 - 두 줄로 나눔: 첫 줄에는 주 작업 버튼, 두번째 줄에는 이메일 발송과 타임 테이블 */
     .modal-buttons {
-      text-align: right; margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .modal-buttons .primary-buttons,
+    .modal-buttons .secondary-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
     }
     .modal-buttons button {
-      background: #2c3e50; color: #ecf0f1; border: none;
-      border-radius: 4px; padding: 6px 8px; font-size: 0.75em;
-      cursor: pointer; margin-left: 6px; transition: background 0.2s;
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.85em;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
     }
-    .modal-buttons button:hover { background: #34495e; }
+    .modal-buttons button:hover {
+      background: #34495e;
+      transform: translateY(-1px);
+    }
     /* ------------------------------
        9) 유저 수정 모달
     ------------------------------*/
@@ -306,6 +328,16 @@
       margin: 0 0 8px; font-size: 0.9em; color: #2c3e50;
       border-bottom: 1px solid #ddd; padding-bottom: 4px;
     }
+    /* ------------------------------
+       10) 스케줄 목록 표 (좌우 스크롤 적용)
+         스케줄 목록만 좌우 스크롤이 적용되도록 함
+    ------------------------------*/
+    .schedule-list-container {
+      overflow-x: auto;
+    }
+    .schedule-list-container table {
+      min-width: 800px;
+    }
   </style>
   
   <!-- EmailJS SDK (클라이언트 사이드) -->
@@ -318,7 +350,7 @@
 </head>
 <body>
   <header>
-    <h1>S&SYS 서비스 엔지니어 일정 관리</h1>
+    <h1>서비스 엔지니어 일정 관리</h1>
     <a href="https://snsys-qa.neoali.com/" target="_blank" class="ai-service">AI서비스</a>
   </header>
 
@@ -398,7 +430,7 @@
         <button onclick="showAdminPane('history')">변경 히스토리</button>
       </div>
 
-      <!-- 관리자 스케줄 목록 -->
+      <!-- 관리자 스케줄 목록 (좌우 스크롤 적용) -->
       <div id="adminScheduleListPane" class="admin-pane">
         <h4>스케줄 목록</h4>
         <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
@@ -408,24 +440,26 @@
           <input type="date" id="adminQueryEnd">
           <button onclick="drawScheduleList()">조회</button>
         </div>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>업체</th>
-              <th>기간</th>
-              <th>Ship Name</th>
-              <th>IMO No.</th>
-              <th>Hull No.</th>
-              <th>지역</th>
-              <th>담당자</th>
-              <th>상세</th>
-              <th style="text-align:left;">서비스 불가 일정</th>
-              <th>수정</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody id="adminScheduleListBody"></tbody>
-        </table>
+        <div class="schedule-list-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>업체</th>
+                <th>기간</th>
+                <th>Ship Name</th>
+                <th>IMO No.</th>
+                <th>Hull No.</th>
+                <th>지역</th>
+                <th>담당자</th>
+                <th>상세</th>
+                <th style="text-align:left;">서비스 불가 일정</th>
+                <th>수정</th>
+                <th>삭제</th>
+              </tr>
+            </thead>
+            <tbody id="adminScheduleListBody"></tbody>
+          </table>
+        </div>
         <div style="margin-top:12px;">
           <button onclick="downloadExcel()">엑셀 다운로드</button>
           <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadExcel(event)"/>
@@ -515,7 +549,7 @@
         <button onclick="saveCompanyColor()">추가/수정</button>
       </div>
 
-      <!-- 변경 히스토리 -->
+      <!-- 변경 히스토리 (헤더에 변경 전/후 시작/종료일 포함) -->
       <div id="adminHistoryPane" class="admin-pane">
         <h4>변경 히스토리</h4>
         <div class="admin-form-row">
@@ -524,7 +558,6 @@
         </div>
         <button onclick="setHistoryLimit()">설정 저장</button>
         <button onclick="downloadHistoryExcel()" style="float:right;">히스토리 엑셀 다운로드</button>
-        <!-- 헤더 수정: 변경 전/후 시작/종료일을 추가 -->
         <table class="admin-table" style="margin-top:10px; clear:both;">
           <thead>
             <tr>
@@ -553,7 +586,6 @@
       <div id="scheduleStatusLabel"></div>
       <h3>스케줄 등록/수정</h3>
       <div class="modal-row" id="modalUserRow" style="display:none;">
-        <!-- 라벨을 '엔지니어(업체)'로 수정 -->
         <label>엔지니어(업체)</label>
         <div style="display:flex; gap:4px; align-items:center;">
           <select id="modalUserSelect"></select>
@@ -605,13 +637,48 @@
         <label>가용 엔지니어(확인 필요)</label>
         <div id="availableEngineersList" style="border:1px solid #ccc; padding:4px; height:60px; overflow:auto; font-size:0.8em;"></div>
       </div>
+      <!-- 모달 버튼 영역: 주 작업 버튼과 이메일 발송/타임 테이블 버튼을 별도 줄에 배치 -->
       <div class="modal-buttons">
-        <button onclick="closeModal()">취소</button>
-        <button id="btnDeleteSchedule" onclick="deleteSchedule()" style="display:none;background:#c0392b;">삭제</button>
-        <button id="btnCancelSchedule" onclick="cancelSchedule()" style="display:none;background:#9b59b6;">일정 취소</button>
-        <button id="btnSaveSchedule" onclick="saveSchedule()" style="background:#2980b9;">일정 추가</button>
-        <button id="btnFinalizeSchedule" onclick="finalizeSchedule()" style="display:none;background:#27ae60;">최종 확정</button>
-        <button id="btnSendEmail" onclick="sendEmailNotification()" style="background:#2980b9;">이메일 발송</button>
+        <div class="primary-buttons">
+          <button onclick="closeModal()">취소</button>
+          <button id="btnDeleteSchedule" onclick="deleteSchedule()" style="display:none;background:#c0392b;">삭제</button>
+          <button id="btnCancelSchedule" onclick="cancelSchedule()" style="display:none;background:#9b59b6;">일정 취소</button>
+          <button id="btnSaveSchedule" onclick="saveSchedule()" style="background:#2980b9;">일정 추가</button>
+          <button id="btnFinalizeSchedule" onclick="finalizeSchedule()" style="display:none;background:#27ae60;">최종 확정</button>
+        </div>
+        <div class="secondary-buttons">
+          <button id="btnSendEmail" onclick="sendEmailNotification()" style="background:#2980b9;">이메일 발송</button>
+          <button id="btnTimeTable" onclick="openTimeTableModal()" style="background:#2980b9;">타임 테이블</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 타임 테이블 모달 -->
+  <div id="timeTableModalBg" style="display:none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:1000;">
+    <div class="modal" id="timeTableModal">
+      <h3>타임 테이블 입력</h3>
+      <div id="timeTableContainer">
+        <table id="timeTable" border="1" style="width:100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th>시간</th>
+              <th>작업 내용</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="timeTableBody">
+            <!-- 동적으로 행 추가 -->
+          </tbody>
+        </table>
+      </div>
+      <button onclick="addTimeTableRow()">행 추가</button>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:8px;">
+        <button onclick="downloadTimeTableExcel()">엑셀 다운로드</button>
+        <button onclick="document.getElementById('timeTableFileInput').click()">엑셀 업로드</button>
+        <input type="file" id="timeTableFileInput" accept=".xlsx,.xls" style="display:none" onchange="uploadTimeTableExcel(event)">
+        <button onclick="saveTimeTable()">저장</button>
+        <button onclick="closeTimeTableModal()">취소</button>
       </div>
     </div>
   </div>
@@ -652,7 +719,7 @@
     </div>
   </div>
 
-  <!-- SheetJS + Firebase -->
+  <!-- SheetJS + Firebase, Excel 기능 -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- Firebase App, Database, Auth (compat 버전) -->
   <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
@@ -680,9 +747,9 @@
     /****************************************
      2) 전역 변수
     *****************************************/
-    let currentUser = null;  // DB에 저장된 유저 정보 (예: { id, role, company, email })
-    let currentUid = null;   // Firebase Auth의 UID
-    let users = {};          // DB의 전체 유저 정보
+    let currentUser = null;  
+    let currentUid = null;   
+    let users = {};          
     let schedules = [];
     let companyColors = {};
     let histories = [];
@@ -690,13 +757,13 @@
     let currentMonthDate = new Date();
     let currentWeekDate = new Date();
     let editingScheduleId = null;
+    // 타임 테이블 전역 변수
+    let timeTableData = [];
 
     /****************************************
      3) 페이지 로드 시 초기 작업
     *****************************************/
-    window.onload = () => {
-      checkAutoLogin();
-    };
+    window.onload = () => { checkAutoLogin(); };
 
     /****************************************
      4) Firebase Auth 상태 변화 감지 및 관리자 자동 등록
@@ -720,19 +787,11 @@
               currentUser = userData;
               document.getElementById("login-container").style.display = "none";
               document.getElementById("main-menu").style.display = "flex";
-              if (currentUser.role === "관리자") {
-                document.getElementById("btnAdmin").style.display = "inline-block";
-              } else {
-                document.getElementById("btnAdmin").style.display = "none";
-              }
-              loadAllData().then(() => {
-                showSection("monthly");
-              });
+              document.getElementById("btnAdmin").style.display = (currentUser.role === "관리자") ? "inline-block" : "none";
+              loadAllData().then(() => { showSection("monthly"); });
             }
           })
-          .catch(err => {
-            console.error(err);
-          });
+          .catch(err => { console.error(err); });
       } else {
         document.getElementById("login-container").style.display = "block";
         document.getElementById("main-menu").style.display = "none";
@@ -745,21 +804,15 @@
     function login(){
       const emailVal = document.getElementById("loginEmail").value.trim();
       const pwVal = document.getElementById("loginPw").value.trim();
-      if(!emailVal || !pwVal){
-        alert("이메일과 비밀번호를 입력하세요");
-        return;
-      }
+      if(!emailVal || !pwVal){ alert("이메일과 비밀번호를 입력하세요"); return; }
       auth.signInWithEmailAndPassword(emailVal, pwVal)
         .then(() => {})
-        .catch(err => {
-          alert("로그인 실패: " + err.message);
-        });
+        .catch(err => { alert("로그인 실패: " + err.message); });
     }
     function logout(){
       if(!confirm("로그아웃 하시겠습니까?")) return;
       auth.signOut();
-      currentUser = null;
-      currentUid = null;
+      currentUser = null; currentUid = null;
       hideAllSections();
       document.getElementById("loginEmail").value = "";
       document.getElementById("loginPw").value = "";
@@ -768,17 +821,10 @@
     }
     function resetPassword(){
       const emailVal = document.getElementById("loginEmail").value.trim();
-      if(!emailVal){
-         alert("비밀번호 변경을 위해 이메일을 입력하세요.");
-         return;
-      }
+      if(!emailVal){ alert("비밀번호 변경을 위해 이메일을 입력하세요."); return; }
       auth.sendPasswordResetEmail(emailVal)
-         .then(() => {
-             alert("비밀번호 변경 이메일이 발송되었습니다. 이메일을 확인하세요.");
-         })
-         .catch(err => {
-             alert("비밀번호 변경 이메일 발송 실패: " + err.message);
-         });
+         .then(() => { alert("비밀번호 변경 이메일이 발송되었습니다. 이메일을 확인하세요."); })
+         .catch(err => { alert("비밀번호 변경 이메일 발송 실패: " + err.message); });
     }
 
     /****************************************
@@ -817,9 +863,7 @@
           document.getElementById("adminSection").classList.add("active");
           document.getElementById("btnAdmin").classList.add("active");
           showAdminPane("userList");
-        } else {
-          alert("관리자 권한이 없습니다.");
-        }
+        } else { alert("관리자 권한이 없습니다."); }
       }
     }
     function hideAllSections(){
@@ -838,8 +882,7 @@
       if(!currentUser) return false;
       if(currentUser.role === "관리자" || currentUser.role === "본사") return true;
       const schUser = users[sch.userId];
-      if(!schUser) return false;
-      return (schUser.company === currentUser.company);
+      return schUser ? (schUser.company === currentUser.company) : false;
     }
 
     /****************************************
@@ -856,24 +899,17 @@
       const monthBody = document.getElementById("monthBody");
       monthBody.innerHTML = "";
       let row = document.createElement("tr");
-      for(let i = 0; i < firstDow; i++){
-        row.appendChild(document.createElement("td"));
-      }
+      for(let i = 0; i < firstDow; i++){ row.appendChild(document.createElement("td")); }
       for(let d = 1; d <= lastDate; d++){
         const td = document.createElement("td");
         td.innerHTML = `<span class="day-number">${d}</span>`;
         const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
         td.onclick = () => openModal(null, dateStr);
         row.appendChild(td);
-        if((firstDow+d) % 7 === 0){
-          monthBody.appendChild(row);
-          row = document.createElement("tr");
-        }
+        if((firstDow+d) % 7 === 0){ monthBody.appendChild(row); row = document.createElement("tr"); }
       }
       if(row.children.length > 0){
-        while(row.children.length < 7){
-          row.appendChild(document.createElement("td"));
-        }
+        while(row.children.length < 7){ row.appendChild(document.createElement("td")); }
         monthBody.appendChild(row);
       }
       document.getElementById("monthOverlay").innerHTML = "";
@@ -883,22 +919,14 @@
         let rowDates = [];
         for(let i = 0; i < 7; i++){
           const daySpan = cells[i]?.querySelector(".day-number");
-          if(daySpan){
-            const dNum = parseInt(daySpan.textContent, 10);
-            rowDates.push(formatDate(year, month+1, dNum));
-          } else {
-            rowDates.push(null);
-          }
+          rowDates.push(daySpan ? formatDate(year, month+1, parseInt(daySpan.textContent,10)) : null);
         }
         const validD = rowDates.filter(x => x);
         if(validD.length < 1) return;
-        const rowStart = validD[0];
-        const rowEnd = validD[validD.length-1];
+        const rowStart = validD[0], rowEnd = validD[validD.length-1];
         const weekly = schedules.filter(sch => {
           if(!canAccessSchedule(sch)) return false;
-          if(document.getElementById("excludeSchedules").checked){
-            if(sch.unavailable || sch.status === "cancelled") return false;
-          }
+          if(document.getElementById("excludeSchedules").checked && (sch.unavailable || sch.status === "cancelled")) return false;
           return (sch.startDate <= rowEnd && sch.endDate >= rowStart);
         });
         let barCount = 0;
@@ -907,12 +935,9 @@
           const barEnd = (sch.endDate > rowEnd) ? rowEnd : sch.endDate;
           const startIdx = rowDates.findIndex(d => d && d >= barStart);
           let endIdx = -1;
-          for(let c = 6; c >= 0; c--){
-            if(rowDates[c] && rowDates[c] <= barEnd){ endIdx = c; break; }
-          }
+          for(let c = 6; c >= 0; c--){ if(rowDates[c] && rowDates[c] <= barEnd){ endIdx = c; break; } }
           if(startIdx < 0 || endIdx < 0) return;
-          const startCell = cells[startIdx];
-          const endCell = cells[endIdx];
+          const startCell = cells[startIdx], endCell = cells[endIdx];
           if(!startCell || !endCell) return;
           const overlayRect = document.getElementById("monthOverlay").getBoundingClientRect();
           const startRect = startCell.getBoundingClientRect();
@@ -926,13 +951,9 @@
           const comp = userObj.company || "기타";
           let c = "#999";
           if(companyColors[comp]){
-            if(sch.status === "cancelled"){
-              c = companyColors[comp].cancel || "#f00";
-            } else if(sch.status === "finalized" || sch.status === "일정 변경 / 최종 확정"){
-              c = companyColors[comp].final || "#0f0";
-            } else {
-              c = companyColors[comp].normal || "#999";
-            }
+            if(sch.status === "cancelled"){ c = companyColors[comp].cancel || "#f00"; }
+            else if(sch.status === "finalized" || sch.status === "일정 변경 / 최종 확정"){ c = companyColors[comp].final || "#0f0"; }
+            else { c = companyColors[comp].normal || "#999"; }
           }
           const bar = document.createElement("div");
           bar.className = "schedule-bar";
@@ -940,12 +961,8 @@
           bar.style.top = topPos + "px";
           bar.style.width = width + "px";
           bar.style.backgroundColor = c;
-          // 엔지니어 정보를 UID 대신 '엔지니어(업체)' 형식으로 표시 (이름과 업체)
           bar.textContent = userObj.id + " (" + (userObj.company || "업체 미지정") + ")";
-          bar.onclick = (e) => {
-            e.stopPropagation();
-            openModal(sch.id);
-          };
+          bar.onclick = (e) => { e.stopPropagation(); openModal(sch.id); };
           document.getElementById("monthOverlay").appendChild(bar);
           barCount++;
         });
@@ -981,9 +998,7 @@
         dayBlock.appendChild(h4);
         const daySch = schedules.filter(sch => {
           if(!canAccessSchedule(sch)) return false;
-          if(document.getElementById("excludeSchedules").checked){
-            if(sch.unavailable || sch.status === "cancelled") return false;
-          }
+          if(document.getElementById("excludeSchedules").checked && (sch.unavailable || sch.status === "cancelled")) return false;
           return (sch.startDate <= dateStr && sch.endDate >= dateStr);
         });
         daySch.forEach(sch => {
@@ -991,12 +1006,8 @@
           const comp = userObj.company || "기타";
           let c = "#999";
           if(companyColors[comp]){
-            if(sch.status === "cancelled"){
-              c = companyColors[comp].cancel || "#f00";
-            }
-            else if(sch.status === "finalized" || sch.status === "일정 변경 / 최종 확정"){
-              c = companyColors[comp].final || "#0f0";
-            }
+            if(sch.status === "cancelled"){ c = companyColors[comp].cancel || "#f00"; }
+            else if(sch.status === "finalized" || sch.status === "일정 변경 / 최종 확정"){ c = companyColors[comp].final || "#0f0"; }
             else { c = companyColors[comp].normal || "#999"; }
           }
           const item = document.createElement("div");
@@ -1029,11 +1040,11 @@
       const sel = document.getElementById("modalUserSelect");
       const extraContainer = document.getElementById("additionalEngineerRows");
       extraContainer.innerHTML = "";
-      const btnDel = document.getElementById("btnDeleteSchedule");
+      const btnDelete = document.getElementById("btnDeleteSchedule");
       const btnCancel = document.getElementById("btnCancelSchedule");
       const btnFinalize = document.getElementById("btnFinalizeSchedule");
       const btnSave = document.getElementById("btnSaveSchedule");
-      btnDel.style.display = "none";
+      btnDelete.style.display = "none";
       btnCancel.style.display = "none";
       btnFinalize.style.display = "none";
       document.getElementById("scheduleStatusLabel").textContent = "";
@@ -1084,7 +1095,7 @@
         if(currentUser.role === "관리자" || currentUser.role === "본사"){
           userRow.style.display = "";
           buildEngineerSelectOptions(sel, sch.userId);
-          btnDel.style.display = "inline-block";
+          btnDelete.style.display = "inline-block";
           btnCancel.style.display = "inline-block";
           btnFinalize.style.display = "inline-block";
         } else {
@@ -1095,7 +1106,6 @@
       } else {
         document.getElementById("modalStartDate").value = dateStr || "";
         document.getElementById("modalEndDate").value = dateStr || "";
-        // 신규 등록 시 상태 표시 변경 → "일정등록"
         document.getElementById("scheduleStatusLabel").textContent = "일정등록";
         btnSave.textContent = "일정 추가";
       }
@@ -1105,9 +1115,7 @@
 
     /****************************************
      12) 히스토리 기록
-     
-     기록 시 사용자 정보를 UID 대신 이름(users[userUid].id)로 기록하고,
-     변경 작업인 경우 변경 전 시작일/종료일과 변경 후 시작일/종료일을 함께 저장함.
+     - 사용자 이름(users[userUid].id)과 변경 전/후 시작/종료일 기록
     *****************************************/
     function recordHistory(actionType, userUid, newSchedule, oldSchedule = null){
       const userName = users[userUid] ? users[userUid].id : userUid;
@@ -1131,9 +1139,7 @@
         const exceed = arr.length - historyLimit;
         if(exceed > 0){
           let tasks = [];
-          for(let i = 0; i < exceed; i++){
-            tasks.push(db.ref("history/" + arr[i].key).remove());
-          }
+          for(let i = 0; i < exceed; i++){ tasks.push(db.ref("history/" + arr[i].key).remove()); }
           return Promise.all(tasks);
         }
       });
@@ -1145,17 +1151,10 @@
     function cancelSchedule(){
       if(!editingScheduleId) return;
       let reason = prompt("일정 취소 사유를 입력하세요:");
-      if(!reason){
-        alert("취소 사유가 필요합니다.");
-        return;
-      }
+      if(!reason){ alert("취소 사유가 필요합니다."); return; }
       const idx = schedules.findIndex(x => x.id === editingScheduleId);
       if(idx < 0) return;
-      if(!canAccessSchedule(schedules[idx])){
-        alert("권한 없음");
-        return;
-      }
-      // 변경 전 시작/종료일 복사
+      if(!canAccessSchedule(schedules[idx])){ alert("권한 없음"); return; }
       const oldSch = { startDate: schedules[idx].startDate, endDate: schedules[idx].endDate };
       schedules[idx].cancelReason = reason;
       schedules[idx].status = "cancelled";
@@ -1163,9 +1162,7 @@
       .then(() => {
         recordHistory("일정 취소", currentUid, schedules[idx], oldSch);
         alert("일정 취소 완료");
-        if(confirm("이메일을 발송할까요?")){
-          sendEmailNotification();
-        }
+        if(confirm("이메일을 발송할까요?")){ sendEmailNotification(); }
         closeModal();
         refreshCalendar();
       });
@@ -1175,20 +1172,14 @@
       if(!confirm("이 일정을 최종 확정하시겠습니까?")) return;
       const idx = schedules.findIndex(x => x.id === editingScheduleId);
       if(idx < 0) return;
-      if(!canAccessSchedule(schedules[idx])){
-        alert("권한 없음");
-        return;
-      }
-      // 변경 전 시작/종료일 복사
+      if(!canAccessSchedule(schedules[idx])){ alert("권한 없음"); return; }
       const oldSch = { startDate: schedules[idx].startDate, endDate: schedules[idx].endDate };
       schedules[idx].status = "finalized";
       db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
       .then(() => {
         recordHistory("최종 확정", currentUid, schedules[idx], oldSch);
         alert("일정 최종 확정");
-        if(confirm("이메일을 발송할까요?")){
-          sendEmailNotification();
-        }
+        if(confirm("이메일을 발송할까요?")){ sendEmailNotification(); }
         closeModal();
         refreshCalendar();
       });
@@ -1207,20 +1198,9 @@
       const workContent = document.getElementById("modalDetails").value.trim();
       const transferMsg = document.getElementById("modalMessage").value.trim();
       const isUnavailable = document.getElementById("modalUnavailable").checked;
-      if(!sDate || !eDate){
-        alert("시작/종료일을 입력하세요");
-        return;
-      }
-      if(sDate > eDate){
-        alert("종료일이 시작일보다 빠릅니다.");
-        return;
-      }
-      let mainUserId = null;
-      if(document.getElementById("modalUserRow").style.display !== "none"){
-        mainUserId = document.getElementById("modalUserSelect").value;
-      } else {
-        mainUserId = currentUid;
-      }
+      if(!sDate || !eDate){ alert("시작/종료일을 입력하세요"); return; }
+      if(sDate > eDate){ alert("종료일이 시작일보다 빠릅니다."); return; }
+      let mainUserId = (document.getElementById("modalUserRow").style.display !== "none") ? document.getElementById("modalUserSelect").value : currentUid;
       const extraContainer = document.getElementById("additionalEngineerRows");
       const extraSelects = extraContainer.querySelectorAll("select");
       const managerId = document.getElementById("modalManagerSelect").value;
@@ -1228,11 +1208,7 @@
         if(!confirm("변경된 일정을 확정하시겠습니까?")) return;
         const idx = schedules.findIndex(x => x.id === editingScheduleId);
         if(idx > -1){
-          if(!canAccessSchedule(schedules[idx])){
-            alert("수정 권한 없음");
-            return;
-          }
-          // 변경 전 일정 복사
+          if(!canAccessSchedule(schedules[idx])){ alert("수정 권한 없음"); return; }
           const oldSch = { startDate: schedules[idx].startDate, endDate: schedules[idx].endDate };
           schedules[idx].userId = mainUserId;
           schedules[idx].startDate = sDate;
@@ -1271,9 +1247,7 @@
           .then(() => {
             recordHistory("일정 변경", currentUid, schedules[idx], oldSch);
             alert("일정이 변경 및 확정되었습니다.");
-            if(confirm("이메일을 발송할까요?")){
-              sendEmailNotification();
-            }
+            if(confirm("이메일을 발송할까요?")){ sendEmailNotification(); }
             closeModal();
             refreshCalendar();
           });
@@ -1347,17 +1321,9 @@
     *****************************************/
     function updateAvailableEngineers(sDate, eDate){
       const listDiv = document.getElementById("availableEngineersList");
-      if(!sDate || !eDate){
-         listDiv.textContent = "시작/종료일을 먼저 입력하세요.";
-         return;
-      }
+      if(!sDate || !eDate){ listDiv.textContent = "시작/종료일을 먼저 입력하세요."; return; }
       const candidateIds = [];
-      for(const uid in users){
-         const u = users[uid];
-         if(u.role === "협력"){
-            candidateIds.push(uid);
-         }
-      }
+      for(const uid in users){ if(users[uid].role === "협력"){ candidateIds.push(uid); } }
       const available = [];
       candidateIds.forEach(uid => {
          const conflict = schedules.some(sch => {
@@ -1367,30 +1333,14 @@
          });
          if(!conflict) available.push(uid);
       });
-      if(available.length < 1){
-         listDiv.textContent = "가용 엔지니어 없음";
-      } else {
-         const nameArr = available.map(uid => {
-           const u = users[uid];
-           return u.id + " (" + (u.company || "업체 미지정") + ")";
-         });
-         listDiv.textContent = nameArr.join(", ");
-      }
+      if(available.length < 1){ listDiv.textContent = "가용 엔지니어 없음"; }
+      else { listDiv.textContent = available.map(uid => users[uid].id + " (" + (users[uid].company || "업체 미지정") + ")").join(", "); }
     }
     function buildEngineerSelectOptions(selectEl, selectedValue = null){
       selectEl.innerHTML = "";
       let engineerOptions = [];
-      for(const uid in users){
-         const u = users[uid];
-         if(u.role === "협력"){
-            engineerOptions.push({uid: uid, name: u.id || "NONAME", company: u.company || "업체 미지정"});
-         }
-      }
-      engineerOptions.sort((a, b) => {
-         if(a.company < b.company) return 1;
-         if(a.company > b.company) return -1;
-         return 0;
-      });
+      for(const uid in users){ if(users[uid].role === "협력"){ engineerOptions.push({uid: uid, name: users[uid].id || "NONAME", company: users[uid].company || "업체 미지정"}); } }
+      engineerOptions.sort((a, b) => a.company.localeCompare(b.company));
       engineerOptions.forEach(optData => {
          const opt = document.createElement("option");
          opt.value = optData.uid;
@@ -1399,36 +1349,25 @@
       });
       if(selectedValue){
          for(let i = 0; i < selectEl.options.length; i++){
-           if(selectEl.options[i].value === selectedValue){
-             selectEl.selectedIndex = i;
-             break;
-           }
+           if(selectEl.options[i].value === selectedValue){ selectEl.selectedIndex = i; break; }
          }
       }
     }
     function buildManagerSelectOptions(selectEl, selectedValue = null){
       selectEl.innerHTML = "";
       let hasOption = false;
-      for(const uid in users){
-        const u = users[uid];
-        if(u.role === "본사"){
+      for(const uid in users){ if(users[uid].role === "본사"){
           const opt = document.createElement("option");
           opt.value = uid;
-          opt.textContent = (u.id || "본사담당");
+          opt.textContent = users[uid].id || "본사담당";
           selectEl.appendChild(opt);
           hasOption = true;
-        }
-      }
-      if(!hasOption){
-        selectEl.innerHTML = "<option value=''>없음</option>";
-      }
+      } }
+      if(!hasOption){ selectEl.innerHTML = "<option value=''>없음</option>"; }
       if(selectedValue){
-        for(let i = 0; i < selectEl.options.length; i++){
-          if(selectEl.options[i].value === selectedValue){
-            selectEl.selectedIndex = i;
-            break;
-          }
-        }
+         for(let i = 0; i < selectEl.options.length; i++){
+           if(selectEl.options[i].value === selectedValue){ selectEl.selectedIndex = i; break; }
+         }
       }
     }
     function addEngineerRow(){
@@ -1462,19 +1401,15 @@
       if(pane === "userList"){
         document.getElementById("adminUserListPane").classList.add("active");
         drawUserList();
-      }
-      else if(pane === "userRegister"){
+      } else if(pane === "userRegister"){
         document.getElementById("adminUserRegisterPane").classList.add("active");
-      }
-      else if(pane === "scheduleList"){
+      } else if(pane === "scheduleList"){
         document.getElementById("adminScheduleListPane").classList.add("active");
         drawScheduleList();
-      }
-      else if(pane === "companyColor"){
+      } else if(pane === "companyColor"){
         document.getElementById("adminCompanyColorPane").classList.add("active");
         drawCompanyColorList();
-      }
-      else if(pane === "history"){
+      } else if(pane === "history"){
         db.ref("history").once("value").then(snap => {
           let temp = [];
           snap.forEach(child => { temp.push({ key: child.key, ...child.val() }); });
@@ -1574,19 +1509,11 @@
       const newEmail = document.getElementById("adminRegisterEmail").value.trim();
       const newPw = document.getElementById("adminRegisterPw").value.trim();
       const newComp = document.getElementById("adminRegisterCompany").value.trim() || "";
-      if(!userName || !newEmail || !newPw){
-        alert("이름/이메일/비밀번호는 필수 입력입니다.");
-        return;
-      }
+      if(!userName || !newEmail || !newPw){ alert("이름/이메일/비밀번호는 필수 입력입니다."); return; }
       auth.createUserWithEmailAndPassword(newEmail, newPw)
         .then(cred => {
           const uid = cred.user.uid;
-          const userData = {
-            id: userName,
-            email: newEmail,
-            role: role,
-            company: newComp
-          };
+          const userData = { id: userName, email: newEmail, role: role, company: newComp };
           return db.ref("users/" + uid).set(userData);
         })
         .then(() => {
@@ -1613,7 +1540,7 @@
         document.getElementById("adminQueryStart").value = qStart;
         document.getElementById("adminQueryEnd").value = qEnd;
       }
-      const filtered = schedules.filter(sch => { return (sch.startDate <= qEnd && sch.endDate >= qStart); });
+      const filtered = schedules.filter(sch => sch.startDate <= qEnd && sch.endDate >= qStart);
       filtered.forEach(sch => {
         const tr = document.createElement("tr");
         const userObj = users[sch.userId] || {};
@@ -1684,10 +1611,7 @@
       const newManagerId = prompt("본사 담당자", sch.managerId || "");
       if(newManagerId === null) return;
       const newUnavail = confirm("서비스 불가 일정?");
-      if(newSDate > newEDate){
-        alert("종료일이 시작일보다 빠릅니다.");
-        return;
-      }
+      if(newSDate > newEDate){ alert("종료일이 시작일보다 빠릅니다."); return; }
       sch.userId = newUid;
       sch.startDate = newSDate;
       sch.endDate = newEDate;
@@ -1731,13 +1655,8 @@
       const sel = document.getElementById("selectCompanyName");
       sel.innerHTML = "";
       let compSet = {};
-      for(const uid in users){
-        const c = users[uid].company || "기타";
-        compSet[c] = true;
-      }
-      for(const cName in companyColors){
-        compSet[cName] = true;
-      }
+      for(const uid in users){ compSet[users[uid].company || "기타"] = true; }
+      for(const cName in companyColors){ compSet[cName] = true; }
       for(const cName in compSet){
         const opt = document.createElement("option");
         opt.value = cName;
@@ -1804,7 +1723,7 @@
         document.getElementById("inputCompanyColorNormal").value = "#999999";
         document.getElementById("inputCompanyColorCancel").value = "#ff0000";
         document.getElementById("inputCompanyColorFinal").value = "#00ff00";
-        loadAllData().then(() => { drawCompanyColorList(); });
+        loadAllData().then(() => drawCompanyColorList());
       });
     }
     function deleteCompanyColor(cName){
@@ -1812,16 +1731,15 @@
       delete companyColors[cName];
       db.ref("companyColors").set(companyColors).then(() => {
         alert("삭제 완료");
-        loadAllData().then(() => { drawCompanyColorList(); });
+        loadAllData().then(() => drawCompanyColorList());
       });
     }
 
     /****************************************
-     18) 엑셀 업/다운로드
+     18) 엑셀 업/다운로드 (스케줄 목록)
     *****************************************/
     function downloadExcel(){
-      const exportData = schedules.map(sch => {
-        return {
+      const exportData = schedules.map(sch => ({
           startDate: sch.startDate,
           endDate: sch.endDate,
           Ship_Name: sch.lineName || "",
@@ -1834,8 +1752,7 @@
           unavailable: sch.unavailable || false,
           managerId: sch.managerId || "",
           cancelReason: sch.cancelReason || ""
-        };
-      });
+      }));
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Schedules");
@@ -1851,23 +1768,21 @@
         const sheetName = wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(ws);
-        const newArr = jsonData.map(row => {
-          return {
-            id: Date.now() + Math.floor(Math.random()*100000),
-            startDate: row.startDate || "",
-            endDate: row.endDate || "",
-            lineName: row.Ship_Name || "",
-            imoNo: row.IMO_No || "",
-            hullNo: row.Hull_No || "",
-            regionName: row.regionName || "",
-            details: row.details || "",
-            status: row.status || "normal",
-            userId: row.userId || "",
-            unavailable: row.unavailable || false,
-            managerId: row.managerId || "",
-            cancelReason: row.cancelReason || ""
-          };
-        });
+        const newArr = jsonData.map(row => ({
+          id: Date.now() + Math.floor(Math.random()*100000),
+          startDate: row.startDate || "",
+          endDate: row.endDate || "",
+          lineName: row.Ship_Name || "",
+          imoNo: row.IMO_No || "",
+          hullNo: row.Hull_No || "",
+          regionName: row.regionName || "",
+          details: row.details || "",
+          status: row.status || "normal",
+          userId: row.userId || "",
+          unavailable: row.unavailable || false,
+          managerId: row.managerId || "",
+          cancelReason: row.cancelReason || ""
+        }));
         schedules = newArr;
         db.ref("schedules").set(schedules).then(() => {
           alert("엑셀 업로드 완료");
@@ -1885,7 +1800,7 @@
       document.getElementById("historyLimitInput").value = historyLimit;
       const tbody = document.getElementById("adminHistoryBody");
       tbody.innerHTML = "";
-      const sorted = [...histories].sort((a, b) => { return (b.timestamp || "").localeCompare(a.timestamp || ""); });
+      const sorted = [...histories].sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
       sorted.forEach(h => {
         const tr = document.createElement("tr");
         const tdTime = document.createElement("td");
@@ -1915,10 +1830,7 @@
     }
     function setHistoryLimit(){
       const val = parseInt(document.getElementById("historyLimitInput").value, 10);
-      if(isNaN(val) || val < 1){
-        alert("1 이상의 숫자를 입력하세요.");
-        return;
-      }
+      if(isNaN(val) || val < 1){ alert("1 이상의 숫자를 입력하세요."); return; }
       historyLimit = val;
       db.ref("historyLimit").set(val).then(() => {
         alert("히스토리 최대 개수 설정 완료");
@@ -1926,8 +1838,7 @@
       });
     }
     function downloadHistoryExcel(){
-      const histData = histories.map(h => {
-        return {
+      const histData = histories.map(h => ({
           time: (h.timestamp || "").replace("T", " ").substring(0,19),
           user: h.user || "",
           oldStartDate: h.oldStartDate || "",
@@ -1935,8 +1846,7 @@
           newStartDate: h.newStartDate || "",
           newEndDate: h.newEndDate || "",
           action: h.action || ""
-        };
-      });
+      }));
       const ws = XLSX.utils.json_to_sheet(histData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Histories");
@@ -1978,30 +1888,25 @@
       const userRow = document.getElementById("modalUserRow");
       if (userRow.style.display !== "none") {
         const mainUserId = document.getElementById("modalUserSelect").value;
-        if (users[mainUserId] && users[mainUserId].email) { recipients.push(users[mainUserId].email); }
+        if (users[mainUserId] && users[mainUserId].email) recipients.push(users[mainUserId].email);
       } else {
         if (currentUser && currentUser.email) recipients.push(currentUser.email);
       }
       const extraContainer = document.getElementById("additionalEngineerRows");
       const extraSelects = extraContainer.querySelectorAll("select");
-      extraSelects.forEach(sel => {
-        const uid = sel.value;
-        if (users[uid] && users[uid].email) { recipients.push(users[uid].email); }
-      });
+      extraSelects.forEach(sel => { const uid = sel.value; if (users[uid] && users[uid].email) recipients.push(users[uid].email); });
       const managerId = document.getElementById("modalManagerSelect").value;
-      if(managerId && users[managerId] && users[managerId].email){ recipients.push(users[managerId].email); }
-      for (const uid in users) {
-        if (users[uid].role === "관리자" && users[uid].email) { recipients.push(users[uid].email); }
-      }
+      if(managerId && users[managerId] && users[managerId].email) recipients.push(users[managerId].email);
+      for (const uid in users) { if (users[uid].role === "관리자" && users[uid].email) recipients.push(users[uid].email); }
       recipients = [...new Set(recipients)];
       if (recipients.length === 0) { alert("발송할 이메일 주소가 없습니다."); return; }
-      const engineer    = document.getElementById("modalUserSelect").value;
-      const startDate   = document.getElementById("modalStartDate").value;
-      const endDate     = document.getElementById("modalEndDate").value;
-      const imoNo       = document.getElementById("modalIMONo").value.trim();
-      const shipName    = document.getElementById("modalLine").value.trim();
-      const hullNo      = document.getElementById("modalHullNo").value.trim();
-      const regionName  = document.getElementById("modalRegion").value.trim();
+      const engineer = document.getElementById("modalUserSelect").value;
+      const startDate = document.getElementById("modalStartDate").value;
+      const endDate = document.getElementById("modalEndDate").value;
+      const imoNo = document.getElementById("modalIMONo").value.trim();
+      const shipName = document.getElementById("modalLine").value.trim();
+      const hullNo = document.getElementById("modalHullNo").value.trim();
+      const regionName = document.getElementById("modalRegion").value.trim();
       const workContent = document.getElementById("modalDetails").value.trim();
       const transferMsg = document.getElementById("modalMessage").value.trim();
       const msg = "엔지니어(업체): " + engineer + "\n" +
@@ -2015,14 +1920,89 @@
                   "전달사항: " + transferMsg;
       const templateParams = { to_email: recipients.join(", "), message: msg };
       emailjs.send("service_cvipu3z", "template_aneojps", templateParams)
-        .then(response => {
-          console.log("이메일 전송 성공:", response.status, response.text);
-          alert("이메일이 전송되었습니다.");
-        })
-        .catch(error => {
-          console.error("이메일 전송 실패:", error);
-          alert("이메일 전송에 실패했습니다.");
-        });
+        .then(response => { console.log("이메일 전송 성공:", response.status, response.text); alert("이메일이 전송되었습니다."); })
+        .catch(error => { console.error("이메일 전송 실패:", error); alert("이메일 전송에 실패했습니다."); });
+    }
+
+    /****************************************
+     22) 타임 테이블 모달 관련 기능
+    *****************************************/
+    function openTimeTableModal(){
+      db.ref("timeTable").once("value").then(snap => {
+        if(snap.exists()){
+          timeTableData = [];
+          snap.forEach(child => { timeTableData.push(child.val()); });
+        } else { timeTableData = []; }
+        renderTimeTable();
+        document.getElementById("timeTableModalBg").style.display = "block";
+      });
+    }
+    function closeTimeTableModal(){
+      document.getElementById("timeTableModalBg").style.display = "none";
+    }
+    function renderTimeTable(){
+      const tbody = document.getElementById("timeTableBody");
+      tbody.innerHTML = "";
+      timeTableData.forEach((row, index) => {
+        const tr = document.createElement("tr");
+        const tdTime = document.createElement("td");
+        const inputTime = document.createElement("input");
+        inputTime.type = "text";
+        inputTime.value = row.time || "";
+        tdTime.appendChild(inputTime);
+        const tdWork = document.createElement("td");
+        const inputWork = document.createElement("input");
+        inputWork.type = "text";
+        inputWork.value = row.work || "";
+        tdWork.appendChild(inputWork);
+        const tdDelete = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "삭제";
+        delBtn.onclick = function(){ timeTableData.splice(index, 1); renderTimeTable(); };
+        tdDelete.appendChild(delBtn);
+        tr.appendChild(tdTime);
+        tr.appendChild(tdWork);
+        tr.appendChild(tdDelete);
+        tbody.appendChild(tr);
+      });
+    }
+    function addTimeTableRow(){
+      timeTableData.push({ time:"", work:"" });
+      renderTimeTable();
+    }
+    function saveTimeTable(){
+      const tbody = document.getElementById("timeTableBody");
+      const newData = [];
+      tbody.querySelectorAll("tr").forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        newData.push({ time: inputs[0].value, work: inputs[1].value });
+      });
+      timeTableData = newData;
+      db.ref("timeTable").set(timeTableData).then(() => {
+        alert("타임 테이블 저장 완료");
+        closeTimeTableModal();
+      });
+    }
+    function downloadTimeTableExcel(){
+      const ws = XLSX.utils.json_to_sheet(timeTableData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "TimeTable");
+      XLSX.writeFile(wb, "timeTable.xlsx");
+    }
+    function uploadTimeTableExcel(event){
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:"array"});
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(ws);
+        timeTableData = jsonData;
+        renderTimeTable();
+      };
+      reader.readAsArrayBuffer(file);
     }
   </script>
 </body>
