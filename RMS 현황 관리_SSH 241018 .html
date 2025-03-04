@@ -1,994 +1,1270 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RMS 현황 관리</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #315b8a; 
-            --secondary-color: #1e3d59;
-            --background-color: #f5f7fa;
-            --text-color: #2d3e50;
-            --border-color: #d1d5db;
-            --highlight-color: #e0eaf3;
-        }
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 타이틀 변경 -->
+  <title>S&SYS 고객지원팀 RMS 현황 관리</title>
+  
+  <!-- (1) Firebase (Compat 버전) 스크립트 로드 -->
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
 
-        .sidebar {
-            width: 240px;
-            background: linear-gradient(180deg, var(--secondary-color) 0%, #183046 100%);
-            padding: 20px;
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar h3 {
-            color: #ffffff;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            font-weight: 700;
-            font-size: 1.2em;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 10px;
-        }
-        .sidebar button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            background-color: #315b8a;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            text-align: left;
-            font-size: 0.95em;
-        }
-        .sidebar button:hover {
-            background-color: #2b4f7a;
-            transform: translateY(-2px);
-        }
+  <!-- (2) XLSX 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 
-        .container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+  <!-- 구글 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  >
 
-        .content {
-            flex-grow: 1;
-            padding: 20px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        h1 {
-            color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.2em;
-            font-weight: 700;
-        }
-        #connectionStatus {
-            margin-bottom: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-        #errorLog {
-            color: #e74c3c;
-            margin-top: 10px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .table-container {
-            overflow: hidden;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .scrollbar-container {
-            overflow: auto;
-        }
-        .table-wrapper {
-            overflow: auto;
-            flex-grow: 1;
-        }
-
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            font-size: 0.9em;
-        }
-        th, td {
-            border: 1px solid var(--border-color);
-            padding: 12px;
-            text-align: left;
-            position: relative;
-            background-color: #ffffff;
-            transition: background-color 0.2s;
-        }
-        th {
-            background-color: var(--primary-color);
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        tr:nth-child(even) td {
-            background-color: #f9fafb;
-        }
-        tr:hover td {
-            background-color: var(--highlight-color);
-        }
-
-        input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea.large-input {
-            width: 90%;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            transition: border-color 0.3s;
-            font-size: 0.85em;
-            font-family: inherit;
-            background-color: #fcfcfd;
-        }
-        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea.large-input:focus {
-            border-color: var(--primary-color);
-            outline: none;
-            background-color: #ffffff;
-        }
-        textarea.large-input {
-            height: 60px;
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .button-group {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: space-between;
-            padding: 0 20px;
-        }
-        .button-group button {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            flex-grow: 1;
-            font-size: 0.95em;
-            font-weight: 500;
-        }
-        .button-group button:hover {
-            background-color: #2b4f7a;
-            transform: translateY(-2px);
-        }
-
-        #historyModal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            animation: fadeIn 0.3s ease;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-height: 90%;
-            overflow-y: auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            animation: slideUp 0.3s ease;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            margin-top: -10px;
-            cursor: pointer;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-        }
-        #historyContent p {
-            margin: 8px 0;
-        }
-        #historyContent ul {
-            list-style: disc inside;
-            margin: 5px 0 15px 0;
-            padding: 0;
-        }
-        #historyContent li {
-            margin: 5px 0;
-        }
-
-        .resizer {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 5px;
-            cursor: col-resize;
-            user-select: none;
-        }
-        .resizer:hover,
-        .resizing {
-            border-right: 2px solid var(--primary-color);
-        }
-
-        th:nth-child(1), td:nth-child(1) { width: 30px; min-width: 30px; max-width: 30px; }
-        th:nth-child(2), td:nth-child(2) { width: 100px; min-width: 100px; }
-        th:nth-child(3), td:nth-child(3),
-        th:nth-child(4), td:nth-child(4) { width: 80px; min-width: 80px; }
-        th:nth-child(5), td:nth-child(5) { width: 100px; min-width: 100px; }
-        th:nth-child(6), td:nth-child(6),
-        th:nth-child(7), td:nth-child(7),
-        th:nth-child(8), td:nth-child(8) { width: 120px; min-width: 120px; }
-        th:nth-child(9), td:nth-child(9),
-        th:nth-child(10), td:nth-child(10) { width: 100px; min-width: 100px; }
-        th:nth-child(11), td:nth-child(11),
-        th:nth-child(12), td:nth-child(12) { width: 400px; min-width: 400px; max-width: 400px; }
-        th:nth-child(13), td:nth-child(13) { width: 150px; min-width: 150px; }
-
-        @keyframes fadeIn {
-            from {opacity: 0;}
-            to {opacity: 1;}
-        }
-        @keyframes slideUp {
-            from {transform: translateY(20px); opacity: 0;}
-            to {transform: translateY(0); opacity: 1;}
-        }
-    </style>
+  <!-- (3) 스타일 -->
+  <style>
+    /* RMS 관리 기본 스타일 */
+    :root {
+      --primary-color: #315b8a;
+      --secondary-color: #1e3d59;
+      --background-color: #f5f7fa;
+      --text-color: #2d3e50;
+      --border-color: #d1d5db;
+      --highlight-color: #e0eaf3;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 240px;
+      background: linear-gradient(180deg, var(--secondary-color) 0%, #183046 100%);
+      padding: 20px;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    .sidebar h3 {
+      color: #ffffff;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-weight: 700;
+      font-size: 1.2em;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 10px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: #315b8a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      text-align: left;
+      font-size: 0.95em;
+    }
+    .sidebar button:hover {
+      background-color: #2b4f7a;
+      transform: translateY(-2px);
+    }
+    .container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* 헤더 제목을 "S&SYS 고객지원팀 RMS 현황 관리" 로 변경 */
+    .header h1 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    .header button {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #categoryTitle {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+      font-weight: 700;
+  color: white; /* var(--primary-color) 대신 white 사용 */
+    }
+    #connectionStatus {
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    #errorLog {
+      color: #e74c3c;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .table-container {
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .scrollbar-container {
+      overflow: auto;
+    }
+    .table-wrapper {
+      overflow: auto;
+      flex-grow: 1;
+    }
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      font-size: 0.9em;
+    }
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      text-align: left;
+      position: relative;
+      background-color: #ffffff;
+      transition: background-color 0.2s;
+    }
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    tr:nth-child(even) td {
+      background-color: #f9fafb;
+    }
+    tr:hover td {
+      background-color: var(--highlight-color);
+    }
+    input[type="text"], input[type="number"], input[type="date"], input[type="time"], textarea.large-input {
+      width: 90%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: border-color 0.3s;
+      font-size: 0.85em;
+      font-family: inherit;
+      background-color: #fcfcfd;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus, textarea.large-input:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      background-color: #ffffff;
+    }
+    textarea.large-input {
+      height: 60px;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .button-group button {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      flex-grow: 1;
+      font-size: 0.95em;
+      font-weight: 500;
+    }
+    .button-group button:hover {
+      background-color: #2b4f7a;
+      transform: translateY(-2px);
+    }
+    #historyModal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-height: 90%;
+      overflow-y: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: -10px;
+      cursor: pointer;
+    }
+    .close:hover,
+    .close:focus {
+      color: black;
+    }
+    #historyContent p {
+      margin: 8px 0;
+    }
+    #historyContent ul {
+      list-style: disc inside;
+      margin: 5px 0 15px 0;
+      padding: 0;
+    }
+    #historyContent li {
+      margin: 5px 0;
+    }
+    .resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 5px;
+      cursor: col-resize;
+      user-select: none;
+    }
+    .resizer:hover,
+    .resizing {
+      border-right: 2px solid var(--primary-color);
+    }
+    th:nth-child(1), td:nth-child(1) {
+      width: 30px; min-width: 30px; max-width: 30px;
+    }
+    th:nth-child(2), td:nth-child(2) {
+      width: 100px; min-width: 100px;
+    }
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4) {
+      width: 80px; min-width: 80px;
+    }
+    th:nth-child(5), td:nth-child(5) {
+      width: 100px; min-width: 100px;
+    }
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(7), td:nth-child(7),
+    th:nth-child(8), td:nth-child(8) {
+      width: 120px; min-width: 120px;
+    }
+    th:nth-child(9), td:nth-child(9),
+    th:nth-child(10), td:nth-child(10) {
+      width: 100px; min-width: 100px;
+    }
+    th:nth-child(11), td:nth-child(11),
+    th:nth-child(12), td:nth-child(12) {
+      width: 400px; min-width: 400px; max-width: 400px;
+    }
+    th:nth-child(13), td:nth-child(13) {
+      width: 150px; min-width: 150px;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @keyframes slideUp {
+      from {transform: translateY(20px); opacity: 0;}
+      to {transform: translateY(0); opacity: 1;}
+    }
+    /* 로그인 화면 스타일 */
+    #login-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      flex-direction: column;
+    }
+    #login-container h2 {
+      margin-bottom: 20px;
+      color: var(--primary-color);
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 300px;
+    }
+    .login-form input {
+      padding: 8px;
+      font-size: 1em;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .login-form button {
+      padding: 10px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    /* 관리자 유저 관리 모달 스타일 */
+    #userManagementModal {
+      display: none;
+      position: fixed;
+      z-index: 10001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    #userManagementModal .modal-content {
+      width: 80%;
+      max-width: 600px;
+    }
+    #userTabs {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    #userTabs button {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      background-color: #eee;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    #userTabs button.active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .user-tab-content {
+      display: none;
+    }
+    .user-tab-content.active {
+      display: block;
+    }
+    table.admin-user-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    table.admin-user-table th, table.admin-user-table td {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      text-align: left;
+    }
+    /* 하단 문구 */
+    footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 0.8em;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
+  <!-- 로그인 화면 -->
+  <div id="login-container">
+    <h2>로그인</h2>
+    <div class="login-form">
+      <input type="text" id="loginEmail" placeholder="이메일">
+      <input type="password" id="loginPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter'){ login(); }">
+      <button onclick="login()">로그인</button>
+      <button onclick="resetPassword()">비밀번호 재설정</button>
+    </div>
+  </div>
+
+  <!-- 메인 앱 (로그인 후 표시) -->
+  <div id="main-app" style="display:none; width:100%; height:100%;">
     <div class="sidebar">
-        <h3>BWMS</h3>
-        <button onclick="changeCategory('BWMS', 2024)">2024년</button>
-        <button onclick="changeCategory('BWMS', 2025)">2025년</button>
-        <h3>제어</h3>
-        <button onclick="changeCategory('control', 2024)">2024년</button>
-        <button onclick="changeCategory('control', 2025)">2025년</button>
+      <h3>BWMS</h3>
+      <button onclick="changeCategory('BWMS', 2024)">2024년</button>
+      <button onclick="changeCategory('BWMS', 2025)">2025년</button>
+      <h3>제어</h3>
+      <button onclick="changeCategory('control', 2024)">2024년</button>
+      <button onclick="changeCategory('control', 2025)">2025년</button>
+      <!-- 관리자 전용 유저 관리 버튼 -->
+      <div id="adminButtons" style="margin-top:20px; display:none;">
+        <button onclick="openUserManagementModal()">유저 관리</button>
+      </div>
     </div>
     <div class="container">
-        <div class="content">
-            <h1 id="categoryTitle">RMS 현황 관리</h1>
-            <div id="connectionStatus">연결 상태: 확인 중...</div>
-            <div id="errorLog"></div>
-            <div class="table-container">
-                <div class="scrollbar-container"></div>
-                <div class="table-wrapper">
-                    <table id="rmsTable">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()"></th>
-                                <th>일자<div class="resizer"></div></th>
-                                <th>시작 시간<div class="resizer"></div></th>
-                                <th>종료 시간<div class="resizer"></div></th>
-                                <th>총 작업 시간<div class="resizer"></div></th>
-                                <th>Ship name<div class="resizer"></div></th>
-                                <th>Hull No.<div class="resizer"></div></th>
-                                <th>AS공번<div class="resizer"></div></th>
-                                <th>호선 담당자<div class="resizer"></div></th>
-                                <th>기술 담당자<div class="resizer"></div></th>
-                                <th>클레임 내용<div class="resizer"></div></th>
-                                <th>조치 결과<div class="resizer"></div></th>
-                                <th>비고<div class="resizer"></div></th>
-                            </tr>
-                        </thead>
-                        <tbody id="rmsBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      <div class="header">
+        <!-- 타이틀을 "S&SYS 고객지원팀 RMS 현황 관리" 로 변경 -->
+        <h1 id="categoryTitle">S&SYS 고객지원팀 RMS 현황 관리</h1>
+        <div>
+          <button onclick="logout()">로그아웃</button>
+        </div>
+      </div>
+      <div class="content">
+        <div id="connectionStatus">연결 상태: 확인 중...</div>
+        <div id="errorLog"></div>
+        <div class="table-container">
+          <div class="scrollbar-container"></div>
+          <div class="table-wrapper">
+            <table id="rmsTable">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()"></th>
+                  <th>일자<div class="resizer"></div></th>
+                  <th>시작 시간<div class="resizer"></div></th>
+                  <th>종료 시간<div class="resizer"></div></th>
+                  <th>총 작업 시간<div class="resizer"></div></th>
+                  <th>Ship name<div class="resizer"></div></th>
+                  <th>Hull No.<div class="resizer"></div></th>
+                  <th>AS공번<div class="resizer"></div></th>
+                  <th>호선 담당자<div class="resizer"></div></th>
+                  <th>기술 담당자<div class="resizer"></div></th>
+                  <th>클레임 내용<div class="resizer"></div></th>
+                  <th>조치 결과<div class="resizer"></div></th>
+                  <th>비고<div class="resizer"></div></th>
+                </tr>
+              </thead>
+              <tbody id="rmsBody"></tbody>
+            </table>
+          </div>
         </div>
         <div class="button-group">
-            <button onclick="addRow()">행 추가</button>
-            <button onclick="deleteSelectedRows()">선택 행 삭제</button>
-            <button onclick="saveToFirebase()">저장</button>
-            <button onclick="loadFromFirebase()">불러오기</button>
-            <button onclick="downloadExcel()">엑셀 다운로드</button>
-            <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
-            <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
-            <button onclick="showHistory()">히스토리</button>
-            <button onclick="deleteAllHistory()">히스토리 전체 삭제</button>
+          <button onclick="addRow()">행 추가</button>
+          <button onclick="deleteSelectedRows()">선택 행 삭제</button>
+          <button onclick="saveToFirebase()">저장</button>
+          <button onclick="loadFromFirebase()">불러오기</button>
+          <button onclick="downloadExcel()">엑셀 다운로드</button>
+          <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
+          <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
+          <button onclick="showHistory()">히스토리</button>
+          <button onclick="deleteAllHistory()">히스토리 전체 삭제</button>
         </div>
+      </div>
     </div>
+  </div>
 
-    <div id="historyModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeHistory()">&times;</span>
-            <h2>변경 히스토리</h2>
-            <div id="historyContent"></div>
+  <!-- 변경 히스토리 모달 -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeHistory()">&times;</span>
+      <h2>변경 히스토리</h2>
+      <div id="historyContent"></div>
+    </div>
+  </div>
+
+  <!-- 관리자 유저 관리 모달 -->
+  <div id="userManagementModal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUserManagementModal()">&times;</span>
+      <div id="userTabs">
+        <button id="tabUserList" class="active" onclick="showUserTab('list')">유저 목록</button>
+        <button id="tabUserRegister" onclick="showUserTab('register')">유저 등록</button>
+      </div>
+      <div id="userListContent" class="user-tab-content active">
+        <table class="admin-user-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>이메일</th>
+              <th>권한</th>
+              <th>업체</th>
+              <th>수정</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserListBody"></tbody>
+        </table>
+      </div>
+      <div id="userRegisterContent" class="user-tab-content">
+        <div>
+          <label>권한</label>
+          <select id="adminRegisterRole">
+            <option value="관리자">관리자</option>
+            <option value="일반">일반</option>
+            <!-- "협력"도 만들 수 있지만, 여기서는 필요에 따라 선택 -->
+            <option value="협력">협력</option>
+          </select>
         </div>
+        <div>
+          <label>이름(표시용)</label>
+          <input type="text" id="adminRegisterName" placeholder="예: 홍길동">
+        </div>
+        <div>
+          <label>이메일</label>
+          <input type="email" id="adminRegisterEmail" placeholder="예: user@example.com">
+        </div>
+        <div>
+          <label>비밀번호</label>
+          <input type="password" id="adminRegisterPw" placeholder="********">
+        </div>
+        <div>
+          <label>업체명</label>
+          <input type="text" id="adminRegisterCompany" placeholder="예: 본사, ○○업체 등">
+        </div>
+        <button onclick="createUser()">등록하기</button>
+      </div>
     </div>
-    <script>
-        // ------------------------------
-        // 1. Firebase 초기화
-        // ------------------------------
-        const firebaseConfig = {
-            apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
-            authDomain: "sanghoon-d8f1c.firebaseapp.com",
-            databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
-            projectId: "sanghoon-d8f1c",
-            storageBucket: "sanghoon-d8f1c.appspot.com",
-            messagingSenderId: "495391900753",
-            appId: "1:495391900753:web:b0d708eeca64fafe562470",
-            measurementId: "G-J2E22BW61H"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+  </div>
 
-        let currentCategory = 'BWMS';
-        let currentYear = 2024;
-        // 이전에 불러온 DB 데이터(UID->행객체)
-        let previousData = {};
+  <!-- (하단 문구 추가) -->
+  <footer>
+    문의 및 개선 : 서상훈 차장(1432)
+  </footer>
 
-        // ------------------------------
-        // 2. 연결 테스트
-        // ------------------------------
-        function testConnection() {
-            database.ref('test').set({ connectionTest: true })
-                .then(() => {
-                    console.log("Firebase 연결 성공");
-                    updateConnectionStatus(true);
-                })
-                .catch((error) => {
-                    console.error("Firebase 연결 실패:", error);
-                    updateConnectionStatus(false, error.message);
-                });
-        }
+  <!-- 실제 JS 코드 -->
+  <script>
+    // 1) Firebase 설정 객체
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+      authDomain: "sanghoon-d8f1c.firebaseapp.com",
+      databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+      projectId: "sanghoon-d8f1c",
+      storageBucket: "sanghoon-d8f1c.appspot.com",
+      messagingSenderId: "495391900753",
+      appId: "1:495391900753:web:b0d708eeca64fafe562470",
+      measurementId: "G-J2E22BW61H"
+    };
 
-        function updateConnectionStatus(isConnected, errorMessage = '') {
-            const statusElement = document.getElementById('connectionStatus');
-            const errorLog = document.getElementById('errorLog');
-            
-            if (isConnected) {
-                statusElement.textContent = "연결 상태: Firebase에 연결되었습니다.";
-                statusElement.style.color = "green";
-                errorLog.textContent = "";
-            } else {
-                statusElement.textContent = "연결 상태: Firebase에 연결되지 않았습니다.";
-                statusElement.style.color = "red";
-                errorLog.textContent = "연결 오류: " + errorMessage;
+    // 2) Firebase App 초기화 (가장 먼저 호출) + 중복방지
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    // 3) Auth, Database 참조
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // 전역 변수
+    let currentUser = null; // 현재 로그인한 사용자 (DB의 "users" 정보)
+    let previousData = {};  // 이전에 불러온 DB 데이터
+    let currentCategory = 'BWMS';
+    let currentYear = 2024;
+
+    // ------------------------------
+    // Firebase Auth 상태 변화 감지
+    // ------------------------------
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        const uid = user.uid;
+        database.ref("users/" + uid).once("value").then(snapshot => {
+          if (!snapshot.exists()) {
+            // sanghoon.seo@snsys.net이면 관리자, 아니면 일반
+            let role = "일반";
+            if (user.email.toLowerCase() === "sanghoon.seo@snsys.net") {
+              role = "관리자";
             }
-        }
+            const userData = {
+              id: user.email.split("@")[0],
+              email: user.email,
+              role: role,
+              company: ""
+            };
+            return database.ref("users/" + uid).set(userData).then(() => userData);
+          } else {
+            return snapshot.val();
+          }
+        }).then(userData => {
+          // (1) '협력' 권한이면 접근 제한 -> 로그아웃
+          if (userData.role === '협력') {
+            alert("협력 권한은 접근이 제한됩니다.");
+            logout();
+            return;
+          }
+          currentUser = userData;
+          document.getElementById("login-container").style.display = "none";
+          document.getElementById("main-app").style.display = "flex";
+          if (currentUser.role === "관리자") {
+            document.getElementById("adminButtons").style.display = "block";
+          }
+          testConnection();
+          loadFromFirebase();
+          // 스크롤바 폭 조정
+          const scrollbarContainer = document.querySelector('.scrollbar-container');
+          const table = document.getElementById('rmsTable');
+          const scrollbarContent = document.createElement('div');
+          scrollbarContent.style.width = table.scrollWidth + 'px';
+          scrollbarContainer.appendChild(scrollbarContent);
+        }).catch(err => {
+          console.error("사용자 데이터 로드 실패:", err);
+          logout();
+        });
+      } else {
+        document.getElementById("login-container").style.display = "flex";
+        document.getElementById("main-app").style.display = "none";
+      }
+    });
 
-        // ------------------------------
-        // 3. 카테고리/연도 변경
-        // ------------------------------
-        function changeCategory(category, year) {
-            currentCategory = category;
-            currentYear = year;
-            document.getElementById('categoryTitle').textContent = `RMS 현황 관리 - ${category} ${year}년`;
-            loadFromFirebase();
-        }
+    // ------------------------------
+    // 로그인/로그아웃/비밀번호 재설정
+    // ------------------------------
+    function login(){
+      const emailVal = document.getElementById("loginEmail").value.trim();
+      const pwVal = document.getElementById("loginPw").value.trim();
+      if(!emailVal || !pwVal){ alert("이메일과 비밀번호를 입력하세요"); return; }
+      auth.signInWithEmailAndPassword(emailVal, pwVal)
+        .catch(err => { alert("로그인 실패: " + err.message); });
+    }
+    function logout(){
+      if(!confirm("로그아웃 하시겠습니까?")) return;
+      auth.signOut();
+      currentUser = null;
+      document.getElementById("loginEmail").value = "";
+      document.getElementById("loginPw").value = "";
+    }
+    function resetPassword(){
+      const emailVal = document.getElementById("loginEmail").value.trim();
+      if(!emailVal){ alert("비밀번호 재설정을 위해 이메일을 입력하세요."); return; }
+      auth.sendPasswordResetEmail(emailVal)
+         .then(() => { alert("비밀번호 재설정 이메일이 발송되었습니다."); })
+         .catch(err => { alert("비밀번호 재설정 실패: " + err.message); });
+    }
 
-        // ------------------------------
-        // 4. 행 추가 (신규행 -> 새로운 UID 생성)
-        // ------------------------------
-        function addRow() {
-            const tbody = document.getElementById('rmsBody');
-            const rowCount = tbody.rows.length;
-            if (rowCount >= 2000) {
-                alert('최대 2000개의 항목만 입력할 수 있습니다.');
-                return;
+    // ------------------------------
+    // 연결 테스트
+    // ------------------------------
+    function testConnection() {
+      database.ref('test').set({ connectionTest: true })
+        .then(() => { updateConnectionStatus(true); })
+        .catch((error) => { updateConnectionStatus(false, error.message); });
+    }
+    function updateConnectionStatus(isConnected, errorMessage = '') {
+      const statusElement = document.getElementById('connectionStatus');
+      const errorLog = document.getElementById('errorLog');
+      if (isConnected) {
+        statusElement.textContent = "연결 상태: Firebase에 연결되었습니다.";
+        statusElement.style.color = "green";
+        errorLog.textContent = "";
+      } else {
+        statusElement.textContent = "연결 상태: Firebase에 연결되지 않았습니다.";
+        statusElement.style.color = "red";
+        errorLog.textContent = "연결 오류: " + errorMessage;
+      }
+    }
+
+    // ------------------------------
+    // 카테고리/연도 변경
+    // ------------------------------
+    function changeCategory(category, year) {
+      currentCategory = category;
+      currentYear = year;
+      document.getElementById('categoryTitle').textContent = `S&SYS 고객지원팀 RMS 현황 관리 - ${category} ${year}년`;
+      loadFromFirebase();
+    }
+
+    // ------------------------------
+    // 행 추가 (신규행 -> 새로운 UID)
+    // ------------------------------
+    function addRow() {
+      const tbody = document.getElementById('rmsBody');
+      const rowCount = tbody.rows.length;
+      if (rowCount >= 2000) {
+        alert('최대 2000개의 항목만 입력할 수 있습니다.');
+        return;
+      }
+      const newId = database.ref().push().key;
+      const row = tbody.insertRow(0);
+      row.setAttribute('data-uid', newId);
+      // 체크박스
+      const checkboxCell = row.insertCell(0);
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkboxCell.appendChild(checkbox);
+      // 나머지 12칸
+      for (let i = 0; i < 12; i++) {
+        const cell = row.insertCell(i + 1);
+        let input;
+        if (i === 9 || i === 10) {
+          input = document.createElement('textarea');
+          input.className = 'large-input';
+        } else {
+          input = document.createElement('input');
+          if (i === 0) {
+            input.type = 'date';
+          } else if (i === 1 || i === 2) {
+            input.type = 'time';
+          } else if (i === 3) {
+            input.type = 'text';
+            input.readOnly = true;
+          } else {
+            input.type = 'text';
+          }
+        }
+        input.addEventListener('input', calculateTotalTime);
+        cell.appendChild(input);
+      }
+    }
+
+    // ------------------------------
+    // 총 작업 시간 계산
+    // ------------------------------
+    function calculateTotalTime(event) {
+      const row = event.target.closest('tr');
+      const startTime = row.cells[2].querySelector('input').value;
+      const endTime = row.cells[3].querySelector('input').value;
+      if (startTime && endTime) {
+        const start = new Date(`2000-01-01T${startTime}`);
+        const end = new Date(`2000-01-01T${endTime}`);
+        let diff = end - start;
+        if (diff < 0) { diff += 24 * 60 * 60 * 1000; }
+        const hours = Math.floor(diff / (60 * 60 * 1000));
+        const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+        row.cells[4].querySelector('input').value = `${hours}시간 ${minutes}분`;
+      }
+    }
+
+    // ------------------------------
+    // 로컬 테이블 -> 객체 변환
+    // ------------------------------
+    function convertTableToObject() {
+      const rows = document.querySelectorAll('#rmsBody tr');
+      const result = {};
+      rows.forEach((tr) => {
+        const uid = tr.getAttribute('data-uid');
+        if (!uid) return;
+        const inputs = tr.querySelectorAll('td input, td textarea');
+        const date      = inputs[1].value;
+        const startTime = inputs[2].value;
+        const endTime   = inputs[3].value;
+        const totalTime = inputs[4].value;
+        const shipName  = inputs[5].value;
+        const hullNo    = inputs[6].value;
+        const asNo      = inputs[7].value;
+        const hosen     = inputs[8].value;
+        const tech      = inputs[9].value;
+        const claim     = inputs[10].value;
+        const action    = inputs[11].value;
+        const note      = inputs[12].value;
+        result[uid] = { id: uid, date, startTime, endTime, totalTime, shipName, hullNo, asNo, hosen, tech, claim, action, note };
+      });
+      return result;
+    }
+
+    // ------------------------------
+    // 변경 내역 추적(히스토리)
+    // ------------------------------
+    function getChanges(oldDataObj, newDataObj) {
+      const changes = [];
+      // (1) 삭제
+      for (let oldId in oldDataObj) {
+        if (!newDataObj.hasOwnProperty(oldId)) {
+          const shipName = oldDataObj[oldId].shipName || 'Ship name 미기재';
+          const hullNo   = oldDataObj[oldId].hullNo   || 'Hull No. 미기재';
+          changes.push(`삭제: ${shipName} (${hullNo})`);
+        }
+      }
+      // (2) 신규
+      for (let newId in newDataObj) {
+        if (!oldDataObj.hasOwnProperty(newId)) {
+          const shipName = newDataObj[newId].shipName || 'Ship name 미기재';
+          const hullNo   = newDataObj[newId].hullNo   || 'Hull No. 미기재';
+          changes.push(`신규: ${shipName} (${hullNo})`);
+        }
+      }
+      // (3) 수정
+      const fields = ["date","startTime","endTime","totalTime","shipName","hullNo","asNo","hosen","tech","claim","action","note"];
+      for (let newId in newDataObj) {
+        if (oldDataObj.hasOwnProperty(newId)) {
+          const oldRow = oldDataObj[newId];
+          const newRow = newDataObj[newId];
+          let isChanged = false;
+          for (let f of fields) {
+            if ((oldRow[f] || '') !== (newRow[f] || '')) {
+              isChanged = true;
+              break;
             }
+          }
+          if (isChanged) {
+            const shipName = newRow.shipName || 'Ship name 미기재';
+            const hullNo   = newRow.hullNo   || 'Hull No. 미기재';
+            changes.push(`수정: ${shipName} (${hullNo})`);
+          }
+        }
+      }
+      return changes;
+    }
 
-            const newId = database.ref().push().key; 
-            const row = tbody.insertRow(0);
-            row.setAttribute('data-uid', newId);
+    // ------------------------------
+    // 저장
+    // ------------------------------
+    function saveToFirebase() {
+      if (!currentUser) {
+        alert("로그인 후 저장할 수 있습니다.");
+        return;
+      }
+      const newDataObj = convertTableToObject();
+      const changes = getChanges(previousData, newDataObj);
+      if (changes.length === 0) {
+        alert("변경 사항이 없습니다.");
+        return;
+      }
+      const historyEntry = {
+        name: currentUser.id,
+        timestamp: new Date().toISOString(),
+        action: "데이터 저장",
+        changes: changes
+      };
+      const ref = database.ref(`rms/${currentCategory}/${currentYear}`);
+      ref.transaction(function(currentData) {
+        if (!currentData || typeof currentData !== 'object') {
+          return newDataObj;
+        }
+        const merged = { ...currentData };
+        for (let uid in newDataObj) {
+          merged[uid] = newDataObj[uid];
+        }
+        return merged;
+      },
+      function(error, committed, snapshot) {
+        if (error) {
+          console.error("트랜잭션 오류 발생:", error);
+          document.getElementById('errorLog').textContent = '저장 중 오류가 발생했습니다: ' + error.message;
+        } else if (!committed) {
+          console.warn("트랜잭션이 중단되었습니다.");
+        } else {
+          database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry)
+            .then(() => {
+              alert("데이터가 성공적으로 저장되었습니다.");
+              previousData = snapshot.val() || {};
+              loadFromFirebase();
+            })
+            .catch(err => { console.error("히스토리 저장 중 오류:", err); });
+        }
+      });
+    }
 
-            // 체크박스
-            const checkboxCell = row.insertCell(0);
+    // ------------------------------
+    // DB에서 불러오기
+    // ------------------------------
+    function loadFromFirebase() {
+      database.ref(`rms/${currentCategory}/${currentYear}`).once('value')
+        .then((snapshot) => {
+          const dataObj = snapshot.val() || {};
+          previousData = dataObj;
+          const tbody = document.getElementById('rmsBody');
+          tbody.innerHTML = '';
+          let rowsArray = Object.values(dataObj);
+          rowsArray.sort((a,b) => {
+            const da = a.date ? new Date(a.date) : null;
+            const db = b.date ? new Date(b.date) : null;
+            if (!da) return 1;
+            if (!db) return -1;
+            return db - da;
+          });
+          rowsArray.forEach(obj => {
+            const newRow = tbody.insertRow();
+            newRow.setAttribute('data-uid', obj.id);
+            const checkboxCell = newRow.insertCell(0);
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkboxCell.appendChild(checkbox);
-
-            // 나머지 12칸
-            for (let i = 0; i < 12; i++) {
-                const cell = row.insertCell(i + 1);
-                let input;
-                if (i === 9 || i === 10) {
-                    // 클레임 내용, 조치 결과
-                    input = document.createElement('textarea');
-                    input.className = 'large-input';
-                } else {
-                    input = document.createElement('input');
-                    if (i === 0) {
-                        input.type = 'date';
-                    } else if (i === 1 || i === 2) {
-                        input.type = 'time';
-                    } else if (i === 3) {
-                        input.type = 'text';
-                        input.readOnly = true;
-                    } else {
-                        input.type = 'text';
-                    }
-                }
-                input.addEventListener('input', calculateTotalTime);
-                cell.appendChild(input);
-            }
-        }
-
-        // ------------------------------
-        // 5. 총 작업 시간 계산
-        // ------------------------------
-        function calculateTotalTime(event) {
-            const row = event.target.closest('tr');
-            const startTime = row.cells[2].querySelector('input').value;
-            const endTime = row.cells[3].querySelector('input').value;
-            
-            if (startTime && endTime) {
-                const start = new Date(`2000-01-01T${startTime}`);
-                const end = new Date(`2000-01-01T${endTime}`);
-                let diff = end - start;
-                if (diff < 0) {
-                    diff += 24 * 60 * 60 * 1000; 
-                }
-                const hours = Math.floor(diff / (60 * 60 * 1000));
-                const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
-                row.cells[4].querySelector('input').value = `${hours}시간 ${minutes}분`;
-            }
-        }
-
-        // ------------------------------
-        // 6. 로컬 테이블 -> 객체 변환 (UID->행객체)
-        // ------------------------------
-        function convertTableToObject() {
-            const rows = document.querySelectorAll('#rmsBody tr');
-            const result = {};
-            rows.forEach((tr) => {
-                const uid = tr.getAttribute('data-uid');
-                if (!uid) return;
-
-                const inputs = tr.querySelectorAll('td input, td textarea');
-                // 인덱스: 0=checkbox(무시), 1=일자, 2=시작시간, 3=종료시간, 4=총작업시간, ...
-                const date      = inputs[1].value;
-                const startTime = inputs[2].value;
-                const endTime   = inputs[3].value;
-                const totalTime = inputs[4].value;
-                const shipName  = inputs[5].value;
-                const hullNo    = inputs[6].value;
-                const asNo      = inputs[7].value;
-                const hosen     = inputs[8].value;
-                const tech      = inputs[9].value;
-                const claim     = inputs[10].value;
-                const action    = inputs[11].value;
-                const note      = inputs[12].value;
-
-                result[uid] = {
-                    id: uid,
-                    date,
-                    startTime,
-                    endTime,
-                    totalTime,
-                    shipName,
-                    hullNo,
-                    asNo,
-                    hosen,
-                    tech,
-                    claim,
-                    action,
-                    note
-                };
+            const fields = [
+              ['date','date'],
+              ['startTime','time'],
+              ['endTime','time'],
+              ['totalTime','text'],
+              ['shipName','text'],
+              ['hullNo','text'],
+              ['asNo','text'],
+              ['hosen','text'],
+              ['tech','text'],
+              ['claim','textarea'],
+              ['action','textarea'],
+              ['note','text']
+            ];
+            fields.forEach((f, i) => {
+              const fieldName = f[0];
+              const fieldType = f[1];
+              const cell = newRow.insertCell(i + 1);
+              let input;
+              if (fieldType === 'textarea') {
+                input = document.createElement('textarea');
+                input.className = 'large-input';
+              } else {
+                input = document.createElement('input');
+                input.type = fieldType;
+                if (i === 3) { input.readOnly = true; }
+              }
+              input.value = obj[fieldName] || '';
+              input.addEventListener('input', calculateTotalTime);
+              cell.appendChild(input);
             });
-            return result;
-        }
-
-        // ------------------------------
-        // 7. 변경 내역 추적용(히스토리)
-        // ------------------------------
-        function getChanges(oldDataObj, newDataObj) {
-            const changes = [];
-
-            // (1) 삭제된 것 감지: oldDataObj에는 있는데 newDataObj에 없는 UID
-            for (let oldId in oldDataObj) {
-                if (!newDataObj.hasOwnProperty(oldId)) {
-                    const shipName = oldDataObj[oldId].shipName || 'Ship name 미기재';
-                    const hullNo   = oldDataObj[oldId].hullNo   || 'Hull No. 미기재';
-                    changes.push(`삭제: ${shipName} (${hullNo})`);
-                }
-            }
-            // (2) 신규
-            for (let newId in newDataObj) {
-                if (!oldDataObj.hasOwnProperty(newId)) {
-                    const shipName = newDataObj[newId].shipName || 'Ship name 미기재';
-                    const hullNo   = newDataObj[newId].hullNo   || 'Hull No. 미기재';
-                    changes.push(`신규: ${shipName} (${hullNo})`);
-                }
-            }
-            // (3) 수정
-            const fields = ["date","startTime","endTime","totalTime","shipName","hullNo","asNo","hosen","tech","claim","action","note"];
-            for (let newId in newDataObj) {
-                if (oldDataObj.hasOwnProperty(newId)) {
-                    // 필드 단위 비교
-                    const oldRow = oldDataObj[newId];
-                    const newRow = newDataObj[newId];
-                    let isChanged = false;
-                    for (let f of fields) {
-                        if ((oldRow[f] || '') !== (newRow[f] || '')) {
-                            isChanged = true;
-                            break;
-                        }
-                    }
-                    if (isChanged) {
-                        const shipName = newRow.shipName || 'Ship name 미기재';
-                        const hullNo   = newRow.hullNo   || 'Hull No. 미기재';
-                        changes.push(`수정: ${shipName} (${hullNo})`);
-                    }
-                }
-            }
-            return changes;
-        }
-
-        // ------------------------------
-        // 8. 저장(트랜잭션에서 “기존 데이터 유지 + 신규/수정만 반영”)
-        // ------------------------------
-        function saveToFirebase() {
-            const name = prompt("저장하는 사람의 이름을 입력하세요:");
-            if (!name) {
-                alert("이름을 입력하지 않아 저장이 취소되었습니다.");
-                return;
-            }
-            const password = prompt("저장하려면 패스워드를 입력하세요:");
-            if (!password || password.toUpperCase() !== "SNSYS") {
-                alert("잘못된 패스워드입니다. 저장이 취소되었습니다.");
-                return;
-            }
-
-            const newDataObj = convertTableToObject();
-            const changes = getChanges(previousData, newDataObj);
-            if (changes.length === 0) {
-                alert("변경 사항이 없습니다.");
-                return;
-            }
-
-            const historyEntry = {
-                name,
-                timestamp: new Date().toISOString(),
-                action: "데이터 저장",
-                changes: changes
-            };
-
-            const ref = database.ref(`rms/${currentCategory}/${currentYear}`);
-            ref.transaction(function(currentData) {
-                if (!currentData || typeof currentData !== 'object') {
-                    // DB가 비어 있으면, 새 객체로 통째로 세팅
-                    return newDataObj;
-                }
-
-                /**
-                 *  "기존 데이터 유지" + "새로 입력/수정된 것 덮어쓰기" 형태의 병합
-                 *  
-                 *  예) currentData = { uid1: {...}, uid2: {...} }
-                 *      newDataObj  = { uid2: {...(수정됨)}, uid3: {...(신규)}, ... }
-                 * 
-                 *  => merged = { uid1: {...기존}, uid2: {...덮어씀}, uid3: {...신규}, ... }
-                 * 
-                 *  즉, newDataObj에 없는 UID라도 currentData에 있으면 **삭제하지 않고** 그대로 둔다.
-                 */
-                const merged = { ...currentData };
-                for (let uid in newDataObj) {
-                    merged[uid] = newDataObj[uid];
-                }
-                return merged;
-            },
-            function(error, committed, snapshot) {
-                if (error) {
-                    console.error("트랜잭션 오류 발생:", error);
-                    document.getElementById('errorLog').textContent = '저장 중 오류가 발생했습니다: ' + error.message;
-                } else if (!committed) {
-                    console.warn("트랜잭션이 중단되었습니다.");
-                } else {
-                    // 성공적으로 병합이 끝난 후, 히스토리 저장
-                    database.ref(`history/${currentCategory}/${currentYear}`).push(historyEntry)
-                        .then(() => {
-                            alert("데이터가 성공적으로 저장되었습니다.");
-                            previousData = snapshot.val() || {};
-                            // 혹시 모를 화면-DB 불일치를 없애기 위해 다시 로딩
-                            loadFromFirebase();
-                        })
-                        .catch(err => {
-                            console.error("히스토리 저장 중 오류:", err);
-                        });
-                }
-            });
-        }
-
-        // ------------------------------
-        // 9. DB에서 불러오기
-        // ------------------------------
-        function loadFromFirebase() {
-            database.ref(`rms/${currentCategory}/${currentYear}`).once('value')
-                .then((snapshot) => {
-                    const dataObj = snapshot.val() || {};
-                    previousData = dataObj; 
-                    
-                    const tbody = document.getElementById('rmsBody');
-                    tbody.innerHTML = '';
-
-                    // 객체 -> 배열로 변환 후, 일자 기준 내림차순 정렬
-                    let rowsArray = Object.values(dataObj);
-                    rowsArray.sort((a,b) => {
-                        const da = a.date ? new Date(a.date) : null;
-                        const db = b.date ? new Date(b.date) : null;
-                        if (!da) return 1;
-                        if (!db) return -1;
-                        return db - da;
-                    });
-
-                    // 테이블에 표시
-                    rowsArray.forEach(obj => {
-                        const newRow = tbody.insertRow();
-                        newRow.setAttribute('data-uid', obj.id);
-
-                        // 체크박스
-                        const checkboxCell = newRow.insertCell(0);
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkboxCell.appendChild(checkbox);
-
-                        // (일자, 시작, 종료, 총작업시간, shipName, hullNo, ...)
-                        const fields = [
-                            ['date','date'],
-                            ['startTime','time'],
-                            ['endTime','time'],
-                            ['totalTime','text'],
-                            ['shipName','text'],
-                            ['hullNo','text'],
-                            ['asNo','text'],
-                            ['hosen','text'],
-                            ['tech','text'],
-                            ['claim','textarea'],
-                            ['action','textarea'],
-                            ['note','text']
-                        ];
-                        fields.forEach((f, i) => {
-                            const fieldName = f[0];
-                            const fieldType = f[1];
-                            const cell = newRow.insertCell(i + 1);
-                            let input;
-                            if (fieldType === 'textarea') {
-                                input = document.createElement('textarea');
-                                input.className = 'large-input';
-                            } else {
-                                input = document.createElement('input');
-                                input.type = fieldType;
-                                // 총 작업시간 칸이면 readOnly
-                                if (i === 3) {
-                                    input.readOnly = true;
-                                }
-                            }
-                            input.value = obj[fieldName] || '';
-                            input.addEventListener('input', calculateTotalTime);
-                            cell.appendChild(input);
-                        });
-                    });
-
-                    // DB가 비어 있으면 초기 10행 채워넣기
-                    if (rowsArray.length === 0) {
-                        for (let i = 0; i < 10; i++) {
-                            addRow();
-                        }
-                    }
-                })
-                .catch((error) => {
-                    console.error("데이터 로드 중 오류 발생:", error);
-                    document.getElementById('errorLog').textContent = '데이터 로드 중 오류가 발생했습니다: ' + error.message;
-                });
-        }
-
-        // ------------------------------
-        // 10. 선택 행 삭제(화면 상에서만 제거)
-        // ------------------------------
-        function deleteSelectedRows() {
-            const tbody = document.getElementById('rmsBody');
-            const rows = tbody.querySelectorAll('tr');
-            let deletedCount = 0;
-
-            for (let i = rows.length - 1; i >= 0; i--) {
-                const checkbox = rows[i].querySelector('input[type="checkbox"]');
-                if (checkbox && checkbox.checked) {
-                    tbody.removeChild(rows[i]);
-                    deletedCount++;
-                }
-            }
-
-            if (deletedCount > 0) {
-                alert(`${deletedCount}개의 행이 삭제되었습니다.`);
-            } else {
-                alert('선택된 행이 없습니다.');
-            }
-            document.getElementById('selectAll').checked = false;
-        }
-
-        // ------------------------------
-        // 11. 전체 선택 체크박스
-        // ------------------------------
-        function toggleAllCheckboxes() {
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('#rmsBody input[type="checkbox"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAllCheckbox.checked;
-            });
-        }
-
-        // ------------------------------
-        // 12. 엑셀 다운로드
-        // ------------------------------
-        function downloadExcel() {
-            // (1) 화면 테이블 -> 객체
-            const dataObj = convertTableToObject();
-            // (2) 객체 -> 배열 + 정렬
-            let rowsArray = Object.values(dataObj);
-            rowsArray.sort((a,b) => {
-                const da = a.date ? new Date(a.date) : null;
-                const db = b.date ? new Date(b.date) : null;
-                if (!da) return 1;
-                if (!db) return -1;
-                return db - da;
-            });
-            // (3) 시트 데이터 구성
-            const header = ['일자','시작 시간','종료 시간','총 작업 시간','Ship name','Hull No.','AS공번','호선 담당자','기술 담당자','클레임 내용','조치 결과','비고'];
-            const sheetData = [header];
-            rowsArray.forEach(r => {
-                sheetData.push([
-                    r.date || '',
-                    r.startTime || '',
-                    r.endTime || '',
-                    r.totalTime || '',
-                    r.shipName || '',
-                    r.hullNo || '',
-                    r.asNo || '',
-                    r.hosen || '',
-                    r.tech || '',
-                    r.claim || '',
-                    r.action || '',
-                    r.note || ''
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(sheetData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "RMS 현황");
-            XLSX.writeFile(wb, `rms_${currentCategory}_${currentYear}.xlsx`);
-        }
-
-        // ------------------------------
-        // 13. 엑셀 업로드
-        // ------------------------------
-        function uploadExcel(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                
-                const tbody = document.getElementById('rmsBody');
-                tbody.innerHTML = '';
-
-                // 첫 행은 헤더이므로 제외, 최대 2000행
-                const rows = json.slice(1, 2001);
-                
-                rows.forEach(row => {
-                    const newId = database.ref().push().key;
-                    const newRow = tbody.insertRow();
-                    newRow.setAttribute('data-uid', newId);
-
-                    // 체크박스
-                    const checkboxCell = newRow.insertCell(0);
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkboxCell.appendChild(checkbox);
-
-                    for (let i = 0; i < 12; i++) {
-                        const cell = newRow.insertCell(i + 1);
-                        let input;
-                        if (i === 9 || i === 10) {
-                            input = document.createElement('textarea');
-                            input.className = 'large-input';
-                        } else {
-                            input = document.createElement('input');
-                            if (i === 0) {
-                                input.type = 'date';
-                            } else if (i === 1 || i === 2) {
-                                input.type = 'time';
-                            } else if (i === 3) {
-                                input.type = 'text';
-                                input.readOnly = true;
-                            } else {
-                                input.type = 'text';
-                            }
-                        }
-                        input.value = row[i] || '';
-                        input.addEventListener('input', calculateTotalTime);
-                        cell.appendChild(input);
-                    }
-                });
-                alert(`총 ${rows.length}개의 행이 업로드되었습니다.`);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        // ------------------------------
-        // 14. 히스토리 보기/삭제
-        // ------------------------------
-        function showHistory() {
-            database.ref(`history/${currentCategory}/${currentYear}`).once('value')
-                .then((snapshot) => {
-                    const historyData = snapshot.val();
-                    const historyContent = document.getElementById('historyContent');
-                    historyContent.innerHTML = '';
-
-                    if (historyData) {
-                        let historyEntries = Object.entries(historyData).map(([key, value]) => {
-                            return { key, ...value };
-                        });
-                        // 30일 지난 히스토리는 자동 삭제
-                        const now = new Date();
-                        const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-                        let entriesToDelete = [];
-
-                        historyEntries = historyEntries.filter(entry => {
-                            const entryDate = new Date(entry.timestamp);
-                            const isOld = entryDate < cutoff;
-                            if (isOld) {
-                                entriesToDelete.push(entry.key);
-                            }
-                            return !isOld;
-                        });
-                        entriesToDelete.forEach(keyToDelete => {
-                            database.ref(`history/${currentCategory}/${currentYear}/${keyToDelete}`).remove();
-                        });
-
-                        // 최신순 정렬
-                        historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-                        if (historyEntries.length === 0) {
-                            historyContent.innerHTML = '<p>최근 30일 이내 변경 히스토리가 없습니다.</p>';
-                        } else {
-                            historyEntries.forEach(entry => {
-                                const entryDiv = document.createElement('div');
-                                entryDiv.innerHTML = 
-                                    `<p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
-                                     <p>${entry.action}</p>
-                                     <ul>
-                                        ${
-                                            entry.changes && Array.isArray(entry.changes)
-                                            ? entry.changes.map(change => `<li>${change}</li>`).join('')
-                                            : '<li>변경 사항 없음</li>'
-                                        }
-                                     </ul>
-                                     <hr>`;
-                                historyContent.appendChild(entryDiv);
-                            });
-                        }
-                    } else {
-                        historyContent.innerHTML = '<p>변경 히스토리가 없습니다.</p>';
-                    }
-
-                    document.getElementById('historyModal').style.display = 'block';
-                })
-                .catch((error) => {
-                    console.error("히스토리 로드 중 오류 발생:", error);
-                    document.getElementById('errorLog').textContent = '히스토리 로드 중 오류가 발생했습니다: ' + error.message;
-                });
-        }
-
-        function closeHistory() {
-            document.getElementById('historyModal').style.display = 'none';
-        }
-
-        function deleteAllHistory() {
-            const loginId = prompt("로그인 아이디를 입력하세요:");
-            if (loginId.toLowerCase() !== 'administrator') {
-                alert("잘못된 아이디입니다.");
-                return;
-            }
-            const loginPassword = prompt("비밀번호를 입력하세요:");
-            if (loginPassword !== '1') {
-                alert("잘못된 비밀번호입니다.");
-                return;
-            }
-
-            if (confirm("정말 히스토리를 모두 삭제하시겠습니까?")) {
-                database.ref(`history/${currentCategory}/${currentYear}`).remove()
-                    .then(() => {
-                        alert("히스토리가 모두 삭제되었습니다.");
-                    })
-                    .catch((error) => {
-                        console.error("히스토리 삭제 중 오류:", error);
-                        document.getElementById('errorLog').textContent = '히스토리 삭제 중 오류가 발생했습니다: ' + error.message;
-                    });
-            }
-        }
-
-        // ------------------------------
-        // 15. 컬럼 리사이즈 이벤트
-        // ------------------------------
-        const table = document.getElementById('rmsTable');
-        let resizingCol;
-        let startX;
-        let startWidth;
-
-        table.addEventListener('mousedown', function(e) {
-            if (e.target.classList.contains('resizer')) {
-                resizingCol = e.target.parentElement;
-                startX = e.pageX;
-                startWidth = resizingCol.offsetWidth;
-                document.addEventListener('mousemove', resizeColumn);
-                document.addEventListener('mouseup', stopResize);
-                e.preventDefault();
-            }
+          });
+          if (rowsArray.length === 0) {
+            for (let i = 0; i < 10; i++) { addRow(); }
+          }
+        })
+        .catch((error) => {
+          console.error("데이터 로드 중 오류 발생:", error);
+          document.getElementById('errorLog').textContent = '데이터 로드 중 오류가 발생했습니다: ' + error.message;
         });
+    }
 
-        function resizeColumn(e) {
-            if (resizingCol) {
-                const dx = e.pageX - startX;
-                resizingCol.style.width = `${startWidth + dx}px`;
+    // ------------------------------
+    // 선택 행 삭제
+    // ------------------------------
+    function deleteSelectedRows() {
+      const tbody = document.getElementById('rmsBody');
+      const rows = tbody.querySelectorAll('tr');
+      let deletedCount = 0;
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const checkbox = rows[i].querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+          tbody.removeChild(rows[i]);
+          deletedCount++;
+        }
+      }
+      if (deletedCount > 0) { alert(`${deletedCount}개의 행이 삭제되었습니다.`); }
+      else { alert('선택된 행이 없습니다.'); }
+      document.getElementById('selectAll').checked = false;
+    }
+
+    // ------------------------------
+    // 전체 선택 체크박스
+    // ------------------------------
+    function toggleAllCheckboxes() {
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const checkboxes = document.querySelectorAll('#rmsBody input[type="checkbox"]');
+      checkboxes.forEach(checkbox => { checkbox.checked = selectAllCheckbox.checked; });
+    }
+
+    // ------------------------------
+    // 엑셀 다운로드
+    // ------------------------------
+    function downloadExcel() {
+      const dataObj = convertTableToObject();
+      let rowsArray = Object.values(dataObj);
+      rowsArray.sort((a,b) => {
+        const da = a.date ? new Date(a.date) : null;
+        const db = b.date ? new Date(b.date) : null;
+        if (!da) return 1;
+        if (!db) return -1;
+        return db - da;
+      });
+      const header = [
+        '일자','시작 시간','종료 시간','총 작업 시간',
+        'Ship name','Hull No.','AS공번','호선 담당자','기술 담당자','클레임 내용','조치 결과','비고'
+      ];
+      const sheetData = [header];
+      rowsArray.forEach(r => {
+        sheetData.push([
+          r.date || '',
+          r.startTime || '',
+          r.endTime || '',
+          r.totalTime || '',
+          r.shipName || '',
+          r.hullNo || '',
+          r.asNo || '',
+          r.hosen || '',
+          r.tech || '',
+          r.claim || '',
+          r.action || '',
+          r.note || ''
+        ]);
+      });
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "RMS 현황");
+      XLSX.writeFile(wb, `rms_${currentCategory}_${currentYear}.xlsx`);
+    }
+
+    // ------------------------------
+    // 엑셀 업로드
+    // ------------------------------
+    function uploadExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+        const tbody = document.getElementById('rmsBody');
+        tbody.innerHTML = '';
+        const rows = json.slice(1, 2001);
+        rows.forEach(row => {
+          const newId = database.ref().push().key;
+          const newRow = tbody.insertRow();
+          newRow.setAttribute('data-uid', newId);
+          const checkboxCell = newRow.insertCell(0);
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkboxCell.appendChild(checkbox);
+          for (let i = 0; i < 12; i++) {
+            const cell = newRow.insertCell(i + 1);
+            let input;
+            if (i === 9 || i === 10) {
+              input = document.createElement('textarea');
+              input.className = 'large-input';
+            } else {
+              input = document.createElement('input');
+              if (i === 0) { input.type = 'date'; }
+              else if (i === 1 || i === 2) { input.type = 'time'; }
+              else if (i === 3) { input.type = 'text'; input.readOnly = true; }
+              else { input.type = 'text'; }
             }
-        }
+            input.value = row[i] || '';
+            input.addEventListener('input', calculateTotalTime);
+            cell.appendChild(input);
+          }
+        });
+        alert(`총 ${rows.length}개의 행이 업로드되었습니다.`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-        function stopResize() {
-            document.removeEventListener('mousemove', resizeColumn);
-            document.removeEventListener('mouseup', stopResize);
-            resizingCol = null;
-        }
+    // ------------------------------
+    // 히스토리 보기/삭제
+    // ------------------------------
+    function showHistory() {
+      database.ref(`history/${currentCategory}/${currentYear}`).once('value')
+        .then((snapshot) => {
+          const historyData = snapshot.val();
+          const historyContent = document.getElementById('historyContent');
+          historyContent.innerHTML = '';
+          if (historyData) {
+            let historyEntries = Object.entries(historyData).map(([key, value]) => ({ key, ...value }));
+            const now = new Date();
+            // 30일 지난 히스토리는 자동 삭제
+            const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            let entriesToDelete = [];
+            historyEntries = historyEntries.filter(entry => {
+              const entryDate = new Date(entry.timestamp);
+              const isOld = entryDate < cutoff;
+              if (isOld) { entriesToDelete.push(entry.key); }
+              return !isOld;
+            });
+            entriesToDelete.forEach(keyToDelete => {
+              database.ref(`history/${currentCategory}/${currentYear}/${keyToDelete}`).remove();
+            });
+            historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            if (historyEntries.length === 0) {
+              historyContent.innerHTML = '<p>최근 30일 이내 변경 히스토리가 없습니다.</p>';
+            } else {
+              historyEntries.forEach(entry => {
+                const entryDiv = document.createElement('div');
+                entryDiv.innerHTML =
+                  `<p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
+                   <p>${entry.action}</p>
+                   <ul>${
+                     entry.changes && Array.isArray(entry.changes)
+                     ? entry.changes.map(change => `<li>${change}</li>`).join('')
+                     : '<li>변경 사항 없음</li>'
+                   }</ul>
+                   <hr>`;
+                historyContent.appendChild(entryDiv);
+              });
+            }
+          } else {
+            historyContent.innerHTML = '<p>변경 히스토리가 없습니다.</p>';
+          }
+          document.getElementById('historyModal').style.display = 'block';
+        })
+        .catch((error) => {
+          console.error("히스토리 로드 중 오류 발생:", error);
+          document.getElementById('errorLog').textContent = '히스토리 로드 중 오류가 발생했습니다: ' + error.message;
+        });
+    }
+    function closeHistory() {
+      document.getElementById('historyModal').style.display = 'none';
+    }
+    function deleteAllHistory() {
+      if (confirm("정말 히스토리를 모두 삭제하시겠습니까?")) {
+        database.ref(`history/${currentCategory}/${currentYear}`).remove()
+          .then(() => { alert("히스토리가 모두 삭제되었습니다."); })
+          .catch((error) => {
+            console.error("히스토리 삭제 중 오류:", error);
+            document.getElementById('errorLog').textContent = '히스토리 삭제 중 오류가 발생했습니다: ' + error.message;
+          });
+      }
+    }
 
-        // ------------------------------
-        // 16. 초기 실행
-        // ------------------------------
-        window.onload = function() {
-            testConnection();
-            loadFromFirebase();
-            const scrollbarContainer = document.querySelector('.scrollbar-container');
-            const scrollbarContent = document.createElement('div');
-            scrollbarContent.style.width = table.scrollWidth + 'px';
-            scrollbarContainer.appendChild(scrollbarContent);
-        };
-    </script>
+    // ------------------------------
+    // 컬럼 리사이즈 이벤트
+    // ------------------------------
+    const table = document.getElementById('rmsTable');
+    let resizingCol;
+    let startX;
+    let startWidth;
+    table.addEventListener('mousedown', function(e) {
+      if (e.target.classList.contains('resizer')) {
+        resizingCol = e.target.parentElement;
+        startX = e.pageX;
+        startWidth = resizingCol.offsetWidth;
+        document.addEventListener('mousemove', resizeColumn);
+        document.addEventListener('mouseup', stopResize);
+        e.preventDefault();
+      }
+    });
+    function resizeColumn(e) {
+      if (resizingCol) {
+        const dx = e.pageX - startX;
+        resizingCol.style.width = `${startWidth + dx}px`;
+      }
+    }
+    function stopResize() {
+      document.removeEventListener('mousemove', resizeColumn);
+      document.removeEventListener('mouseup', stopResize);
+      resizingCol = null;
+    }
+
+    // ------------------------------
+    // 관리자 유저 관리 모달
+    // ------------------------------
+    function openUserManagementModal() {
+      loadUserList();
+      document.getElementById("userManagementModal").style.display = "block";
+    }
+    function closeUserManagementModal() {
+      document.getElementById("userManagementModal").style.display = "none";
+    }
+    function showUserTab(tab) {
+      if(tab === "list") {
+        document.getElementById("tabUserList").classList.add("active");
+        document.getElementById("tabUserRegister").classList.remove("active");
+        document.getElementById("userListContent").classList.add("active");
+        document.getElementById("userRegisterContent").classList.remove("active");
+        loadUserList();
+      } else {
+        document.getElementById("tabUserRegister").classList.add("active");
+        document.getElementById("tabUserList").classList.remove("active");
+        document.getElementById("userRegisterContent").classList.add("active");
+        document.getElementById("userListContent").classList.remove("active");
+      }
+    }
+    function loadUserList() {
+      database.ref("users").once("value").then(snapshot => {
+        const usersData = snapshot.val() || {};
+        const tbody = document.getElementById("adminUserListBody");
+        tbody.innerHTML = "";
+        for(const uid in usersData) {
+          const u = usersData[uid];
+          // (2) 권한이 '협력'인 유저는 목록에서 제외
+          if (u.role === "협력") {
+            continue;
+          }
+          const tr = document.createElement("tr");
+          const tdName = document.createElement("td");
+          tdName.textContent = u.id || "(no name)";
+          const tdEmail = document.createElement("td");
+          tdEmail.textContent = u.email || "";
+          const tdRole = document.createElement("td");
+          tdRole.textContent = u.role;
+          const tdComp = document.createElement("td");
+          tdComp.textContent = u.company || "";
+          const tdEdit = document.createElement("td");
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "수정";
+          editBtn.onclick = () => { openUserEditModal(uid); };
+          tdEdit.appendChild(editBtn);
+          const tdDel = document.createElement("td");
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "삭제";
+          delBtn.onclick = () => { deleteUser(uid); };
+          tdDel.appendChild(delBtn);
+          tr.appendChild(tdName);
+          tr.appendChild(tdEmail);
+          tr.appendChild(tdRole);
+          tr.appendChild(tdComp);
+          tr.appendChild(tdEdit);
+          tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        }
+      });
+    }
+    function openUserEditModal(uid) {
+      database.ref("users/" + uid).once("value").then(snapshot => {
+        const userData = snapshot.val();
+        if(userData) {
+          const newName = prompt("이름 수정", userData.id);
+          const newRole = prompt("권한 수정 (관리자/일반/협력)", userData.role);
+          const newCompany = prompt("업체명 수정", userData.company);
+          if(newName != null && newRole != null) {
+            const updated = { ...userData, id: newName, role: newRole, company: newCompany };
+            database.ref("users/" + uid).set(updated).then(() => {
+              alert("유저 정보 수정 완료");
+              loadUserList();
+            });
+          }
+        }
+      });
+    }
+    function deleteUser(uid) {
+      if(confirm("해당 유저를 삭제하시겠습니까?")) {
+        database.ref("users/" + uid).remove().then(() => {
+          alert("유저 삭제 완료");
+          loadUserList();
+        });
+      }
+    }
+    function createUser() {
+      const role = document.getElementById("adminRegisterRole").value;
+      const userName = document.getElementById("adminRegisterName").value.trim();
+      const newEmail = document.getElementById("adminRegisterEmail").value.trim();
+      const newPw = document.getElementById("adminRegisterPw").value.trim();
+      const newComp = document.getElementById("adminRegisterCompany").value.trim() || "";
+      if(!userName || !newEmail || !newPw) { alert("이름, 이메일, 비밀번호는 필수입니다."); return; }
+      auth.createUserWithEmailAndPassword(newEmail, newPw)
+        .then(cred => {
+          const uid = cred.user.uid;
+          const userData = { id: userName, email: newEmail, role: role, company: newComp };
+          return database.ref("users/" + uid).set(userData);
+        })
+        .then(() => {
+          alert("유저 등록 완료");
+          document.getElementById("adminRegisterName").value = "";
+          document.getElementById("adminRegisterEmail").value = "";
+          document.getElementById("adminRegisterPw").value = "";
+          document.getElementById("adminRegisterCompany").value = "";
+          showUserTab("list");
+        })
+        .catch(err => { alert("유저 등록 실패: " + err.message); });
+    }
+  </script>
 </body>
 </html>
