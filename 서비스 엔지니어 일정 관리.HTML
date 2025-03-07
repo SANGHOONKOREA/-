@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -442,21 +443,22 @@
         </div>
         <div class="schedule-list-container">
           <table class="admin-table">
-            <thead>
-              <tr>
-                <th>업체</th>
-                <th>기간</th>
-                <th>Ship Name</th>
-                <th>IMO No.</th>
-                <th>Hull No.</th>
-                <th>지역</th>
-                <th>담당자</th>
-                <th>상세</th>
-                <th style="text-align:left;">서비스 불가 일정</th>
-                <th>수정</th>
-                <th>삭제</th>
-              </tr>
-            </thead>
+<thead>
+  <tr>
+    <th>업체</th>
+    <th>엔지니어</th>
+    <th>기간</th>
+    <th>Ship Name</th>
+    <th>IMO No.</th>
+    <th>Hull No.</th>
+    <th>지역</th>
+    <th>담당자</th>
+    <th>상세</th>
+    <th style="text-align:left;">서비스 불가 일정</th>
+    <th>수정</th>
+    <th>삭제</th>
+  </tr>
+</thead>
             <tbody id="adminScheduleListBody"></tbody>
           </table>
         </div>
@@ -467,23 +469,30 @@
         </div>
       </div>
 
-      <!-- 유저 목록 -->
-      <div id="adminUserListPane" class="admin-pane">
-        <h4>유저 목록</h4>
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>이름</th>
-              <th>이메일</th>
-              <th>권한</th>
-              <th>업체</th>
-              <th>수정</th>
-              <th>삭제</th>
-            </tr>
-          </thead>
-          <tbody id="adminUserListBody"></tbody>
-        </table>
-      </div>
+<!-- 유저 목록 -->
+<div id="adminUserListPane" class="admin-pane">
+  <h4>유저 목록</h4>
+  <div style="margin-bottom:10px;">
+    <label for="userCompanyFilter">업체별 필터: </label>
+    <select id="userCompanyFilter" onchange="drawUserList()">
+      <option value="">전체</option>
+      <!-- 옵션은 drawUserList() 함수에서 동적으로 추가됩니다 -->
+    </select>
+  </div>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>이름</th>
+        <th>이메일</th>
+        <th>권한</th>
+        <th>업체</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody id="adminUserListBody"></tbody>
+  </table>
+</div>
 
       <!-- 유저 등록 -->
       <div id="adminUserRegisterPane" class="admin-pane">
@@ -1188,75 +1197,106 @@
     /****************************************
      14) 일정 추가 / 변경 / 삭제
     *****************************************/
-    function saveSchedule(){
-      const sDate = document.getElementById("modalStartDate").value;
-      const eDate = document.getElementById("modalEndDate").value;
-      const imoNo = document.getElementById("modalIMONo").value.trim();
-      const shipName = document.getElementById("modalLine").value.trim();
-      const hullNo = document.getElementById("modalHullNo").value.trim();
-      const regionVal = document.getElementById("modalRegion").value.trim();
-      const workContent = document.getElementById("modalDetails").value.trim();
-      const transferMsg = document.getElementById("modalMessage").value.trim();
-      const isUnavailable = document.getElementById("modalUnavailable").checked;
-      if(!sDate || !eDate){ alert("시작/종료일을 입력하세요"); return; }
-      if(sDate > eDate){ alert("종료일이 시작일보다 빠릅니다."); return; }
-      let mainUserId = (document.getElementById("modalUserRow").style.display !== "none") ? document.getElementById("modalUserSelect").value : currentUid;
-      const extraContainer = document.getElementById("additionalEngineerRows");
-      const extraSelects = extraContainer.querySelectorAll("select");
-      const managerId = document.getElementById("modalManagerSelect").value;
-      if(editingScheduleId){
-        if(!confirm("변경된 일정을 확정하시겠습니까?")) return;
-        const idx = schedules.findIndex(x => x.id === editingScheduleId);
-        if(idx > -1){
-          if(!canAccessSchedule(schedules[idx])){ alert("수정 권한 없음"); return; }
-          const oldSch = { startDate: schedules[idx].startDate, endDate: schedules[idx].endDate };
-          schedules[idx].userId = mainUserId;
-          schedules[idx].startDate = sDate;
-          schedules[idx].endDate = eDate;
-          schedules[idx].imoNo = imoNo;
-          schedules[idx].lineName = shipName;
-          schedules[idx].hullNo = hullNo;
-          schedules[idx].regionName = regionVal;
-          schedules[idx].details = workContent;
-          schedules[idx].message = transferMsg;
-          schedules[idx].unavailable = isUnavailable;
-          schedules[idx].managerId = managerId;
-          schedules[idx].status = "일정 변경 / 최종 확정";
-          extraSelects.forEach(sel => {
-            const uid = sel.value;
-            if(uid){
-              const newId = Date.now() + Math.floor(Math.random() * 100000);
-              schedules.push({
-                id: newId,
-                userId: uid,
-                startDate: sDate,
-                endDate: eDate,
-                imoNo: imoNo,
-                lineName: shipName,
-                hullNo: hullNo,
-                regionName: regionVal,
-                details: workContent,
-                message: transferMsg,
-                unavailable: isUnavailable,
-                managerId: managerId,
-                status: "일정 변경 / 최종 확정"
-              });
-            }
-          });
-          db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
-          .then(() => {
-            recordHistory("일정 변경", currentUid, schedules[idx], oldSch);
-            alert("일정이 변경 및 확정되었습니다.");
-            if(confirm("이메일을 발송할까요?")){ sendEmailNotification(); }
-            closeModal();
-            refreshCalendar();
+function saveSchedule(){
+  const sDate = document.getElementById("modalStartDate").value;
+  const eDate = document.getElementById("modalEndDate").value;
+  const imoNo = document.getElementById("modalIMONo").value.trim();
+  const shipName = document.getElementById("modalLine").value.trim();
+  const hullNo = document.getElementById("modalHullNo").value.trim();
+  const regionVal = document.getElementById("modalRegion").value.trim();
+  const workContent = document.getElementById("modalDetails").value.trim();
+  const transferMsg = document.getElementById("modalMessage").value.trim();
+  const isUnavailable = document.getElementById("modalUnavailable").checked;
+  if(!sDate || !eDate){ alert("시작/종료일을 입력하세요"); return; }
+  if(sDate > eDate){ alert("종료일이 시작일보다 빠릅니다."); return; }
+  let mainUserId = (document.getElementById("modalUserRow").style.display !== "none") ? document.getElementById("modalUserSelect").value : currentUid;
+  const extraContainer = document.getElementById("additionalEngineerRows");
+  const extraSelects = extraContainer.querySelectorAll("select");
+  const managerId = document.getElementById("modalManagerSelect").value;
+  
+  if(editingScheduleId){
+    // 변경된 일정에 대해 최종 확정을 할 것인지 사용자에게 물어봅니다.
+    var finalizeAnswer = confirm("일정변경 후에 최종 확정 할까요?");
+    const idx = schedules.findIndex(x => x.id === editingScheduleId);
+    if(idx > -1){
+      if(!canAccessSchedule(schedules[idx])){ alert("수정 권한 없음"); return; }
+      const oldSch = { startDate: schedules[idx].startDate, endDate: schedules[idx].endDate };
+      schedules[idx].userId = mainUserId;
+      schedules[idx].startDate = sDate;
+      schedules[idx].endDate = eDate;
+      schedules[idx].imoNo = imoNo;
+      schedules[idx].lineName = shipName;
+      schedules[idx].hullNo = hullNo;
+      schedules[idx].regionName = regionVal;
+      schedules[idx].details = workContent;
+      schedules[idx].message = transferMsg;
+      schedules[idx].unavailable = isUnavailable;
+      schedules[idx].managerId = managerId;
+      // 사용자가 예를 선택하면 최종 확정, 아니면 변경 상태만 적용합니다.
+      if(finalizeAnswer){
+        schedules[idx].status = "일정 변경 / 최종 확정";
+      } else {
+        schedules[idx].status = "일정 변경";
+      }
+      extraSelects.forEach(sel => {
+        const uid = sel.value;
+        if(uid){
+          const newId = Date.now() + Math.floor(Math.random() * 100000);
+          schedules.push({
+            id: newId,
+            userId: uid,
+            startDate: sDate,
+            endDate: eDate,
+            imoNo: imoNo,
+            lineName: shipName,
+            hullNo: hullNo,
+            regionName: regionVal,
+            details: workContent,
+            message: transferMsg,
+            unavailable: isUnavailable,
+            managerId: managerId,
+            status: finalizeAnswer ? "일정 변경 / 최종 확정" : "일정 변경"
           });
         }
-      } else {
-        const newId = Date.now();
-        const newSch = {
-          id: newId,
-          userId: mainUserId,
+      });
+      db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
+      .then(() => {
+        recordHistory("일정 변경", currentUid, schedules[idx], oldSch);
+        if(finalizeAnswer){
+          alert("일정이 변경 및 최종 확정되었습니다.");
+        } else {
+          alert("일정이 변경되었습니다.");
+        }
+        if(confirm("이메일을 발송할까요?")){ sendEmailNotification(); }
+        closeModal();
+        refreshCalendar();
+      });
+    }
+  } else {
+    const newId = Date.now();
+    const newSch = {
+      id: newId,
+      userId: mainUserId,
+      startDate: sDate,
+      endDate: eDate,
+      imoNo: imoNo,
+      lineName: shipName,
+      hullNo: hullNo,
+      regionName: regionVal,
+      details: workContent,
+      message: transferMsg,
+      unavailable: isUnavailable,
+      managerId: managerId,
+      status: "일정확정대기"
+    };
+    schedules.push(newSch);
+    extraSelects.forEach(sel => {
+      const uid = sel.value;
+      if(uid){
+        const newId2 = Date.now() + Math.floor(Math.random() * 100000);
+        schedules.push({
+          id: newId2,
+          userId: uid,
           startDate: sDate,
           endDate: eDate,
           imoNo: imoNo,
@@ -1268,53 +1308,19 @@
           unavailable: isUnavailable,
           managerId: managerId,
           status: "일정확정대기"
-        };
-        schedules.push(newSch);
-        extraSelects.forEach(sel => {
-          const uid = sel.value;
-          if(uid){
-            const newId2 = Date.now() + Math.floor(Math.random() * 100000);
-            schedules.push({
-              id: newId2,
-              userId: uid,
-              startDate: sDate,
-              endDate: eDate,
-              imoNo: imoNo,
-              lineName: shipName,
-              hullNo: hullNo,
-              regionName: regionVal,
-              details: workContent,
-              message: transferMsg,
-              unavailable: isUnavailable,
-              managerId: managerId,
-              status: "일정확정대기"
-            });
-          }
-        });
-        db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
-        .then(() => {
-          recordHistory("추가", currentUid, newSch);
-          alert("새 일정이 추가되었습니다.");
-          closeModal();
-          refreshCalendar();
         });
       }
-    }
-    function deleteSchedule(){
-      if(!editingScheduleId) return;
-      if(!confirm("정말 삭제하시겠습니까?")) return;
-      const idx = schedules.findIndex(x => x.id === editingScheduleId);
-      if(idx < 0) return;
-      const delObj = schedules[idx];
-      schedules.splice(idx, 1);
-      db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
-      .then(() => {
-        recordHistory("삭제", currentUid, delObj);
-        alert("삭제 완료");
-        closeModal();
-        refreshCalendar();
-      });
-    }
+    });
+    db.ref("schedules").set(schedules).then(() => { return loadAllData(); })
+    .then(() => {
+      recordHistory("추가", currentUid, newSch);
+      alert("새 일정이 추가되었습니다.");
+      closeModal();
+      refreshCalendar();
+    });
+  }
+}
+
 
     /****************************************
      15) 가용 엔지니어 계산 및 select 옵션 구축
@@ -1353,23 +1359,32 @@
          }
       }
     }
-    function buildManagerSelectOptions(selectEl, selectedValue = null){
-      selectEl.innerHTML = "";
-      let hasOption = false;
-      for(const uid in users){ if(users[uid].role === "본사"){
-          const opt = document.createElement("option");
-          opt.value = uid;
-          opt.textContent = users[uid].id || "본사담당";
-          selectEl.appendChild(opt);
-          hasOption = true;
-      } }
-      if(!hasOption){ selectEl.innerHTML = "<option value=''>없음</option>"; }
-      if(selectedValue){
-         for(let i = 0; i < selectEl.options.length; i++){
-           if(selectEl.options[i].value === selectedValue){ selectEl.selectedIndex = i; break; }
-         }
-      }
+function buildManagerSelectOptions(selectEl, selectedValue = null){
+  selectEl.innerHTML = "";
+  let hasOption = false;
+  for(const uid in users){
+    // 본사 혹은 관리자 역할인 경우 선택 옵션에 추가
+    if(users[uid].role === "본사" || users[uid].role === "관리자"){
+      const opt = document.createElement("option");
+      opt.value = uid;
+      opt.textContent = users[uid].id || "담당자";
+      selectEl.appendChild(opt);
+      hasOption = true;
     }
+  }
+  if(!hasOption){ 
+    selectEl.innerHTML = "<option value=''>없음</option>"; 
+  }
+  if(selectedValue){
+     for(let i = 0; i < selectEl.options.length; i++){
+       if(selectEl.options[i].value === selectedValue){ 
+         selectEl.selectedIndex = i; 
+         break; 
+       }
+     }
+  }
+}
+
     function addEngineerRow(){
       const container = document.getElementById("additionalEngineerRows");
       const row = document.createElement("div");
@@ -1419,41 +1434,83 @@
         });
       }
     }
-    function drawUserList(){
-      const tbody = document.getElementById("adminUserListBody");
-      tbody.innerHTML = "";
-      for(const uid in users){
-        const u = users[uid];
-        const tr = document.createElement("tr");
-        const tdName = document.createElement("td");
-        tdName.textContent = u.id || "(no name)";
-        const tdEmail = document.createElement("td");
-        tdEmail.textContent = u.email || "";
-        const tdRole = document.createElement("td");
-        tdRole.textContent = u.role;
-        const tdComp = document.createElement("td");
-        tdComp.textContent = u.company || "";
-        const tdEdit = document.createElement("td");
-        const editBtn = document.createElement("button");
-        editBtn.className = "admin-btn";
-        editBtn.textContent = "수정";
-        editBtn.onclick = () => openUserEditModal(uid);
-        tdEdit.appendChild(editBtn);
-        const tdDel = document.createElement("td");
-        const delBtn = document.createElement("button");
-        delBtn.className = "admin-btn";
-        delBtn.textContent = "삭제";
-        delBtn.onclick = () => deleteUser(uid);
-        tdDel.appendChild(delBtn);
-        tr.appendChild(tdName);
-        tr.appendChild(tdEmail);
-        tr.appendChild(tdRole);
-        tr.appendChild(tdComp);
-        tr.appendChild(tdEdit);
-        tr.appendChild(tdDel);
-        tbody.appendChild(tr);
-      }
-    }
+function drawUserList(){
+  // 필터 선택창("userCompanyFilter") 요소 가져오기
+  const filterSelect = document.getElementById("userCompanyFilter");
+  
+  // 기존 선택된 값 저장 (있다면)
+  const prevSelected = filterSelect.value;
+  
+  // "전체" 옵션으로 초기화 후 옵션 재생성
+  filterSelect.innerHTML = "<option value=''>전체</option>";
+  let companies = new Set();
+  for (const uid in users) {
+    const comp = users[uid].company || "";
+    if(comp) companies.add(comp);
+  }
+  companies.forEach(comp => {
+    const option = document.createElement("option");
+    option.value = comp;
+    option.textContent = comp;
+    filterSelect.appendChild(option);
+  });
+  
+  // 기존 선택값 복원 (옵션 목록에 있을 경우)
+  if(prevSelected && Array.from(filterSelect.options).some(opt => opt.value === prevSelected)){
+    filterSelect.value = prevSelected;
+  }
+  
+  // 선택된 업체 필터 값 확인 (비어있으면 전체)
+  const selectedCompany = filterSelect.value;
+  
+  // 유저 목록 테이블 body 업데이트
+  const tbody = document.getElementById("adminUserListBody");
+  tbody.innerHTML = "";
+  for (const uid in users) {
+    const u = users[uid];
+    // 업체 필터가 설정되어 있고, 해당 유저의 업체와 일치하지 않으면 건너뜁니다.
+    if(selectedCompany && u.company !== selectedCompany) continue;
+    
+    const tr = document.createElement("tr");
+
+    const tdName = document.createElement("td");
+    tdName.textContent = u.id || "(no name)";
+    
+    const tdEmail = document.createElement("td");
+    tdEmail.textContent = u.email || "";
+    
+    const tdRole = document.createElement("td");
+    tdRole.textContent = u.role;
+    
+    const tdComp = document.createElement("td");
+    tdComp.textContent = u.company || "";
+    
+    const tdEdit = document.createElement("td");
+    const editBtn = document.createElement("button");
+    editBtn.className = "admin-btn";
+    editBtn.textContent = "수정";
+    editBtn.onclick = () => openUserEditModal(uid);
+    tdEdit.appendChild(editBtn);
+    
+    const tdDel = document.createElement("td");
+    const delBtn = document.createElement("button");
+    delBtn.className = "admin-btn";
+    delBtn.textContent = "삭제";
+    delBtn.onclick = () => deleteUser(uid);
+    tdDel.appendChild(delBtn);
+    
+    tr.appendChild(tdName);
+    tr.appendChild(tdEmail);
+    tr.appendChild(tdRole);
+    tr.appendChild(tdComp);
+    tr.appendChild(tdEdit);
+    tr.appendChild(tdDel);
+    
+    tbody.appendChild(tr);
+  }
+}
+
+
     function openUserEditModal(uid){
       const u = users[uid];
       if(!u) return;
@@ -1526,69 +1583,106 @@
         })
         .catch(err => { alert("유저 등록 실패: " + err.message); });
     }
-    function drawScheduleList(){
-      const tbody = document.getElementById("adminScheduleListBody");
-      tbody.innerHTML = "";
-      let qStart = document.getElementById("adminQueryStart").value;
-      let qEnd = document.getElementById("adminQueryEnd").value;
-      if(!qStart || !qEnd){
-        const today = new Date();
-        qStart = formatDate(today.getFullYear(), today.getMonth()+1, today.getDate());
-        const nextMonth = new Date();
-        nextMonth.setMonth(nextMonth.getMonth()+1);
-        qEnd = formatDate(nextMonth.getFullYear(), nextMonth.getMonth()+1, nextMonth.getDate());
-        document.getElementById("adminQueryStart").value = qStart;
-        document.getElementById("adminQueryEnd").value = qEnd;
-      }
-      const filtered = schedules.filter(sch => sch.startDate <= qEnd && sch.endDate >= qStart);
-      filtered.forEach(sch => {
-        const tr = document.createElement("tr");
-        const userObj = users[sch.userId] || {};
-        const tdName = document.createElement("td");
-        tdName.textContent = userObj.company || "(업체 미지정)";
-        const tdPeriod = document.createElement("td");
-        tdPeriod.textContent = `${sch.startDate}~${sch.endDate}`;
-        const tdShipName = document.createElement("td");
-        tdShipName.textContent = sch.lineName || "";
-        const tdIMONo = document.createElement("td");
-        tdIMONo.textContent = sch.imoNo || "";
-        const tdHullNo = document.createElement("td");
-        tdHullNo.textContent = sch.hullNo || "";
-        const tdReg = document.createElement("td");
-        tdReg.textContent = sch.regionName || "";
-        const tdManager = document.createElement("td");
-        tdManager.textContent = sch.managerId || "";
-        const tdDet = document.createElement("td");
-        tdDet.textContent = sch.details || "";
-        const tdUnavailable = document.createElement("td");
-        tdUnavailable.style.textAlign = "left";
-        tdUnavailable.textContent = sch.unavailable ? "서비스 불가" : "";
-        const tdEdit = document.createElement("td");
-        const eBtn = document.createElement("button");
-        eBtn.className = "admin-btn";
-        eBtn.textContent = "수정";
-        eBtn.onclick = () => editAdminSchedule(sch.id);
-        tdEdit.appendChild(eBtn);
-        const tdDel = document.createElement("td");
-        const dBtn = document.createElement("button");
-        dBtn.className = "admin-btn";
-        dBtn.textContent = "삭제";
-        dBtn.onclick = () => deleteAdminSchedule(sch.id);
-        tdDel.appendChild(dBtn);
-        tr.appendChild(tdName);
-        tr.appendChild(tdPeriod);
-        tr.appendChild(tdShipName);
-        tr.appendChild(tdIMONo);
-        tr.appendChild(tdHullNo);
-        tr.appendChild(tdReg);
-        tr.appendChild(tdManager);
-        tr.appendChild(tdDet);
-        tr.appendChild(tdUnavailable);
-        tr.appendChild(tdEdit);
-        tr.appendChild(tdDel);
-        tbody.appendChild(tr);
-      });
+function drawScheduleList(){
+  const tbody = document.getElementById("adminScheduleListBody");
+  tbody.innerHTML = "";
+  
+  let qStart = document.getElementById("adminQueryStart").value;
+  let qEnd = document.getElementById("adminQueryEnd").value;
+  if(!qStart || !qEnd){
+    const today = new Date();
+    qStart = formatDate(today.getFullYear(), today.getMonth()+1, today.getDate());
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth()+1);
+    qEnd = formatDate(nextMonth.getFullYear(), nextMonth.getMonth()+1, nextMonth.getDate());
+    document.getElementById("adminQueryStart").value = qStart;
+    document.getElementById("adminQueryEnd").value = qEnd;
+  }
+  
+  const filtered = schedules.filter(sch => sch.startDate <= qEnd && sch.endDate >= qStart);
+  
+  filtered.forEach(sch => {
+    const tr = document.createElement("tr");
+    
+    // 업체 (company) 컬럼
+    const tdCompany = document.createElement("td");
+    // 스케줄의 userId를 통해 업체 정보를 가져옴
+    const userObj = users[sch.userId] || {};
+    tdCompany.textContent = userObj.company || "(업체 미지정)";
+    tr.appendChild(tdCompany);
+    
+    // 엔지니어 컬럼 (협력 엔지니어 이름)
+    const tdEngineer = document.createElement("td");
+    tdEngineer.textContent = userObj.id || "";
+    tr.appendChild(tdEngineer);
+    
+    // 기간 컬럼
+    const tdPeriod = document.createElement("td");
+    tdPeriod.textContent = `${sch.startDate} ~ ${sch.endDate}`;
+    tr.appendChild(tdPeriod);
+    
+    // Ship Name 컬럼
+    const tdShipName = document.createElement("td");
+    tdShipName.textContent = sch.lineName || "";
+    tr.appendChild(tdShipName);
+    
+    // IMO No. 컬럼
+    const tdIMONo = document.createElement("td");
+    tdIMONo.textContent = sch.imoNo || "";
+    tr.appendChild(tdIMONo);
+    
+    // Hull No. 컬럼
+    const tdHullNo = document.createElement("td");
+    tdHullNo.textContent = sch.hullNo || "";
+    tr.appendChild(tdHullNo);
+    
+    // 지역 컬럼
+    const tdRegion = document.createElement("td");
+    tdRegion.textContent = sch.regionName || "";
+    tr.appendChild(tdRegion);
+    
+    // 담당자 컬럼 (본사 담당자 이름)
+    const tdManager = document.createElement("td");
+    if(sch.managerId && users[sch.managerId]){
+      tdManager.textContent = users[sch.managerId].id || "";
+    } else {
+      tdManager.textContent = "";
     }
+    tr.appendChild(tdManager);
+    
+    // 상세 컬럼
+    const tdDetails = document.createElement("td");
+    tdDetails.textContent = sch.details || "";
+    tr.appendChild(tdDetails);
+    
+    // 서비스 불가 일정 컬럼
+    const tdUnavailable = document.createElement("td");
+    tdUnavailable.style.textAlign = "left";
+    tdUnavailable.textContent = sch.unavailable ? "서비스 불가" : "";
+    tr.appendChild(tdUnavailable);
+    
+    // 수정 버튼 컬럼
+    const tdEdit = document.createElement("td");
+    const btnEdit = document.createElement("button");
+    btnEdit.className = "admin-btn";
+    btnEdit.textContent = "수정";
+    btnEdit.onclick = () => editAdminSchedule(sch.id);
+    tdEdit.appendChild(btnEdit);
+    tr.appendChild(tdEdit);
+    
+    // 삭제 버튼 컬럼
+    const tdDelete = document.createElement("td");
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "admin-btn";
+    btnDelete.textContent = "삭제";
+    btnDelete.onclick = () => deleteAdminSchedule(sch.id);
+    tdDelete.appendChild(btnDelete);
+    tr.appendChild(tdDelete);
+    
+    tbody.appendChild(tr);
+  });
+}
+
     function editAdminSchedule(sid){
       const sch = schedules.find(x => x.id === sid);
       if(!sch) return;
@@ -1734,64 +1828,203 @@
         loadAllData().then(() => drawCompanyColorList());
       });
     }
+/****************************************
+ 1) 엑셀 시리얼 날짜 변환 함수 (수정됨)
+ 
+ - 엑셀의 1900 날짜 시스템에서, 
+   1 = 1900-01-01 이어야 하므로 기준을 1899-12-31로 사용합니다.
+ - 시리얼 값이 60보다 크면(즉, 1900-03-01 이후라면) 
+   엑셀의 잘못된 윤년 계산을 보정하기 위해 1을 빼줍니다.
+*****************************************/
+function parseExcelDate(cellValue) {
+  if (!cellValue) return "";
+  if (typeof cellValue === "number") {
+    // Excel 시리얼 값인 경우: 기준 1899-12-31에 cellValue 일 더함
+    var d = new Date(1899, 11, 31); // 1899-12-31
+    d.setDate(d.getDate() + cellValue);
+    return d.toISOString().substring(0, 10);
+  }
+  if (typeof cellValue === "string") {
+    var tryDate = new Date(cellValue);
+    if (!isNaN(tryDate.getTime())) {
+      return tryDate.toISOString().substring(0, 10);
+    } else {
+      // 파싱 실패 시 앞 10자 반환
+      return cellValue.substring(0, 10);
+    }
+  }
+  return "";
+}
+
 
     /****************************************
      18) 엑셀 업/다운로드 (스케줄 목록)
     *****************************************/
-    function downloadExcel(){
-      const exportData = schedules.map(sch => ({
-          startDate: sch.startDate,
-          endDate: sch.endDate,
-          Ship_Name: sch.lineName || "",
-          IMO_No: sch.imoNo || "",
-          Hull_No: sch.hullNo || "",
-          regionName: sch.regionName || "",
-          details: sch.details || "",
-          status: sch.status || "normal",
-          engineerCompany: (users[sch.userId] ? users[sch.userId].company : ""),
-          unavailable: sch.unavailable || false,
-          managerId: sch.managerId || "",
-          cancelReason: sch.cancelReason || ""
-      }));
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Schedules");
-      XLSX.writeFile(wb, "schedules_template.xlsx");
+
+// 엑셀 시리얼 날짜(숫자)를 JS Date 객체로 변환
+function excelSerialToJSDate(serial) {
+  // 1) 엑셀은 1900-01-00을 시리얼값 1로 취급 (leap year bug 등으로 보통 -2 또는 -1 보정)
+  // 2) 86400000은 1일 = 24 * 60 * 60 * 1000 (ms)
+  // ※ 실제로는 1900년 2월 29일 버그로 -2 정도 해야 정확
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 1899-12-30
+  const daysAfter = serial - 1; 
+  return new Date(excelEpoch.getTime() + daysAfter * 86400000);
+}
+
+// 엑셀에서 읽은 startDate/endDate가 숫자/문자 어떤 형식이든
+// YYYY-MM-DD 형태로 변환해 주는 함수
+function formatExcelDateToYyyyMmDd(value) {
+  if (typeof value === "number") {
+    // 엑셀 시리얼값이면 excelSerialToJSDate로 변환
+    const jsDate = excelSerialToJSDate(value);
+    return jsDate.toISOString().substring(0, 10); 
+  } else if (typeof value === "string") {
+    // 이미 문자열인 경우(예: "2025-03-08" 혹은 "2025-03-08T00:00:00Z")
+    // 앞 10자만 잘라 YYYY-MM-DD 형태로 사용
+    return value.substring(0, 10);
+  } else {
+    // null/undefined 등은 빈 문자열 처리
+    return "";
+  }
+}
+
+function downloadExcel(){
+  // 내부 status → 한글 매핑 객체
+  const statusToKorean = {
+    "cancelled": "취소됨",
+    "finalized": "최종 확정",
+    "일정 변경 / 최종 확정": "일정 변경 / 최종 확정",
+    "일정확정대기": "일정확정대기",
+    "normal": "정상"
+  };
+
+  const exportData = schedules.map(sch => {
+    let managerName = "";
+    if (sch.managerId && users[sch.managerId]) {
+      managerName = users[sch.managerId].id || "";
     }
-    function uploadExcel(event){
-      const file = event.target.files[0];
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, {type:"array"});
-        const sheetName = wb.SheetNames[0];
-        const ws = wb.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(ws);
-        const newArr = jsonData.map(row => ({
-          id: Date.now() + Math.floor(Math.random()*100000),
-          startDate: row.startDate || "",
-          endDate: row.endDate || "",
-          lineName: row.Ship_Name || "",
-          imoNo: row.IMO_No || "",
-          hullNo: row.Hull_No || "",
-          regionName: row.regionName || "",
-          details: row.details || "",
-          status: row.status || "normal",
-          userId: row.userId || "",
-          unavailable: row.unavailable || false,
-          managerId: row.managerId || "",
-          cancelReason: row.cancelReason || ""
-        }));
-        schedules = newArr;
-        db.ref("schedules").set(schedules).then(() => {
-          alert("엑셀 업로드 완료");
-          drawScheduleList();
-          refreshCalendar();
-        });
+    
+    let engineerName = "";
+    if (sch.userId && users[sch.userId]) {
+      engineerName = users[sch.userId].id || "";
+    }
+
+    return {
+      startDate: sch.startDate,
+      endDate: sch.endDate,
+      Ship_Name: sch.lineName || "",
+      IMO_No: sch.imoNo || "",
+      Hull_No: sch.hullNo || "",
+      regionName: sch.regionName || "",
+      details: sch.details || "",
+      // status는 내부값을 한글로 변환
+      status: statusToKorean[sch.status] || sch.status || "정상",
+      // unavailable는 boolean → "네"/"아니요"
+      unavailable: sch.unavailable ? "네" : "아니요",
+      cancelReason: sch.cancelReason || "",
+      engineer: engineerName,
+      hqManager: managerName
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Schedules");
+  XLSX.writeFile(wb, "schedules_template.xlsx");
+}
+
+
+/****************************************
+ 2) 엑셀 업로드 함수 (날짜 변환 적용)
+*****************************************/
+function uploadExcel(event){
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    
+    // raw: true → 날짜 셀이 숫자면 숫자로, 문자열이면 그대로 읽어옴
+    const jsonData = XLSX.utils.sheet_to_json(ws, { raw: true });
+    
+    // 한글 status → 내부 status 매핑 객체
+    const koreanToStatus = {
+      "취소됨": "cancelled",
+      "최종 확정": "finalized",
+      "일정 변경 / 최종 확정": "일정 변경 / 최종 확정",
+      "일정확정대기": "일정확정대기",
+      "정상": "normal"
+    };
+    
+    const newArr = jsonData.map(row => {
+      // 본사 담당자(hqManager) 이름으로 UID 찾기 (Firebase users 객체 내에서)
+      let managerUid = "";
+      if (row.hqManager) {
+        for (const uid in users) {
+          if (users[uid].role === "본사" && users[uid].id === row.hqManager) {
+            managerUid = uid;
+            break;
+          }
+        }
+      }
+      
+      // 협력 엔지니어(engineer) 이름으로 UID 찾기
+      let engineerUid = "";
+      if (row.engineer) {
+        for (const uid in users) {
+          if (users[uid].role === "협력" && users[uid].id === row.engineer) {
+            engineerUid = uid;
+            break;
+          }
+        }
+      }
+      
+      // 날짜 변환: 숫자든 문자열이든 parseExcelDate로 처리
+      const start = parseExcelDate(row.startDate);
+      const end   = parseExcelDate(row.endDate);
+      
+      // unavailable: "네"이면 true, 그 외는 false
+      const unavailableBool = (row.unavailable === "네");
+      
+      // status: 한글 값을 내부값으로 매핑 (매핑 객체에 없으면 그대로 사용)
+      const statusInternal = koreanToStatus[row.status] || row.status || "normal";
+      
+      return {
+        id: Date.now() + Math.floor(Math.random() * 100000),
+        startDate: start,
+        endDate: end,
+        lineName: row.Ship_Name || "",
+        imoNo: row.IMO_No || "",
+        hullNo: row.Hull_No || "",
+        regionName: row.regionName || "",
+        details: row.details || "",
+        status: statusInternal,
+        userId: engineerUid,
+        unavailable: unavailableBool,
+        managerId: managerUid,
+        cancelReason: row.cancelReason || ""
       };
-      reader.readAsArrayBuffer(file);
-    }
+    });
+    
+    schedules = newArr;
+    db.ref("schedules").set(schedules)
+      .then(() => {
+        alert("엑셀 업로드 완료");
+        drawScheduleList();
+        refreshCalendar();
+      })
+      .catch(err => {
+        console.error("업로드 에러:", err);
+        alert("업로드 실패: " + err.message);
+      });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 
     /****************************************
      19) 변경 히스토리 및 히스토리 엑셀 다운로드
@@ -1882,47 +2115,282 @@
     /****************************************
      21) EmailJS 발송
     *****************************************/
-    function sendEmailNotification(){
-      if (!confirm("이메일을 보낼까요?")) return;
-      let recipients = [];
-      const userRow = document.getElementById("modalUserRow");
-      if (userRow.style.display !== "none") {
-        const mainUserId = document.getElementById("modalUserSelect").value;
-        if (users[mainUserId] && users[mainUserId].email) recipients.push(users[mainUserId].email);
-      } else {
-        if (currentUser && currentUser.email) recipients.push(currentUser.email);
+/****************************************
+ 1) 수신자 선택 팝업 함수 (별도)
+    - 엔지니어(협력)와 본사 담당자 선택박스를 각각 제공합니다.
+    - 옵션은 "이메일 (이름)" 형식으로 표시됩니다.
+    - 현재 사용자가 협력(협력)인 경우, 엔지니어 목록은 현재 사용자의 회사와 일치하는 항목만 표시합니다.
+    - "+" 버튼을 눌러 추가 선택박스를 생성할 수 있습니다.
+*****************************************/
+function showRecipientSelectPopup(message, callback) {
+  // 기존 팝업 제거
+  const existing = document.getElementById("emailRecipientPopupOverlay");
+  if(existing) existing.remove();
+
+  // 오버레이 생성
+  let overlay = document.createElement("div");
+  overlay.id = "emailRecipientPopupOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "10000";
+
+  // 팝업 컨테이너 생성
+  let popup = document.createElement("div");
+  popup.style.backgroundColor = "#fff";
+  popup.style.padding = "20px";
+  popup.style.borderRadius = "8px";
+  popup.style.width = "90%";
+  popup.style.maxWidth = "600px";
+  popup.style.boxSizing = "border-box";
+  popup.style.maxHeight = "80%";
+  popup.style.overflowY = "auto";
+
+  // 제목
+  let title = document.createElement("h3");
+  title.textContent = "메일 발송 수신자 선택";
+  popup.appendChild(title);
+
+  // 메시지 미리보기
+  let msgPara = document.createElement("p");
+  msgPara.innerHTML = "<strong>메시지:</strong><br>" + message.replace(/\n/g, "<br>");
+  popup.appendChild(msgPara);
+
+  // --- 엔지니어 선택 영역 (협력) ---
+  let engineerContainer = document.createElement("div");
+  engineerContainer.id = "emailEngineerContainer";
+  engineerContainer.style.marginTop = "15px";
+
+  let engineerLabel = document.createElement("p");
+  engineerLabel.textContent = "메일 발송 엔지니어 선택:";
+  engineerContainer.appendChild(engineerLabel);
+
+  // 함수: 엔지니어 선택박스 추가
+  function addEngineerSelect() {
+    let select = document.createElement("select");
+    select.style.marginBottom = "5px";
+    // 기본 빈 옵션
+    let emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.textContent = "-- 선택 --";
+    select.appendChild(emptyOpt);
+    
+    // users에서 role "협력"인 항목 옵션 추가
+    // 만약 currentUser.role이 "협력"이면, 자신의 회사와 일치하는 엔지니어만 보여줌.
+    for (let uid in users) {
+      if(users[uid].role === "협력") {
+        if (currentUser && currentUser.role === "협력") {
+          if(users[uid].company !== currentUser.company) continue;
+        }
+        let opt = document.createElement("option");
+        opt.value = uid;
+        opt.textContent = users[uid].email + " (" + users[uid].id + ")";
+        select.appendChild(opt);
       }
-      const extraContainer = document.getElementById("additionalEngineerRows");
-      const extraSelects = extraContainer.querySelectorAll("select");
-      extraSelects.forEach(sel => { const uid = sel.value; if (users[uid] && users[uid].email) recipients.push(users[uid].email); });
-      const managerId = document.getElementById("modalManagerSelect").value;
-      if(managerId && users[managerId] && users[managerId].email) recipients.push(users[managerId].email);
-      for (const uid in users) { if (users[uid].role === "관리자" && users[uid].email) recipients.push(users[uid].email); }
-      recipients = [...new Set(recipients)];
-      if (recipients.length === 0) { alert("발송할 이메일 주소가 없습니다."); return; }
-      const engineer = document.getElementById("modalUserSelect").value;
-      const startDate = document.getElementById("modalStartDate").value;
-      const endDate = document.getElementById("modalEndDate").value;
-      const imoNo = document.getElementById("modalIMONo").value.trim();
-      const shipName = document.getElementById("modalLine").value.trim();
-      const hullNo = document.getElementById("modalHullNo").value.trim();
-      const regionName = document.getElementById("modalRegion").value.trim();
-      const workContent = document.getElementById("modalDetails").value.trim();
-      const transferMsg = document.getElementById("modalMessage").value.trim();
-      const msg = "엔지니어(업체): " + engineer + "\n" +
-                  "시작일: " + startDate + "\n" +
-                  "종료일: " + endDate + "\n" +
-                  "IMO No.: " + imoNo + "\n" +
-                  "Ship Name: " + shipName + "\n" +
-                  "Hull No.: " + hullNo + "\n" +
-                  "지역: " + regionName + "\n" +
-                  "작업내용: " + workContent + "\n" +
-                  "전달사항: " + transferMsg;
-      const templateParams = { to_email: recipients.join(", "), message: msg };
-      emailjs.send("service_cvipu3z", "template_aneojps", templateParams)
-        .then(response => { console.log("이메일 전송 성공:", response.status, response.text); alert("이메일이 전송되었습니다."); })
-        .catch(error => { console.error("이메일 전송 실패:", error); alert("이메일 전송에 실패했습니다."); });
     }
+    engineerContainer.appendChild(select);
+  }
+  // 기본 엔지니어 선택박스 추가
+  addEngineerSelect();
+
+  // 엔지니어 추가 버튼
+  let addEngineerBtn = document.createElement("button");
+  addEngineerBtn.textContent = "+";
+  addEngineerBtn.style.marginLeft = "10px";
+  addEngineerBtn.onclick = addEngineerSelect;
+  engineerContainer.appendChild(addEngineerBtn);
+  popup.appendChild(engineerContainer);
+
+  // --- 본사 담당자 선택 영역 ---
+  let managerContainer = document.createElement("div");
+  managerContainer.id = "emailManagerContainer";
+  managerContainer.style.marginTop = "15px";
+
+  let managerLabel = document.createElement("p");
+  managerLabel.textContent = "메일 발송 본사 담당자 선택:";
+  managerContainer.appendChild(managerLabel);
+
+  function addManagerSelect() {
+    let select = document.createElement("select");
+    select.style.marginBottom = "5px";
+    let emptyOpt = document.createElement("option");
+    emptyOpt.value = "";
+    emptyOpt.textContent = "-- 선택 --";
+    select.appendChild(emptyOpt);
+    
+    // users에서 role "본사" 또는 "관리자"인 항목 옵션 추가
+    for (let uid in users) {
+      if(users[uid].role === "본사" || users[uid].role === "관리자") {
+        let opt = document.createElement("option");
+        opt.value = uid;
+        opt.textContent = users[uid].email + " (" + users[uid].id + ")";
+        select.appendChild(opt);
+      }
+    }
+    managerContainer.appendChild(select);
+  }
+  // 기본 본사 담당자 선택박스 추가
+  addManagerSelect();
+
+  // 본사 담당자 추가 버튼
+  let addManagerBtn = document.createElement("button");
+  addManagerBtn.textContent = "+";
+  addManagerBtn.style.marginLeft = "10px";
+  addManagerBtn.onclick = addManagerSelect;
+  managerContainer.appendChild(addManagerBtn);
+  popup.appendChild(managerContainer);
+
+  // --- 팝업 버튼 영역 ---
+  let btnContainer = document.createElement("div");
+  btnContainer.style.textAlign = "right";
+  btnContainer.style.marginTop = "20px";
+
+  let sendBtn = document.createElement("button");
+  sendBtn.textContent = "발송";
+  sendBtn.style.marginRight = "10px";
+  let cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "취소";
+
+  btnContainer.appendChild(sendBtn);
+  btnContainer.appendChild(cancelBtn);
+  popup.appendChild(btnContainer);
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  // --- 버튼 이벤트 처리 ---
+  sendBtn.onclick = function() {
+    let selectedUIDs = [];
+    // 엔지니어 선택박스에서 선택된 값 수집
+    let engSelects = engineerContainer.querySelectorAll("select");
+    engSelects.forEach(function(select) {
+      if(select.value.trim() !== "") {
+        selectedUIDs.push(select.value);
+      }
+    });
+    // 본사 담당자 선택박스에서 선택된 값 수집
+    let mgrSelects = managerContainer.querySelectorAll("select");
+    mgrSelects.forEach(function(select) {
+      if(select.value.trim() !== "") {
+        selectedUIDs.push(select.value);
+      }
+    });
+    if(selectedUIDs.length === 0) {
+      alert("최소 한 명 이상의 수신자를 선택하세요.");
+      return;
+    }
+    // 선택된 UID들을 이메일 주소로 변환
+    let selectedRecipients = [];
+    selectedUIDs.forEach(function(uid) {
+      if(users[uid] && users[uid].email) {
+        selectedRecipients.push(users[uid].email);
+      }
+    });
+    document.body.removeChild(overlay);
+    callback(selectedRecipients);
+  };
+
+  cancelBtn.onclick = function() {
+    document.body.removeChild(overlay);
+    callback(false);
+  };
+}
+
+/****************************************
+ 2) 수정된 이메일 발송 함수
+    - 스케쥴 등록/수정 모달에서 선택된 엔지니어와 본사 담당자는 그대로 표시됩니다.
+    - 별도의 팝업에서 메일 발송 시, 사용자가 수신자(엔지니어, 본사 담당자)를 선택할 수 있습니다.
+*****************************************/
+function sendEmailNotification(){
+  // 모달 내 스케줄 입력값 읽기
+  var startDate = document.getElementById("modalStartDate").value;
+  var endDate = document.getElementById("modalEndDate").value;
+  var imoNo = document.getElementById("modalIMONo").value.trim();
+  var shipName = document.getElementById("modalLine").value.trim();
+  var hullNo = document.getElementById("modalHullNo").value.trim();
+  var regionName = document.getElementById("modalRegion").value.trim();
+  var workContent = document.getElementById("modalDetails").value.trim();
+  var transferMsg = document.getElementById("modalMessage").value.trim();
+  
+  // 엔지니어(협력) 선택된 이름들 추출 (기본 선택 + 추가 행)
+  var engineerNames = "";
+  var engineerSelect = document.getElementById("modalUserSelect");
+  if(engineerSelect){
+    engineerNames = Array.from(engineerSelect.selectedOptions)
+                       .map(opt => opt.textContent.trim())
+                       .join(", ");
+  }
+  var extraEngineerNames = "";
+  var extraContainer = document.getElementById("additionalEngineerRows");
+  if(extraContainer){
+    extraEngineerNames = Array.from(extraContainer.querySelectorAll("select"))
+                             .map(sel => {
+                                return Array.from(sel.selectedOptions)
+                                           .map(opt => opt.textContent.trim())
+                                           .join(", ");
+                             })
+                             .join(", ");
+  }
+  var allEngineerNames = engineerNames;
+  if(extraEngineerNames){
+    allEngineerNames = allEngineerNames ? (allEngineerNames + ", " + extraEngineerNames) : extraEngineerNames;
+  }
+  
+  // 본사 담당자 선택된 이름 추출
+  var managerNames = "";
+  var managerSelect = document.getElementById("modalManagerSelect");
+  if(managerSelect){
+    managerNames = Array.from(managerSelect.selectedOptions)
+                     .map(opt => opt.textContent.trim())
+                     .join(", ");
+  }
+  
+  // 이메일 발송 메시지 구성 (엔지니어와 본사 담당자 이름 포함)
+  var msg = "";
+  msg += "엔지니어: " + (allEngineerNames || "미지정") + "\n";
+  msg += "본사 담당자: " + (managerNames || "미지정") + "\n";
+  msg += "시작일: " + startDate + "\n";
+  msg += "종료일: " + endDate + "\n";
+  msg += "IMO No.: " + imoNo + "\n";
+  msg += "Ship Name: " + shipName + "\n";
+  msg += "Hull No.: " + hullNo + "\n";
+  msg += "지역: " + regionName + "\n";
+  msg += "작업내용: " + workContent + "\n";
+  msg += "전달사항: " + transferMsg;
+  
+  // 별도의 수신자 선택 팝업 호출
+  showRecipientSelectPopup(msg, function(selectedRecipients){
+    if(selectedRecipients === false){
+      alert("이메일 발송이 취소되었습니다.");
+      return;
+    }
+    emailjs.send("service_cvipu3z", "template_aneojps", { 
+      to_email: selectedRecipients.join(", "), 
+      message: msg 
+    })
+    .then(function(response){
+      console.log("이메일 전송 성공:", response.status, response.text);
+      alert("이메일이 전송되었습니다.");
+    })
+    .catch(function(error){
+      console.error("이메일 전송 실패:", error);
+      alert("이메일 전송에 실패했습니다.");
+    });
+  });
+}
+
+
+
+
+
+
+
 
     /****************************************
      22) 타임 테이블 모달 관련 기능
