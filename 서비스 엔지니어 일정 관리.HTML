@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>S&SYS 서비스 엔지니어 일정 관리</title>
+  <!-- 제목 변경 -->
+  <title>S&SYS SERVICE MANAGEMENT</title>
   <style>
     /* ------------------------------
        1) 전역 스타일
@@ -350,7 +351,8 @@
 </head>
 <body>
   <header>
-    <h1>S&SYS 서비스 엔지니어 일정 관리</h1>
+    <!-- 헤더 제목 변경 -->
+    <h1>S&SYS SERVICE MANAGEMENT</h1>
   </header>
 
   <div id="container">
@@ -371,14 +373,16 @@
     </div>
 
     <!-- (B) 메인 메뉴 (로그인 후) -->
-    <nav id="main-menu">
-      <button id="btnMonthly" onclick="showSection('monthly')">월간 달력</button>
-      <button id="btnWeekly" onclick="showSection('weekly')">주간 달력</button>
-      <!-- 관리자만 보이게 -->
-      <button id="btnAdmin" onclick="showSection('admin')" style="display:none;">관리자 페이지</button>
-    <button onclick="window.open('https://snsys-qa.neoali.com/', '_blank')" 
-          style="background:#87CEEB; color:#fff;">AI 서비스</button>
-    </nav>
+<nav id="main-menu">
+  <button id="btnMonthly" onclick="showSection('monthly')">월간 달력</button>
+  <button id="btnWeekly" onclick="showSection('weekly')">주간 달력</button>
+  <!-- 본사 권한일 경우 현황 버튼 표시 -->
+  <button id="btnStatus" onclick="showSection('status')" style="display:none;">현황</button>
+  <!-- 관리자만 보이게 -->
+  <button id="btnAdmin" onclick="showSection('admin')" style="display:none;">관리자 페이지</button>
+  <button onclick="window.open('https://snsys-qa.neoali.com/', '_blank')" style="background:#87CEEB; color:#fff;">AI 서비스</button>
+</nav>
+
 
     <!-- (C) 월간 달력 -->
     <section id="monthlySection">
@@ -420,7 +424,91 @@
       <div id="weekList" class="week-list"></div>
     </section>
 
-    <!-- (E) 관리자 페이지 -->
+<!-- (E) 본사 전용 현황 섹션 -->
+<section id="statusSection">
+  <!-- 현황 메뉴 버튼 -->
+  <div id="status-menu" style="display: flex; gap: 8px; margin-bottom: 10px;">
+    <button id="btnStatusUser" onclick="showStatusPane('user')">유저 목록</button>
+    <button id="btnStatusSchedule" onclick="showStatusPane('schedule')">스케줄 목록</button>
+    <button id="btnStatusHistory" onclick="showStatusPane('history')">변경 히스토리</button>
+  </div>
+  <!-- 유저 목록 판 (읽기 전용, 필터 포함) -->
+  <div id="statusUserPane" class="status-pane" style="display:none;">
+    <div style="margin-bottom:10px;">
+      <label for="statusUserCompanyFilter">업체별 필터: </label>
+      <select id="statusUserCompanyFilter" onchange="drawStatusUserList()">
+        <option value="">전체</option>
+      </select>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>이름</th>
+          <th>이메일</th>
+          <th>권한</th>
+          <th>협력 구분</th>
+          <th>업체</th>
+        </tr>
+      </thead>
+      <tbody id="statusUserListBody"></tbody>
+    </table>
+  </div>
+  <!-- 스케줄 목록 판 (읽기 전용, 기간 설정 및 엑셀 다운로드) -->
+  <div id="statusSchedulePane" class="status-pane" style="display:none;">
+    <div style="margin-bottom:8px; display:flex; gap:8px; align-items:center;">
+      <label>조회 시작일</label>
+      <input type="date" id="statusQueryStart">
+      <label>조회 종료일</label>
+      <input type="date" id="statusQueryEnd">
+      <button onclick="drawStatusScheduleList()">조회</button>
+    </div>
+    <div class="schedule-list-container">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>업체</th>
+            <th>엔지니어</th>
+            <th>기간</th>
+            <th>Ship Name</th>
+            <th>IMO No.</th>
+            <th>Hull No.</th>
+            <th>지역</th>
+            <th>담당자</th>
+            <th>상세</th>
+            <th style="text-align:left;">서비스 불가 일정</th>
+          </tr>
+        </thead>
+        <tbody id="statusScheduleListBody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;">
+      <button onclick="downloadExcel()">엑셀 다운로드</button>
+    </div>
+  </div>
+  <!-- 변경 히스토리 판 (읽기 전용, 엑셀 다운로드) -->
+  <div id="statusHistoryPane" class="status-pane" style="display:none;">
+    <button onclick="downloadHistoryExcel()" style="float:right; margin-bottom:10px;">히스토리 엑셀 다운로드</button>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th style="width:80px;">시간</th>
+          <th>사용자</th>
+          <th>변경 전 시작일</th>
+          <th>변경 전 종료일</th>
+          <th>변경 후 시작일</th>
+          <th>변경 후 종료일</th>
+          <th>구분</th>
+        </tr>
+      </thead>
+      <tbody id="statusHistoryBody"></tbody>
+    </table>
+  </div>
+</section>
+
+
+
+
+    <!-- (F) 관리자 페이지 -->
     <section id="adminSection">
       <div class="admin-menu">
         <button onclick="showAdminPane('userList')">유저 목록</button>
@@ -480,10 +568,10 @@
         <table class="admin-table">
           <thead>
             <tr>
-    <th style="min-width:60px;">이름</th>
+              <th style="min-width:60px;">이름</th>
               <th>이메일</th>
               <th>권한</th>
-             <th>협력 구분</th>
+              <th>협력 구분</th>
               <th>업체</th>
               <th>수정</th>
               <th>삭제</th>
@@ -831,6 +919,8 @@
               document.getElementById("login-container").style.display = "none";
               document.getElementById("main-menu").style.display = "flex";
               document.getElementById("btnAdmin").style.display = (currentUser.role === "관리자") ? "inline-block" : "none";
+              // 본사 권한이면 현황 버튼 표시
+              document.getElementById("btnStatus").style.display = (currentUser.role === "본사") ? "inline-block" : "none";
               loadAllData().then(() => { showSection("monthly"); });
             }
           })
@@ -904,31 +994,40 @@
     /****************************************
      7) 섹션 전환
     *****************************************/
-    function showSection(sec){
-      hideAllSections();
-      if(sec === "monthly"){
-        document.getElementById("monthlySection").classList.add("active");
-        drawMonthCalendar();
-        document.getElementById("btnMonthly").classList.add("active");
-      } else if(sec === "weekly"){
-        document.getElementById("weeklySection").classList.add("active");
-        drawWeekCalendar();
-        document.getElementById("btnWeekly").classList.add("active");
-      } else if(sec === "admin"){
-        if(currentUser.role === "관리자"){
-          document.getElementById("adminSection").classList.add("active");
-          document.getElementById("btnAdmin").classList.add("active");
-          showAdminPane("userList");
-        } else { alert("관리자 권한이 없습니다."); }
-      }
-    }
+function showSection(sec){
+  hideAllSections();
+  if(sec === "monthly"){
+    document.getElementById("monthlySection").classList.add("active");
+    drawMonthCalendar();
+    document.getElementById("btnMonthly").classList.add("active");
+  } else if(sec === "weekly"){
+    document.getElementById("weeklySection").classList.add("active");
+    drawWeekCalendar();
+    document.getElementById("btnWeekly").classList.add("active");
+  } else if(sec === "status"){
+    document.getElementById("statusSection").classList.add("active");
+    document.getElementById("btnStatus").classList.add("active");
+    // 기본으로 유저 목록 표시
+    showStatusPane('user');
+  } else if(sec === "admin"){
+    if(currentUser.role === "관리자"){
+      document.getElementById("adminSection").classList.add("active");
+      document.getElementById("btnAdmin").classList.add("active");
+      showAdminPane("userList");
+    } else { alert("관리자 권한이 없습니다."); }
+  }
+}
+
+
     function hideAllSections(){
       document.getElementById("monthlySection").classList.remove("active");
       document.getElementById("weeklySection").classList.remove("active");
       document.getElementById("adminSection").classList.remove("active");
+      document.getElementById("statusSection") && document.getElementById("statusSection").classList.remove("active");
       document.getElementById("btnMonthly").classList.remove("active");
       document.getElementById("btnWeekly").classList.remove("active");
       document.getElementById("btnAdmin").classList.remove("active");
+      document.getElementById("btnStatus") && document.getElementById("btnStatus").classList.remove("active");
     }
 
     /****************************************
@@ -1179,7 +1278,7 @@ function openModal(scheduleId = null, dateStr = null){
       userRow.style.display = "";
       buildEngineerSelectOptions(sel, sch.userId);
       btnDelete.style.display = "inline-block";
-      btnCancel.style.display  = "inline-block";
+      btnCancel.style.display = "inline-block";
       btnFinalize.style.display = "inline-block";
     } else {
       userRow.style.display = "none";
@@ -1436,27 +1535,33 @@ function updateEngineerLists() {
     *****************************************/
     function updateAvailableEngineers(sDate, eDate){
       const listDiv = document.getElementById("availableEngineersList");
-      if(!sDate || !eDate){ listDiv.textContent = "시작/종료일을 먼저 입력하세요."; return; }
+      if(!sDate || !eDate){
+        listDiv.textContent = "시작/종료일을 먼저 입력하세요.";
+        return;
+      }
       let includeOther = false;
       const checkbox = document.getElementById("includeOtherPartnersCheckbox");
-      if(checkbox) {
-        includeOther = checkbox.checked;
-      }
+      if(checkbox) { includeOther = checkbox.checked; }
       const available = [];
       for(const uid in users){
         if(users[uid].role === "협력"){
+          // 협력 사용자는 본인 회사의 협력자만 보임
+          if(currentUser.role === "협력" && users[uid].company !== currentUser.company) continue;
           let subCategory = users[uid].subCategory || "기타";
           if(subCategory !== "주요" && !includeOther) continue;
           const conflict = schedules.some(sch => {
-            if(sch.userId !== uid) return false;
-            if(sch.status === "cancelled") return false;
-            return (sch.startDate <= eDate && sch.endDate >= sDate);
+             if(sch.userId !== uid) return false;
+             if(sch.status === "cancelled") return false;
+             return (sch.startDate <= eDate && sch.endDate >= sDate);
           });
           if(!conflict) available.push(uid);
         }
       }
-      if(available.length < 1){ listDiv.textContent = "가용 엔지니어 없음"; }
-      else { listDiv.textContent = available.map(uid => users[uid].id + " (" + (users[uid].company || "업체 미지정") + ")").join(", "); }
+      if(available.length < 1){
+        listDiv.textContent = "가용 엔지니어 없음";
+      } else {
+        listDiv.textContent = available.map(uid => users[uid].id + " (" + (users[uid].company || "업체 미지정") + ")").join(", ");
+      }
     }
 function updateAssignedEngineers(sDate, eDate) {
   const listDiv = document.getElementById("assignedEngineersList");
@@ -1663,6 +1768,38 @@ function drawUserList(){
     tbody.appendChild(tr);
   });
 }
+// 필터 옵션 채우기 (유저 목록)
+function populateStatusUserFilter(){
+  const filterSelect = document.getElementById("statusUserCompanyFilter");
+  filterSelect.innerHTML = "";
+  const allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = "전체";
+  filterSelect.appendChild(allOpt);
+  
+  // users 객체를 배열로 변환 후, 각 유저의 company 값을 추출 (공백제거)
+  let companies = Object.values(users)
+    .map(u => u.company ? u.company.trim() : "")
+    .filter(comp => comp !== "");
+  
+  // 중복 제거
+  companies = Array.from(new Set(companies));
+  
+  // 오름차순 정렬 (localeCompare 사용)
+  companies.sort((a, b) => a.localeCompare(b));
+  
+  console.log("Companies found:", companies); // 디버깅: 콘솔에 출력
+  
+  companies.forEach(comp => {
+    const option = document.createElement("option");
+    option.value = comp;
+    option.textContent = comp;
+    filterSelect.appendChild(option);
+  });
+}
+
+
+
 
     function openUserEditModal(uid){
       const u = users[uid];
@@ -1968,27 +2105,6 @@ function drawUserList(){
     }
 
     /****************************************
-     1) 엑셀 시리얼 날짜 변환 함수 (수정됨)
-    *****************************************/
-    function parseExcelDate(cellValue) {
-      if (!cellValue) return "";
-      if (typeof cellValue === "number") {
-        var d = new Date(1899, 11, 31);
-        d.setDate(d.getDate() + cellValue);
-        return d.toISOString().substring(0, 10);
-      }
-      if (typeof cellValue === "string") {
-        var tryDate = new Date(cellValue);
-        if (!isNaN(tryDate.getTime())) {
-          return tryDate.toISOString().substring(0, 10);
-        } else {
-          return cellValue.substring(0, 10);
-        }
-      }
-      return "";
-    }
-
-    /****************************************
      18) 엑셀 업/다운로드 (스케줄 목록)
     *****************************************/
     function excelSerialToJSDate(serial) {
@@ -2203,13 +2319,6 @@ function drawUserList(){
     /****************************************
      21) EmailJS 발송
     *****************************************/
-    /****************************************
-     1) 수신자 선택 팝업 함수 (별도)
-       - 엔지니어(협력)와 본사 담당자 선택박스를 각각 제공합니다.
-       - 옵션은 "이메일 (이름)" 형식으로 표시됩니다.
-       - 현재 사용자가 협력인 경우, 자신의 회사와 일치하는 엔지니어만 표시합니다.
-       - "+" 버튼을 눌러 추가 선택박스를 생성할 수 있습니다.
-    *****************************************/
     function showRecipientSelectPopup(message, callback) {
       const existing = document.getElementById("emailRecipientPopupOverlay");
       if(existing) existing.remove();
@@ -2350,77 +2459,96 @@ function drawUserList(){
         callback(false);
       };
     }
-    /****************************************
-     2) 수정된 이메일 발송 함수
-    *****************************************/
-    function sendEmailNotification(){
-      var startDate = document.getElementById("modalStartDate").value;
-      var endDate = document.getElementById("modalEndDate").value;
-      var imoNo = document.getElementById("modalIMONo").value.trim();
-      var shipName = document.getElementById("modalLine").value.trim();
-      var hullNo = document.getElementById("modalHullNo").value.trim();
-      var regionName = document.getElementById("modalRegion").value.trim();
-      var workContent = document.getElementById("modalDetails").value.trim();
-      var transferMsg = document.getElementById("modalMessage").value.trim();
-      var engineerNames = "";
-      var engineerSelect = document.getElementById("modalUserSelect");
-      if(engineerSelect){
-        engineerNames = Array.from(engineerSelect.selectedOptions)
-                           .map(opt => opt.textContent.trim())
-                           .join(", ");
-      }
-      var extraEngineerNames = "";
-      var extraContainer = document.getElementById("additionalEngineerRows");
-      if(extraContainer){
-        extraEngineerNames = Array.from(extraContainer.querySelectorAll("select"))
-                                 .map(sel => {
-                                    return Array.from(sel.selectedOptions)
-                                               .map(opt => opt.textContent.trim())
-                                               .join(", ");
-                                 })
-                                 .join(", ");
-      }
-      var allEngineerNames = engineerNames;
-      if(extraEngineerNames){
-        allEngineerNames = allEngineerNames ? (allEngineerNames + ", " + extraEngineerNames) : extraEngineerNames;
-      }
-      var managerNames = "";
-      var managerSelect = document.getElementById("modalManagerSelect");
-      if(managerSelect){
-        managerNames = Array.from(managerSelect.selectedOptions)
-                         .map(opt => opt.textContent.trim())
-                         .join(", ");
-      }
-      var msg = "";
-      msg += "엔지니어: " + (allEngineerNames || "미지정") + "\n";
-      msg += "본사 담당자: " + (managerNames || "미지정") + "\n";
-      msg += "시작일: " + startDate + "\n";
-      msg += "종료일: " + endDate + "\n";
-      msg += "IMO No.: " + imoNo + "\n";
-      msg += "Ship Name: " + shipName + "\n";
-      msg += "Hull No.: " + hullNo + "\n";
-      msg += "지역: " + regionName + "\n";
-      msg += "작업내용: " + workContent + "\n";
-      msg += "전달사항: " + transferMsg;
-      showRecipientSelectPopup(msg, function(selectedRecipients){
-        if(selectedRecipients === false){
-          alert("이메일 발송이 취소되었습니다.");
-          return;
-        }
-        emailjs.send("service_cvipu3z", "template_aneojps", { 
-          to_email: selectedRecipients.join(", "), 
-          message: msg 
-        })
-        .then(function(response){
-          console.log("이메일 전송 성공:", response.status, response.text);
-          alert("이메일이 전송되었습니다.");
-        })
-        .catch(function(error){
-          console.error("이메일 전송 실패:", error);
-          alert("이메일 전송에 실패했습니다.");
-        });
-      });
+function sendEmailNotification(){
+  var startDate = document.getElementById("modalStartDate").value;
+  var endDate = document.getElementById("modalEndDate").value;
+  var imoNo = document.getElementById("modalIMONo").value.trim();
+  var shipName = document.getElementById("modalLine").value.trim();
+  var hullNo = document.getElementById("modalHullNo").value.trim();
+  var regionName = document.getElementById("modalRegion").value.trim();
+  var workContent = document.getElementById("modalDetails").value.trim();
+  var transferMsg = document.getElementById("modalMessage").value.trim();
+  
+  var engineerNames = "";
+  var engineerSelect = document.getElementById("modalUserSelect");
+  if(engineerSelect){
+    engineerNames = Array.from(engineerSelect.selectedOptions)
+                       .map(opt => opt.textContent.trim())
+                       .join(", ");
+  }
+  
+  var extraEngineerNames = "";
+  var extraContainer = document.getElementById("additionalEngineerRows");
+  if(extraContainer){
+    extraEngineerNames = Array.from(extraContainer.querySelectorAll("select"))
+                             .map(sel => {
+                                return Array.from(sel.selectedOptions)
+                                           .map(opt => opt.textContent.trim())
+                                           .join(", ");
+                             })
+                             .join(", ");
+  }
+  
+  var allEngineerNames = engineerNames;
+  if(extraEngineerNames){
+    allEngineerNames = allEngineerNames ? (allEngineerNames + ", " + extraEngineerNames) : extraEngineerNames;
+  }
+  
+  var managerNames = "";
+  var managerSelect = document.getElementById("modalManagerSelect");
+  if(managerSelect){
+    managerNames = Array.from(managerSelect.selectedOptions)
+                     .map(opt => opt.textContent.trim())
+                     .join(", ");
+  }
+  
+  var msg = "";
+  msg += "엔지니어: " + (allEngineerNames || "미지정") + "\n";
+  msg += "본사 담당자: " + (managerNames || "미지정") + "\n";
+  msg += "시작일: " + startDate + "\n";
+  msg += "종료일: " + endDate + "\n";
+  msg += "IMO No.: " + imoNo + "\n";
+  msg += "Ship Name: " + shipName + "\n";
+  msg += "Hull No.: " + hullNo + "\n";
+  msg += "지역: " + regionName + "\n";
+  msg += "작업내용: " + workContent + "\n";
+  msg += "전달사항: " + transferMsg;
+  
+  showRecipientSelectPopup(msg, function(selectedRecipients){
+    if(selectedRecipients === false){
+      alert("이메일 발송이 취소되었습니다.");
+      return;
     }
+    
+    // 만약 selectedRecipients가 문자열이라면 콤마로 분할하여 배열로 변환
+    if(typeof selectedRecipients === "string"){
+      selectedRecipients = selectedRecipients.split(",").map(email => email.trim());
+    }
+    
+    // 중복 제거
+    selectedRecipients = selectedRecipients.filter((email, index, arr) => arr.indexOf(email) === index);
+    
+    // 발신자 이메일: currentUser.email이 있으면 사용, 없으면 기본값 사용
+    var fromEmail = (typeof currentUser !== "undefined" && currentUser.email) ? currentUser.email : "noreply@example.com";
+    
+    // 각 이메일 주소로 개별 전송 (동시에 전송)
+    Promise.all(selectedRecipients.map(function(email){
+      return emailjs.send("service_cvipu3z", "template_aneojps", { 
+         to_email: email,
+         from_email: fromEmail,
+         message: msg
+      });
+    }))
+    .then(function(responses){
+      console.log("이메일 전송 성공:", responses);
+      alert("모든 이메일이 전송되었습니다.");
+    })
+    .catch(function(error){
+      console.error("이메일 전송 실패:", error);
+      alert("이메일 전송에 실패했습니다.");
+    });
+  });
+}
 
     /****************************************
      22) 타임 테이블 모달 관련 기능
@@ -2515,8 +2643,6 @@ function drawUserList(){
         row.style.display = "none";
       }
     }
-    // 유저 수정 모달에서 협력 계정일 경우 협력 구분 표시
-    // (openUserEditModal 함수 수정 부분 위에 반영됨)
 
     /****************************************
      스케줄 등록/수정 모달 관련: '기타 협력사 포함' 체크박스 제어
@@ -2703,76 +2829,276 @@ function updateAvailableEngineers(sDate, eDate){
     }
 
     /****************************************
-     2) 수정된 이메일 발송 함수
+     22) 아래는 본사 전용 현황 페이지용 함수들
+         - 유저 목록, 스케줄 목록, 변경 히스토리 표시 (읽기 전용)
     *****************************************/
-    function sendEmailNotification(){
-      var startDate = document.getElementById("modalStartDate").value;
-      var endDate = document.getElementById("modalEndDate").value;
-      var imoNo = document.getElementById("modalIMONo").value.trim();
-      var shipName = document.getElementById("modalLine").value.trim();
-      var hullNo = document.getElementById("modalHullNo").value.trim();
-      var regionName = document.getElementById("modalRegion").value.trim();
-      var workContent = document.getElementById("modalDetails").value.trim();
-      var transferMsg = document.getElementById("modalMessage").value.trim();
-      var engineerNames = "";
-      var engineerSelect = document.getElementById("modalUserSelect");
-      if(engineerSelect){
-        engineerNames = Array.from(engineerSelect.selectedOptions)
-                           .map(opt => opt.textContent.trim())
-                           .join(", ");
-      }
-      var extraEngineerNames = "";
-      var extraContainer = document.getElementById("additionalEngineerRows");
-      if(extraContainer){
-        extraEngineerNames = Array.from(extraContainer.querySelectorAll("select"))
-                                 .map(sel => {
-                                    return Array.from(sel.selectedOptions)
-                                               .map(opt => opt.textContent.trim())
-                                               .join(", ");
-                                 })
-                                 .join(", ");
-      }
-      var allEngineerNames = engineerNames;
-      if(extraEngineerNames){
-        allEngineerNames = allEngineerNames ? (allEngineerNames + ", " + extraEngineerNames) : extraEngineerNames;
-      }
-      var managerNames = "";
-      var managerSelect = document.getElementById("modalManagerSelect");
-      if(managerSelect){
-        managerNames = Array.from(managerSelect.selectedOptions)
-                         .map(opt => opt.textContent.trim())
-                         .join(", ");
-      }
-      var msg = "";
-      msg += "엔지니어: " + (allEngineerNames || "미지정") + "\n";
-      msg += "본사 담당자: " + (managerNames || "미지정") + "\n";
-      msg += "시작일: " + startDate + "\n";
-      msg += "종료일: " + endDate + "\n";
-      msg += "IMO No.: " + imoNo + "\n";
-      msg += "Ship Name: " + shipName + "\n";
-      msg += "Hull No.: " + hullNo + "\n";
-      msg += "지역: " + regionName + "\n";
-      msg += "작업내용: " + workContent + "\n";
-      msg += "전달사항: " + transferMsg;
-      showRecipientSelectPopup(msg, function(selectedRecipients){
-        if(selectedRecipients === false){
-          alert("이메일 발송이 취소되었습니다.");
-          return;
-        }
-        emailjs.send("service_cvipu3z", "template_aneojps", { 
-          to_email: selectedRecipients.join(", "), 
-          message: msg 
-        })
-        .then(function(response){
-          console.log("이메일 전송 성공:", response.status, response.text);
-          alert("이메일이 전송되었습니다.");
-        })
-        .catch(function(error){
-          console.error("이메일 전송 실패:", error);
-          alert("이메일 전송에 실패했습니다.");
-        });
-      });
+function drawStatusUserList(){
+  populateStatusUserFilter();
+  const filterSelect = document.getElementById("statusUserCompanyFilter");
+  const selectedCompany = filterSelect.value;
+  const tbody = document.getElementById("statusUserListBody");
+  tbody.innerHTML = "";
+  let userArray = [];
+  for(const uid in users){
+    userArray.push({ uid: uid, user: users[uid] });
+  }
+  userArray.sort((a,b) => {
+    let compA = a.user.company ? a.user.company.toLowerCase() : "";
+    let compB = b.user.company ? b.user.company.toLowerCase() : "";
+    if(compA < compB) return -1;
+    if(compA > compB) return 1;
+    return 0;
+  });
+  userArray.forEach(item => {
+    if(selectedCompany && item.user.company !== selectedCompany) return;
+    let tr = document.createElement("tr");
+    let tdName = document.createElement("td");
+    tdName.textContent = item.user.id || "";
+    let tdEmail = document.createElement("td");
+    tdEmail.textContent = item.user.email || "";
+    let tdRole = document.createElement("td");
+    tdRole.textContent = item.user.role;
+    let tdSub = document.createElement("td");
+    tdSub.textContent = (item.user.role === "협력" ? (item.user.subCategory || "기타") : "");
+    let tdComp = document.createElement("td");
+    tdComp.textContent = item.user.company || "";
+    tr.appendChild(tdName);
+    tr.appendChild(tdEmail);
+    tr.appendChild(tdRole);
+    tr.appendChild(tdSub);
+    tr.appendChild(tdComp);
+    tbody.appendChild(tr);
+  });
+}
+
+// 스케줄 목록 렌더링 (기간 설정 적용, 읽기 전용)
+function drawStatusScheduleList(){
+  const qStart = document.getElementById("statusQueryStart").value;
+  const qEnd = document.getElementById("statusQueryEnd").value;
+  const tbody = document.getElementById("statusScheduleListBody");
+  tbody.innerHTML = "";
+  const filtered = schedules.filter(sch => sch.startDate <= qEnd && sch.endDate >= qStart);
+  filtered.forEach(sch => {
+      const tr = document.createElement("tr");
+      const tdCompany = document.createElement("td");
+      const userObj = users[sch.userId] || {};
+      tdCompany.textContent = userObj.company || "(업체 미지정)";
+      tr.appendChild(tdCompany);
+      const tdEngineer = document.createElement("td");
+      tdEngineer.textContent = userObj.id || "";
+      tr.appendChild(tdEngineer);
+      const tdPeriod = document.createElement("td");
+      tdPeriod.textContent = `${sch.startDate} ~ ${sch.endDate}`;
+      tr.appendChild(tdPeriod);
+      const tdShipName = document.createElement("td");
+      tdShipName.textContent = sch.lineName || "";
+      tr.appendChild(tdShipName);
+      const tdIMONo = document.createElement("td");
+      tdIMONo.textContent = sch.imoNo || "";
+      tr.appendChild(tdIMONo);
+      const tdHullNo = document.createElement("td");
+      tdHullNo.textContent = sch.hullNo || "";
+      tr.appendChild(tdHullNo);
+      const tdRegion = document.createElement("td");
+      tdRegion.textContent = sch.regionName || "";
+      tr.appendChild(tdRegion);
+      const tdManager = document.createElement("td");
+      if(sch.managerId && users[sch.managerId]){
+         tdManager.textContent = users[sch.managerId].id || "";
+      } else { tdManager.textContent = ""; }
+      tr.appendChild(tdManager);
+      const tdDetails = document.createElement("td");
+      tdDetails.textContent = sch.details || "";
+      tr.appendChild(tdDetails);
+      const tdUnavailable = document.createElement("td");
+      tdUnavailable.style.textAlign = "left";
+      tdUnavailable.textContent = sch.unavailable ? "서비스 불가" : "";
+      tr.appendChild(tdUnavailable);
+      tbody.appendChild(tr);
+  });
+}
+function setDefaultStatusScheduleDates(){
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  document.getElementById("statusQueryStart").value = todayStr;
+  
+  const oneMonthLater = new Date(today);
+  oneMonthLater.setMonth(oneMonthLater.getMonth()+1);
+  const yyyy2 = oneMonthLater.getFullYear();
+  const mm2 = String(oneMonthLater.getMonth()+1).padStart(2, "0");
+  const dd2 = String(oneMonthLater.getDate()).padStart(2, "0");
+  const oneMonthLaterStr = `${yyyy2}-${mm2}-${dd2}`;
+  document.getElementById("statusQueryEnd").value = oneMonthLaterStr;
+}
+
+// 변경 히스토리 렌더링 (기존 drawStatusHistory() 그대로 사용)
+function drawStatusHistory(){
+  const tbody = document.getElementById("statusHistoryBody");
+  tbody.innerHTML = "";
+  const sorted = [...histories].sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
+  sorted.forEach(h => {
+     const tr = document.createElement("tr");
+     const tdTime = document.createElement("td");
+     tdTime.style.width = "80px";
+     tdTime.textContent = (h.timestamp || "").replace("T", " ").substring(0,19);
+     const tdUser = document.createElement("td");
+     tdUser.textContent = h.user || "";
+     const tdOldStart = document.createElement("td");
+     tdOldStart.textContent = h.oldStartDate || "";
+     const tdOldEnd = document.createElement("td");
+     tdOldEnd.textContent = h.oldEndDate || "";
+     const tdNewStart = document.createElement("td");
+     tdNewStart.textContent = h.newStartDate || "";
+     const tdNewEnd = document.createElement("td");
+     tdNewEnd.textContent = h.newEndDate || "";
+     const tdAct = document.createElement("td");
+     tdAct.textContent = h.action || "";
+     tr.appendChild(tdTime);
+     tr.appendChild(tdUser);
+     tr.appendChild(tdOldStart);
+     tr.appendChild(tdOldEnd);
+     tr.appendChild(tdNewStart);
+     tr.appendChild(tdNewEnd);
+     tr.appendChild(tdAct);
+     tbody.appendChild(tr);
+  });
+}
+    function drawStatusPage(){
+      drawStatusUserList();
+      drawStatusScheduleList();
+      drawStatusHistory();
     }
+
+    /****************************************
+     1) 엑셀 시리얼 날짜 변환 함수 (수정됨)
+    *****************************************/
+    function parseExcelDate(cellValue) {
+      if (!cellValue) return "";
+      if (typeof cellValue === "number") {
+        var d = new Date(1899, 11, 31);
+        d.setDate(d.getDate() + cellValue);
+        return d.toISOString().substring(0, 10);
+      }
+      if (typeof cellValue === "string") {
+        var tryDate = new Date(cellValue);
+        if (!isNaN(tryDate.getTime())) {
+          return tryDate.toISOString().substring(0, 10);
+        } else {
+          return cellValue.substring(0, 10);
+        }
+      }
+      return "";
+    }
+// 현황 메뉴 전환 (기존 showStatusPane()와 동일)
+function showStatusPane(type){
+   // 모든 판 숨김
+   document.getElementById("statusUserPane").style.display = "none";
+   document.getElementById("statusSchedulePane").style.display = "none";
+   document.getElementById("statusHistoryPane").style.display = "none";
+   // 버튼 active 제거
+   document.getElementById("btnStatusUser").classList.remove("active");
+   document.getElementById("btnStatusSchedule").classList.remove("active");
+   document.getElementById("btnStatusHistory").classList.remove("active");
+   if(type === "user"){
+      document.getElementById("statusUserPane").style.display = "block";
+      document.getElementById("btnStatusUser").classList.add("active");
+      drawStatusUserList();
+   } else if(type === "schedule"){
+      document.getElementById("statusSchedulePane").style.display = "block";
+      document.getElementById("btnStatusSchedule").classList.add("active");
+      setDefaultStatusScheduleDates();
+      drawStatusScheduleList();
+   } else if(type === "history"){
+      document.getElementById("statusHistoryPane").style.display = "block";
+      document.getElementById("btnStatusHistory").classList.add("active");
+      drawStatusHistory();
+   }
+}
+
+
+
+function drawStatusScheduleList(){
+  const qStart = document.getElementById("statusQueryStart").value;
+  const qEnd = document.getElementById("statusQueryEnd").value;
+  const tbody = document.getElementById("statusScheduleListBody");
+  tbody.innerHTML = "";
+  const filtered = schedules.filter(sch => sch.startDate <= qEnd && sch.endDate >= qStart);
+  filtered.forEach(sch => {
+      const tr = document.createElement("tr");
+      const tdCompany = document.createElement("td");
+      const userObj = users[sch.userId] || {};
+      tdCompany.textContent = userObj.company || "(업체 미지정)";
+      tr.appendChild(tdCompany);
+      const tdEngineer = document.createElement("td");
+      tdEngineer.textContent = userObj.id || "";
+      tr.appendChild(tdEngineer);
+      const tdPeriod = document.createElement("td");
+      tdPeriod.textContent = `${sch.startDate} ~ ${sch.endDate}`;
+      tr.appendChild(tdPeriod);
+      const tdShipName = document.createElement("td");
+      tdShipName.textContent = sch.lineName || "";
+      tr.appendChild(tdShipName);
+      const tdIMONo = document.createElement("td");
+      tdIMONo.textContent = sch.imoNo || "";
+      tr.appendChild(tdIMONo);
+      const tdHullNo = document.createElement("td");
+      tdHullNo.textContent = sch.hullNo || "";
+      tr.appendChild(tdHullNo);
+      const tdRegion = document.createElement("td");
+      tdRegion.textContent = sch.regionName || "";
+      tr.appendChild(tdRegion);
+      const tdManager = document.createElement("td");
+      if(sch.managerId && users[sch.managerId]){
+         tdManager.textContent = users[sch.managerId].id || "";
+      } else { tdManager.textContent = ""; }
+      tr.appendChild(tdManager);
+      const tdDetails = document.createElement("td");
+      tdDetails.textContent = sch.details || "";
+      tr.appendChild(tdDetails);
+      const tdUnavailable = document.createElement("td");
+      tdUnavailable.style.textAlign = "left";
+      tdUnavailable.textContent = sch.unavailable ? "서비스 불가" : "";
+      tr.appendChild(tdUnavailable);
+      tbody.appendChild(tr);
+  });
+}
+
+
+function drawStatusHistory(){
+  const tbody = document.getElementById("statusHistoryBody");
+  tbody.innerHTML = "";
+  const sorted = [...histories].sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""));
+  sorted.forEach(h => {
+     const tr = document.createElement("tr");
+     const tdTime = document.createElement("td");
+     tdTime.style.width = "80px";
+     tdTime.textContent = (h.timestamp || "").replace("T", " ").substring(0,19);
+     const tdUser = document.createElement("td");
+     tdUser.textContent = h.user || "";
+     const tdOldStart = document.createElement("td");
+     tdOldStart.textContent = h.oldStartDate || "";
+     const tdOldEnd = document.createElement("td");
+     tdOldEnd.textContent = h.oldEndDate || "";
+     const tdNewStart = document.createElement("td");
+     tdNewStart.textContent = h.newStartDate || "";
+     const tdNewEnd = document.createElement("td");
+     tdNewEnd.textContent = h.newEndDate || "";
+     const tdAct = document.createElement("td");
+     tdAct.textContent = h.action || "";
+     tr.appendChild(tdTime);
+     tr.appendChild(tdUser);
+     tr.appendChild(tdOldStart);
+     tr.appendChild(tdOldEnd);
+     tr.appendChild(tdNewStart);
+     tr.appendChild(tdNewEnd);
+     tr.appendChild(tdAct);
+     tbody.appendChild(tr);
+  });
+}
+
   </script>
 </body>
 </html>
