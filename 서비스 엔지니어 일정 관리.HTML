@@ -1643,24 +1643,30 @@ function buildEngineerSelectOptions(selectEl, selectedValue = null, filterCompan
          }
       }
     }
-    function addEngineerRow(){
-      const container = document.getElementById("additionalEngineerRows");
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.gap = "4px";
-      row.style.marginTop = "4px";
-      const newSelect = document.createElement("select");
-      buildEngineerSelectOptions(newSelect);
-      const removeBtn = document.createElement("button");
-      removeBtn.textContent = "-";
-      removeBtn.style.backgroundColor = "#c0392b";
-      removeBtn.style.color = "#fff";
-      removeBtn.onclick = () => { container.removeChild(row); };
-      row.appendChild(newSelect);
-      row.appendChild(removeBtn);
-      container.insertBefore(row, container.firstChild);
-    }
+function addEngineerRow(){
+  const container = document.getElementById("additionalEngineerRows");
+  const row = document.createElement("div");
+  row.style.display = "flex";
+  row.style.alignItems = "center";
+  row.style.gap = "4px";
+  row.style.marginTop = "4px";
+  const newSelect = document.createElement("select");
+  // 협력사 계정일 경우 현재 회사의 엔지니어만 표시하도록 필터링 조건 추가
+  if(currentUser.role === "협력"){
+    buildEngineerSelectOptions(newSelect, null, currentUser.company);
+  } else {
+    buildEngineerSelectOptions(newSelect);
+  }
+  const removeBtn = document.createElement("button");
+  removeBtn.textContent = "-";
+  removeBtn.style.backgroundColor = "#c0392b";
+  removeBtn.style.color = "#fff";
+  removeBtn.onclick = () => { container.removeChild(row); };
+  row.appendChild(newSelect);
+  row.appendChild(removeBtn);
+  container.insertBefore(row, container.firstChild);
+}
+
 
     /****************************************
      16) 관리자 페이지: 유저 목록, 수정, 등록, 스케줄 목록, 업체 색상 관리, 히스토리
