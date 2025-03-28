@@ -1,0 +1,336 @@
+  <style>
+    /* ------------------------------
+       1) 전역 스타일
+    ------------------------------*/
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0;
+      font-family: "Malgun Gothic", sans-serif;
+      font-size: 14px; background: #f7f7f7; color: #333;
+    }
+    /* 헤더 - 최대폭 480px, 가운데 배치, 오른쪽에 AI서비스 버튼 */
+    header {
+      background: #2c3e50;
+      color: #ecf0f1;
+      position: relative;
+      padding: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.2em;
+    }
+    header a.ai-service {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #e67e22;
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.9em;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    header a.ai-service:hover {
+      background: #d35400;
+    }
+    header a.ai-service::after {
+      content: "→";
+      margin-left: 4px;
+    }
+    #container {
+      max-width: 480px; 
+      margin: 0 auto;
+      background: #fff; 
+      min-height: 100vh;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1); 
+      position: relative;
+    }
+    @media (max-width:480px) {
+      body { font-size: 13px; }
+      .month-table th, .month-table td { font-size: 0.7em; }
+      .schedule-bar { font-size: 0.65em; }
+      .schedule-week-item { font-size: 0.7em; }
+    }
+    /* ------------------------------
+       2) 로그인
+    ------------------------------*/
+    #login-container { padding: 20px; }
+    #login-container h2 { margin-top: 0; font-size: 1em; color: #2c3e50; }
+    .login-form { display: flex; flex-direction: column; gap: 10px; }
+    .login-form label { font-weight: bold; font-size: 0.85em; color: #555; }
+    .login-form input {
+      padding: 8px; border: 1px solid #ccc;
+      border-radius: 4px; font-size: 0.85em;
+    }
+    .login-form button {
+      background: #2c3e50; color: #ecf0f1;
+      border: none; padding: 10px;
+      border-radius: 4px; font-size: 0.85em;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .login-form button:hover { background: #34495e; }
+    .login-form .reset-pw {
+      background: #c0392b;
+      margin-top: 8px;
+    }
+    /* ------------------------------
+       3) 메인 메뉴
+    ------------------------------*/
+    #main-menu {
+      display: none; 
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      background: #fafafa; 
+      overflow-x: auto;
+    }
+    #main-menu button {
+      flex: 1; padding: 10px;
+      border: none; background: #eee;
+      font-size: 0.8em; cursor: pointer;
+      white-space: nowrap; transition: background 0.2s;
+    }
+    #main-menu button.active {
+      background: #2c3e50; color: #ecf0f1;
+    }
+    #main-menu button:hover { background: #ccc; }
+    /* ------------------------------
+       4) 섹션
+    ------------------------------*/
+    section { display: none; padding: 12px; }
+    section.active { display: block; }
+    /* ------------------------------
+       5) 월간 달력
+    ------------------------------*/
+    #monthlySection { margin-bottom: 60px; }
+    .month-controls {
+      display: flex; justify-content: space-between; margin-bottom: 8px;
+    }
+    .month-controls button {
+      background: #2c3e50; color: #ecf0f1; border: none;
+      padding: 4px 8px; border-radius: 4px;
+      font-size: 0.8em; cursor: pointer; transition: background 0.2s;
+    }
+    .month-controls button:hover { background: #34495e; }
+    #monthLabel { font-size: 0.9em; font-weight: bold; color: #2c3e50; }
+    .month-table {
+      width: 100%; border-collapse: collapse;
+      table-layout: fixed; position: relative; margin-bottom: 10px;
+    }
+    .month-table th, .month-table td {
+      border: 1px solid #ddd; height: 50px; vertical-align: top;
+      position: relative; text-align: center; font-size: 0.75em; padding: 2px;
+    }
+    .month-table th {
+      background: #f2f2f2; font-weight: bold; color: #555; height: 35px;
+    }
+    .day-number {
+      position: absolute; top: 2px; right: 2px;
+      z-index: 2; font-weight: bold; font-size: 0.7em;
+    }
+    #monthOverlay {
+      position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+    .schedule-bar {
+      position: absolute; height: 16px; color: #fff;
+      border-radius: 4px; font-size: 0.7em; padding: 2px 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: pointer;
+      pointer-events: auto; z-index: 1; background: #999;
+      transition: opacity 0.2s;
+    }
+    .schedule-bar:hover { opacity: 0.8; }
+    /* ------------------------------
+       6) 주간 달력
+    ------------------------------*/
+    .week-controls {
+      display: flex; justify-content: space-between; margin-bottom: 8px;
+    }
+    .week-controls button {
+      background: #2c3e50; color: #ecf0f1; border: none;
+      padding: 4px 8px; font-size: 0.8em; border-radius: 4px;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .week-controls button:hover { background: #34495e; }
+    #weekLabel { font-size: 0.9em; font-weight: bold; color: #2c3e50; }
+    .week-list { display: flex; flex-direction: column; gap: 8px; }
+    .week-day-block {
+      border: 1px solid #ddd; padding: 5px; position: relative;
+      font-size: 0.75em; background: #fafafa; border-radius: 4px;
+    }
+    .schedule-week-item {
+      display: block; background: #fffbe5; border: 1px solid #ddd;
+      border-radius: 4px; margin-bottom: 6px; padding: 4px; position: relative;
+      font-size: 0.75em; cursor: pointer; min-width: 120px;
+      transition: background 0.2s;
+    }
+    .schedule-week-item:hover { background: #fff9cc; }
+    .schedule-color-bar {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; border-radius: 4px 0 0 4px; background: #999;
+    }
+    .schedule-week-content {
+      margin-left: 6px; padding-left: 4px;
+    }
+    /* ------------------------------
+       7) 관리자 페이지
+    ------------------------------*/
+    .admin-menu {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .admin-menu button {
+      background: #2c3e50; color: #ecf0f1;
+      border: none; border-radius: 4px; padding: 6px;
+      font-size: 0.75em; cursor: pointer; transition: background 0.2s;
+    }
+    .admin-menu button:hover { background: #34495e; }
+    .admin-pane {
+      display: none; 
+      border: 1px solid #ddd; 
+      padding: 8px;
+      margin-bottom: 10px; 
+      border-radius: 4px; 
+      background: #fafafa;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      width: 100%;
+      overflow-x: hidden;
+    }
+    .admin-pane.active { display: block; }
+    .admin-pane h4 {
+      margin-top: 0; font-size: 0.9em;
+      border-bottom: 1px solid #ddd; padding-bottom: 4px;
+      margin-bottom: 8px; color: #2c3e50;
+    }
+    .admin-form-row { margin-bottom: 6px; }
+    .admin-form-row label {
+      display: block; font-size: 0.75em; font-weight: bold; margin-bottom: 2px;
+    }
+    .admin-form-row input,
+    .admin-form-row select,
+    .admin-form-row textarea {
+      width: 100%;
+      padding: 6px; 
+      font-size: 0.75em;
+      border: 1px solid #ccc; 
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75em;
+      margin-bottom: 8px;
+      table-layout: auto;
+      word-break: break-word;
+    }
+    .admin-table th, .admin-table td {
+      border: 1px solid #ddd; padding: 4px; text-align: center;
+    }
+    .admin-table th {
+      background: #f2f2f2; font-weight: bold; color: #333;
+    }
+    .admin-btn {
+      background: #2c3e50; color: #ecf0f1;
+      border: none; padding: 3px 6px; font-size: 0.75em;
+      border-radius: 4px; cursor: pointer; transition: background 0.2s;
+    }
+    .admin-btn:hover { background: #34495e; }
+    /* ------------------------------
+       8) 스케줄 모달
+    ------------------------------*/
+    #modal-background {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 999;
+    }
+    .modal {
+      background: #fff;
+      width: 90%;
+      max-width: 420px;
+      margin: 20px auto;
+      padding: 12px;
+      border-radius: 6px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+    .modal h3 {
+      margin: 0 0 8px; font-size: 0.9em; color: #2c3e50;
+      border-bottom: 1px solid #ddd; padding-bottom: 4px;
+    }
+    #scheduleStatusLabel {
+      position: absolute; right: 12px; top: 8px;
+      font-size: 0.8em; color: #999;
+    }
+    .modal-row { margin-bottom: 6px; }
+    .modal-row label {
+      display: block; font-size: 0.75em; font-weight: bold;
+      margin-bottom: 2px; color: #555;
+    }
+    /* 모달 버튼 영역 - 두 줄로 나눔: 첫 줄에는 주 작업 버튼, 두번째 줄에는 이메일 발송과 타임 테이블 */
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .modal-buttons .primary-buttons,
+    .modal-buttons .secondary-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .modal-buttons button {
+      background: #2c3e50;
+      color: #ecf0f1;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.85em;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .modal-buttons button:hover {
+      background: #34495e;
+      transform: translateY(-1px);
+    }
+    /* ------------------------------
+       9) 유저 수정 모달
+    ------------------------------*/
+    #modalUserEditBg {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 999;
+    }
+    #userEditModal {
+      background: #fff; width: 90%; max-width: 420px;
+      margin: 100px auto 0; padding: 12px; border-radius: 6px;
+      position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+    #userEditModal h3 {
+      margin: 0 0 8px; font-size: 0.9em; color: #2c3e50;
+      border-bottom: 1px solid #ddd; padding-bottom: 4px;
+    }
+    /* ------------------------------
+       10) 스케줄 목록 표 (좌우 스크롤 적용)
+         스케줄 목록만 좌우 스크롤이 적용되도록 함
+    ------------------------------*/
+    .schedule-list-container {
+      overflow-x: auto;
+    }
+    .schedule-list-container table {
+      min-width: 800px;
+    }
+  </style>
+  
