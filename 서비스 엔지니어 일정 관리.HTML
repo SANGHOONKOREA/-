@@ -1603,26 +1603,27 @@ function buildEngineerSelectOptions(selectEl, selectedValue = null, filterCompan
   let engineerOptions = [];
   for(const uid in users){
     if(users[uid].role === "협력"){
-      if(filterCompany && users[uid].company !== filterCompany) continue;
-      engineerOptions.push({uid: uid, name: users[uid].id || "NONAME", company: users[uid].company || "업체 미지정"});
+      if(filterCompany && users[uid].company.trim().toLowerCase() !== filterCompany.trim().toLowerCase()) continue;
+      engineerOptions.push({ uid: uid, name: users[uid].id || "NONAME", company: users[uid].company || "업체 미지정" });
     }
   }
   engineerOptions.sort((a, b) => a.company.localeCompare(b.company));
   engineerOptions.forEach(optData => {
-     const opt = document.createElement("option");
-     opt.value = optData.uid;
-     opt.textContent = `${optData.name} (${optData.company})`;
-     selectEl.appendChild(opt);
+    const opt = document.createElement("option");
+    opt.value = optData.uid;
+    opt.textContent = `${optData.name} (${optData.company})`;
+    selectEl.appendChild(opt);
   });
   if(selectedValue){
-     for(let i = 0; i < selectEl.options.length; i++){
-       if(selectEl.options[i].value === selectedValue){ 
-         selectEl.selectedIndex = i; 
-         break; 
-       }
-     }
+    for(let i = 0; i < selectEl.options.length; i++){
+      if(selectEl.options[i].value === selectedValue){ 
+        selectEl.selectedIndex = i; 
+        break; 
+      }
+    }
   }
 }
+
 
     function buildManagerSelectOptions(selectEl, selectedValue = null){
       selectEl.innerHTML = "";
@@ -1651,7 +1652,7 @@ function addEngineerRow(){
   row.style.gap = "4px";
   row.style.marginTop = "4px";
   const newSelect = document.createElement("select");
-  // 협력사 계정일 경우 현재 회사의 엔지니어만 표시하도록 필터링 조건 추가
+  // 협력사 계정이면 자신의 회사에 속한 엔지니어만 표시
   if(currentUser.role === "협력"){
     buildEngineerSelectOptions(newSelect, null, currentUser.company);
   } else {
@@ -1666,6 +1667,7 @@ function addEngineerRow(){
   row.appendChild(removeBtn);
   container.insertBefore(row, container.firstChild);
 }
+
 
 
     /****************************************
