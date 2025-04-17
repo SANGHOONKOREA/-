@@ -786,50 +786,100 @@
             }
         });
         
-        // 고급 이미지 개선 함수
-        async function enhanceImage(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const img = new Image();
-                    img.crossOrigin = 'Anonymous';
+// 더 간단한 이미지 개선 함수 (CamanJS가 문제를 일으키는 경우 사용)
+async function simpleEnhanceImage(imageUrl) {
+    return new Promise((resolve, reject) => {
+        try {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            
+            img.onload = function() {
+                // 캔버스 생성 및 이미지 그리기
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                
+                // 원본 이미지 그리기
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+                
+                // 이미지 데이터 가져오기
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // 간단한 이미지 처리
+                for (let i = 0; i < data.length; i += 4) {
+                    // 대비 향상 (간단한 방식)
+                    const contrast = 1.2; // 대비 값 (1.0보다 크면 대비 증가)
+                    const brightness = 5; // 밝기 값 (양수면 밝게, 음수면 어둡게)
                     
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        
-                        // CamanJS를 사용한 이미지 개선
-                        Caman(canvas, img, function() {
-                            this.brightness(5);       // 밝기 약간 증가
-                            this.contrast(15);        // 대비 증가
-                            this.sharpen(20);         // 선명도 증가
-                            this.clarity(5);          // 선명도 추가 개선
-                            
-                            // 선택된 언어에 따라 다른 처리
-                            if (selectedLanguage.includes('chi_sim') || selectedLanguage.includes('jpn')) {
-                                // 동아시아 언어는 그레이스케일보다 컬러가 더 나을 수 있음
-                                this.vibrance(20);    // 선명도 증가
-                                this.saturation(-10); // 채도 약간 감소
-                            } else {
-                                this.greyscale();     // 흑백 변환 (OCR에 더 효과적일 수 있음)
-                            }
-                            
-                            this.render(function() {
-                                resolve(canvas.toDataURL('image/png'));
-                            });
-                        });
-                    };
+                    // R, G, B 채널에 대비와 밝기 적용
+                    data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + brightness));
+                    data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * contrast + 128 + brightness));
+                    data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * contrast + 128 + brightness));
                     
-                    img.onerror = function() {
-                        reject(new Error('이미지 로딩 실패'));
-                    };
-                    
-                    img.src = imageUrl;
-                } catch (error) {
-                    reject(error);
+                    // 언어에 따라 흑백 변환 (옵션)
+                    if (!selectedLanguage.includes('chi_sim') && !selectedLanguage.includes('jpn')) {
+                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        data[i] = data[i + 1] = data[i + 2] = avg;
+                    }
                 }
-            });
+                
+                // 수정된 이미지 데이터 적용
+                ctx.putImageData(imageData, 0, 0);
+                
+                // 결과 이미지를 데이터 URL로 변환
+                resolve(canvas.toDataURL('image/png'));
+            };
+            
+            img.onerror = function() {
+                reject(new Error('이미지 로딩에 실패했습니다.'));
+            };
+            
+            img.src = imageUrl;
+        } catch (error) {
+            reject(error);
         }
+    });
+}
+
+// 이미지 개선 버튼에 대한 대체 이벤트 리스너
+function setupSimpleImageEnhancement() {
+    improveImageBtn.addEventListener('click', async () => {
+        try {
+            improveImageBtn.disabled = true;
+            improveImageBtn.textContent = '이미지 개선 중...';
+            
+            // 원본 이미지 백업
+            const originalSrc = capturedImage.src;
+            
+            // 간단한 이미지 개선 적용
+            const enhancedImage = await simpleEnhanceImage(originalSrc);
+            
+            // 유효성 확인 후 이미지 업데이트
+            if (enhancedImage && enhancedImage.startsWith('data:image/')) {
+                capturedImage.src = enhancedImage;
+            } else {
+                // 실패 시 원본 유지
+                capturedImage.src = originalSrc;
+            }
+            
+            // 처리 완료 표시
+            capturedImage.style.display = 'block';
+            improveImageBtn.textContent = '이미지 개선 완료';
+            
+            setTimeout(() => {
+                improveImageBtn.textContent = '이미지 다시 개선';
+                improveImageBtn.disabled = false;
+            }, 1500);
+        } catch (error) {
+            console.error('이미지 개선 오류:', error);
+            improveImageBtn.textContent = '이미지 개선';
+            improveImageBtn.disabled = false;
+            alert('이미지 개선 중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+    });
+}
         
         // 이미지 전처리 함수
         async function preprocessImage(imageData) {
