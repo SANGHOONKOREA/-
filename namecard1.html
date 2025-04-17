@@ -1,1456 +1,1176 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다국어 명함 관리 앱</title>
-    <!-- Tesseract.js for OCR - 안정적인 버전 사용 -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Noto Sans', 'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        .container {
-            max-width: 100%;
-            padding: 15px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        header h1 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 5px;
-        }
-        
-        .tab-container {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            background-color: #f0f0f0;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .tab.active {
-            background-color: #007bff;
-            color: white;
-        }
-        
-        .content {
-            display: none;
-        }
-        
-        .content.active {
-            display: block;
-        }
-        
-        .card-form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-        
-        .form-group textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            display: inline-block;
-            margin-right: 10px;
-        }
-        
-        button:hover {
-            background-color: #0056b3;
-        }
-        
-        .camera-container {
-            width: 100%;
-            position: relative;
-            margin-bottom: 20px;
-        }
-        
-        #video, #canvas, #capturedImage {
-            width: 100%;
-            border-radius: 8px;
-            display: block;
-        }
-        
-        #capturedImage {
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 5px;
-            background-color: #f0f0f0;
-            margin-bottom: 15px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .progress-bar-fill {
-            height: 100%;
-            background-color: #007bff;
-            width: 0%;
-            transition: width 0.3s;
-        }
-        
-        .card-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 15px;
-        }
-        
-        .card-item {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            position: relative;
-        }
-        
-        .card-item h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        
-        .card-details {
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .card-details p {
-            margin-bottom: 5px;
-        }
-        
-        .card-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 10px;
-        }
-        
-        .card-actions button {
-            padding: 8px 12px;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-        
-        .delete-btn {
-            background-color: #dc3545;
-        }
-        
-        .delete-btn:hover {
-            background-color: #c82333;
-        }
-        
-        .edit-btn {
-            background-color: #6c757d;
-        }
-        
-        .edit-btn:hover {
-            background-color: #5a6268;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px 0;
-            color: #6c757d;
-        }
-        
-        #processingMessage {
-            text-align: center;
-            margin: 10px 0;
-            font-weight: bold;
-            color: #007bff;
-        }
-        
-        .search-container {
-            margin-bottom: 20px;
-        }
-        
-        #searchInput {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        /* 언어 선택 */
-        .language-selector {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .language-btn {
-            margin: 0 5px;
-            background-color: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
-            padding: 8px 12px;
-            border-radius: 4px;
-        }
-        
-        .language-btn.active {
-            background-color: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-        
-        /* 모달 스타일 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-        
-        .modal-content {
-            background-color: white;
-            margin: 10% auto;
-            padding: 20px;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            position: relative;
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #aaa;
-        }
-        
-        .close-modal:hover {
-            color: #333;
-        }
+// 1. 고급 명함 인식 및 정보 추출 시스템
 
-        .status-message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
-            text-align: center;
+// 이미지 전처리 파이프라인 - 인식률 향상을 위한 단계별 처리
+async function advancedPreprocessImage(imageUrl) {
+    return new Promise((resolve, reject) => {
+        try {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
+                try {
+                    // 원본 캔버스 생성
+                    const originalCanvas = document.createElement('canvas');
+                    originalCanvas.width = img.width;
+                    originalCanvas.height = img.height;
+                    const originalCtx = originalCanvas.getContext('2d');
+                    originalCtx.drawImage(img, 0, 0, img.width, img.height);
+                    const originalData = originalCtx.getImageData(0, 0, img.width, img.height);
+                    
+                    // 처리용 캔버스 생성
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 1. 크기 최적화 - OCR 엔진을 위한 이상적인 크기로 조정
+                    let processedWidth = img.width;
+                    let processedHeight = img.height;
+                    
+                    // OCR에 최적화된 크기는 2000-3000px 범위 (너무 작으면 텍스트 인식이 어렵고, 너무 크면 처리 속도가 느림)
+                    const OPTIMAL_SIZE = 2500;
+                    const MINIMUM_SIZE = 1000;
+                    
+                    let scale = 1;
+                    if (Math.max(processedWidth, processedHeight) > OPTIMAL_SIZE) {
+                        scale = OPTIMAL_SIZE / Math.max(processedWidth, processedHeight);
+                        processedWidth *= scale;
+                        processedHeight *= scale;
+                    } else if (Math.max(processedWidth, processedHeight) < MINIMUM_SIZE) {
+                        scale = MINIMUM_SIZE / Math.max(processedWidth, processedHeight);
+                        processedWidth *= scale;
+                        processedHeight *= scale;
+                    }
+                    
+                    canvas.width = processedWidth;
+                    canvas.height = processedHeight;
+                    
+                    // 2. 초기 이미지 그리기
+                    ctx.drawImage(img, 0, 0, processedWidth, processedHeight);
+                    
+                    // 3. 이미지 데이터 가져오기
+                    let imageData = ctx.getImageData(0, 0, processedWidth, processedHeight);
+                    let data = imageData.data;
+                    
+                    // 4. 색상 히스토그램 분석 - 이미지 특성에 따른 동적 처리
+                    let histogram = new Array(256).fill(0);
+                    for (let i = 0; i < data.length; i += 4) {
+                        const grayscale = Math.round((data[i] + data[i + 1] + data[i + 2]) / 3);
+                        histogram[grayscale]++;
+                    }
+                    
+                    // 5. Otsu 알고리즘을 사용한 적응형 임계값 찾기
+                    const threshold = calculateOtsuThreshold(histogram, data.length / 4);
+                    
+                    // 6. 노이즈 감소 및 선명도 향상을 위한 가우시안 블러 적용
+                    const blurRadius = 1; // 약한 블러 적용
+                    applyGaussianBlur(data, processedWidth, processedHeight, blurRadius);
+                    
+                    // 7. 적응형 이진화 - 언어에 따라 다른 처리 적용
+                    if (selectedLanguage.includes('chi_sim') || selectedLanguage.includes('jpn')) {
+                        // 동아시아 언어는 더 미세한 문자 필획 보존이 중요
+                        applySauvolaThresholding(data, processedWidth, processedHeight, 10, 0.3);
+                    } else {
+                        // 명함 배경과 텍스트 대비 향상
+                        applyAdaptiveThresholding(data, processedWidth, processedHeight, threshold);
+                    }
+                    
+                    // 8. 언어에 따른 세부 처리
+                    switch(selectedLanguage) {
+                        case 'kor':
+                            // 한글은 모음과 자음의 연결 부분 강화
+                            applyMorphologicalOperation(data, processedWidth, processedHeight, 'dilate', 1);
+                            break;
+                        case 'eng':
+                            // 영어는 대비 증가
+                            applyContrastEnhancement(data, processedWidth, processedHeight, 1.3);
+                            break;
+                        case 'jpn':
+                        case 'chi_sim':
+                            // 동아시아 문자는 노이즈 제거 강화
+                            applyMorphologicalOperation(data, processedWidth, processedHeight, 'erode', 1);
+                            applyMorphologicalOperation(data, processedWidth, processedHeight, 'dilate', 1);
+                            break;
+                        case 'multi':
+                            // 일반적인 향상만 적용
+                            applyContrastEnhancement(data, processedWidth, processedHeight, 1.2);
+                            break;
+                    }
+                    
+                    // 9. 엣지 강화 - 텍스트 윤곽 강조
+                    applyUnsharpMasking(data, processedWidth, processedHeight, 0.8);
+                    
+                    // 10. 이미지 평탄화 - 명함 정면이 기울어진 경우 보정
+                    // (실제 구현은 복잡하므로 프로토타입에서는 생략)
+                    
+                    // 11. 처리된 데이터를 캔버스에 적용
+                    ctx.putImageData(imageData, 0, 0);
+                    
+                    // 12. 최종 이미지 생성
+                    try {
+                        const enhancedImage = canvas.toDataURL('image/png');
+                        
+                        // 처리 결과 반환 - 디버깅을 위해 원본 및 처리 이미지 모두 포함
+                        resolve({
+                            original: originalCanvas.toDataURL('image/png'),
+                            processed: enhancedImage,
+                            width: processedWidth,
+                            height: processedHeight
+                        });
+                    } catch (e) {
+                        console.error('이미지 URL 생성 오류:', e);
+                        resolve({
+                            original: imageUrl,
+                            processed: imageUrl,
+                            width: img.width,
+                            height: img.height
+                        });
+                    }
+                    
+                } catch (error) {
+                    console.error('이미지 처리 오류:', error);
+                    // 오류 시 원본 반환
+                    resolve({
+                        original: imageUrl,
+                        processed: imageUrl,
+                        width: img.width,
+                        height: img.height
+                    });
+                }
+            };
+            
+            img.onerror = function(error) {
+                console.error('이미지 로딩 오류:', error);
+                reject(new Error('이미지 로딩에 실패했습니다.'));
+            };
+            
+            img.src = imageUrl;
+            
+        } catch (error) {
+            console.error('이미지 전처리 초기화 오류:', error);
+            reject(error);
         }
+    });
+}
 
-        .status-message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-message.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>다국어 명함 관리 앱</h1>
-        </header>
-        
-        <div class="tab-container">
-            <div class="tab active" data-tab="camera">명함 추가</div>
-            <div class="tab" data-tab="dashboard">대시보드</div>
-        </div>
-        
-        <div id="cameraContent" class="content active">
-            <div class="language-selector">
-                <button class="language-btn active" data-lang="kor">한국어</button>
-                <button class="language-btn" data-lang="eng">영어</button>
-                <button class="language-btn" data-lang="jpn">일본어</button>
-                <button class="language-btn" data-lang="chi_sim">중국어</button>
-                <button class="language-btn" data-lang="multi">다국어</button>
-            </div>
-            
-            <div class="camera-container">
-                <button id="accessCameraBtn" class="primary-button">카메라 접근 허용</button>
-                <video id="video" autoplay playsinline style="display: none;"></video>
-                <canvas id="canvas" style="display: none;"></canvas>
-                <img id="capturedImage" alt="촬영된 이미지">
-            </div>
-            
-            <div class="button-group" style="text-align: center; margin-bottom: 20px;">
-                <button id="captureBtn" style="display: none;">명함 촬영</button>
-                <button id="retakeBtn" style="display: none;">다시 촬영</button>
-                <button id="analyzeBtn" style="display: none;">명함 분석</button>
-                <button id="improveImageBtn" style="display: none; background-color: #28a745;">이미지 개선</button>
-            </div>
-            
-            <div id="statusMessage" class="status-message info" style="display: none;">명함 분석 준비 중...</div>
-            
-            <div class="progress-bar" id="progressBar" style="display: none;">
-                <div class="progress-bar-fill" id="progressBarFill"></div>
-            </div>
-            
-            <div class="card-form" id="cardForm" style="display: none;">
-                <div class="form-group">
-                    <label for="name">이름</label>
-                    <input type="text" id="name" placeholder="이름을 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="position">직책</label>
-                    <input type="text" id="position" placeholder="직책을 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="company">회사</label>
-                    <input type="text" id="company" placeholder="회사명을 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="department">부서</label>
-                    <input type="text" id="department" placeholder="부서를 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="phone">휴대폰 번호</label>
-                    <input type="tel" id="phone" placeholder="휴대폰 번호를 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">이메일</label>
-                    <input type="email" id="email" placeholder="이메일을 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="address">주소</label>
-                    <input type="text" id="address" placeholder="주소를 입력하세요">
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">메모</label>
-                    <textarea id="notes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
-                </div>
-                
-                <button id="saveBtn">명함 저장</button>
-            </div>
-        </div>
-        
-        <div id="dashboardContent" class="content">
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="이름, 회사, 직책 등으로 검색">
-            </div>
-            
-            <div id="cardList" class="card-list">
-                <!-- 명함 목록이 여기에 동적으로 표시됩니다 -->
-            </div>
-            
-            <div id="emptyState" class="empty-state">
-                <p>등록된 명함이 없습니다.</p>
-                <p>카메라 탭에서 새 명함을 추가해보세요.</p>
-            </div>
-        </div>
-    </div>
+// Otsu 임계값 계산 - 자동 이진화 임계값 결정
+function calculateOtsuThreshold(histogram, totalPixels) {
+    let sum = 0;
+    for (let i = 0; i < 256; i++) {
+        sum += i * histogram[i];
+    }
     
-    <!-- 명함 수정 모달 -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>명함 수정</h2>
-            
-            <div class="form-group">
-                <label for="editName">이름</label>
-                <input type="text" id="editName" placeholder="이름을 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editPosition">직책</label>
-                <input type="text" id="editPosition" placeholder="직책을 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editCompany">회사</label>
-                <input type="text" id="editCompany" placeholder="회사명을 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editDepartment">부서</label>
-                <input type="text" id="editDepartment" placeholder="부서를 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editPhone">휴대폰 번호</label>
-                <input type="tel" id="editPhone" placeholder="휴대폰 번호를 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editEmail">이메일</label>
-                <input type="email" id="editEmail" placeholder="이메일을 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editAddress">주소</label>
-                <input type="text" id="editAddress" placeholder="주소를 입력하세요">
-            </div>
-            
-            <div class="form-group">
-                <label for="editNotes">메모</label>
-                <textarea id="editNotes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
-            </div>
-            
-            <button id="updateBtn">수정 완료</button>
-        </div>
-    </div>
+    let sumB = 0;
+    let wB = 0;
+    let wF = 0;
+    let maxVariance = 0;
+    let threshold = 0;
     
-    <script>
-        // DOM 요소
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const capturedImage = document.getElementById('capturedImage');
-        const captureBtn = document.getElementById('captureBtn');
-        const retakeBtn = document.getElementById('retakeBtn');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const cardForm = document.getElementById('cardForm');
-        const saveBtn = document.getElementById('saveBtn');
-        const statusMessage = document.getElementById('statusMessage');
-        const progressBar = document.getElementById('progressBar');
-        const progressBarFill = document.getElementById('progressBarFill');
-        const cardList = document.getElementById('cardList');
-        const emptyState = document.getElementById('emptyState');
-        const searchInput = document.getElementById('searchInput');
-        const editModal = document.getElementById('editModal');
-        const closeModal = document.querySelector('.close-modal');
-        const updateBtn = document.getElementById('updateBtn');
-        const accessCameraBtn = document.getElementById('accessCameraBtn');
-        const languageButtons = document.querySelectorAll('.language-btn');
-        const improveImageBtn = document.getElementById('improveImageBtn');
+    for (let i = 0; i < 256; i++) {
+        wB += histogram[i];
         
-        // 언어 선택
-        let selectedLanguage = 'kor';
+        if (wB === 0) continue;
         
-        // 탭 관련 변수
-        const tabs = document.querySelectorAll('.tab');
-        const contents = document.querySelectorAll('.content');
+        wF = totalPixels - wB;
+        if (wF === 0) break;
         
-        // 현재 편집 중인 명함 ID
-        let currentEditId = null;
+        sumB += i * histogram[i];
         
-        // 명함 데이터 변수
-        let businessCards = [];
+        const mB = sumB / wB;
+        const mF = (sum - sumB) / wF;
         
-        // 언어별 인식 설정
-        const languageMap = {
-            'kor': { 
-                lang: 'kor',
-                label: '한국어',
-                keywords: {
-                    company: ['주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단'],
-                    position: ['대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트'],
-                    department: ['부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계']
-                }
-            },
-            'eng': { 
-                lang: 'eng',
-                label: '영어',
-                keywords: {
-                    company: ['Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College'],
-                    position: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer'],
-                    department: ['Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service']
-                }
-            },
-            'jpn': { 
-                lang: 'jpn',
-                label: '일본어',
-                keywords: {
-                    company: ['株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団'],
-                    position: ['代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント'],
-                    department: ['部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理']
-                }
-            },
-            'chi_sim': { 
-                lang: 'chi_sim',
-                label: '중국어',
-                keywords: {
-                    company: ['有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'],
-                    position: ['总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'],
-                    department: ['部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计']
-                }
-            },
-            'multi': { 
-                lang: 'kor+eng+jpn+chi_sim',
-                label: '다국어',
-                keywords: {
-                    company: [
-                        // 한국어
-                        '주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단',
-                        // 영어
-                        'Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College',
-                        // 일본어
-                        '株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団',
-                        // 중국어
-                        '有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'
-                    ],
-                    position: [
-                        // 한국어
-                        '대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트',
-                        // 영어
-                        'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer',
-                        // 일본어
-                        '代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント',
-                        // 중국어
-                        '总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'
-                    ],
-                    department: [
-                        // 한국어
-                        '부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계',
-                        // 영어
-                        'Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service',
-                        // 일본어
-                        '部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理',
-                        // 중국어
-                        '部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计'
-                    ]
+        const variance = wB * wF * Math.pow(mB - mF, 2);
+        
+        if (variance > maxVariance) {
+            maxVariance = variance;
+            threshold = i;
+        }
+    }
+    
+    return threshold;
+}
+
+// 가우시안 블러 적용 - 노이즈 감소
+function applyGaussianBlur(data, width, height, radius) {
+    // 간소화된 가우시안 블러 구현 (실제로는 더 복잡함)
+    // 임시 배열 생성
+    const tempData = new Uint8ClampedArray(data.length);
+    for (let i = 0; i < data.length; i++) {
+        tempData[i] = data[i];
+    }
+    
+    const kernel = generateGaussianKernel(radius);
+    const kernelSize = radius * 2 + 1;
+    
+    // 가로 방향 블러
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let r = 0, g = 0, b = 0;
+            let weightSum = 0;
+            
+            for (let kx = -radius; kx <= radius; kx++) {
+                const posX = Math.min(Math.max(x + kx, 0), width - 1);
+                const kernelValue = kernel[kx + radius];
+                const idx = (y * width + posX) * 4;
+                
+                r += tempData[idx] * kernelValue;
+                g += tempData[idx + 1] * kernelValue;
+                b += tempData[idx + 2] * kernelValue;
+                weightSum += kernelValue;
+            }
+            
+            const destIdx = (y * width + x) * 4;
+            data[destIdx] = r / weightSum;
+            data[destIdx + 1] = g / weightSum;
+            data[destIdx + 2] = b / weightSum;
+        }
+    }
+    
+    // 임시 배열에 중간 결과 복사
+    for (let i = 0; i < data.length; i++) {
+        tempData[i] = data[i];
+    }
+    
+    // 세로 방향 블러
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let r = 0, g = 0, b = 0;
+            let weightSum = 0;
+            
+            for (let ky = -radius; ky <= radius; ky++) {
+                const posY = Math.min(Math.max(y + ky, 0), height - 1);
+                const kernelValue = kernel[ky + radius];
+                const idx = (posY * width + x) * 4;
+                
+                r += tempData[idx] * kernelValue;
+                g += tempData[idx + 1] * kernelValue;
+                b += tempData[idx + 2] * kernelValue;
+                weightSum += kernelValue;
+            }
+            
+            const destIdx = (y * width + x) * 4;
+            data[destIdx] = r / weightSum;
+            data[destIdx + 1] = g / weightSum;
+            data[destIdx + 2] = b / weightSum;
+        }
+    }
+}
+
+// 가우시안 커널 생성
+function generateGaussianKernel(radius) {
+    const size = radius * 2 + 1;
+    const kernel = new Array(size);
+    
+    const sigma = radius / 3;
+    let sum = 0;
+    
+    for (let i = 0; i < size; i++) {
+        const x = i - radius;
+        kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma));
+        sum += kernel[i];
+    }
+    
+    // 정규화
+    for (let i = 0; i < size; i++) {
+        kernel[i] /= sum;
+    }
+    
+    return kernel;
+}
+
+// 적응형 이진화 - 로컬 영역 기반 임계값 적용
+function applyAdaptiveThresholding(data, width, height, globalThreshold) {
+    // 그레이스케일 변환
+    for (let i = 0; i < data.length; i += 4) {
+        const gray = Math.round((data[i] + data[i + 1] + data[i + 2]) / 3);
+        
+        // 전역 임계값 기반 이진화 (간소화된 구현)
+        const threshold = globalThreshold;
+        
+        if (gray > threshold + 10) {
+            // 배경은 흰색
+            data[i] = data[i + 1] = data[i + 2] = 255;
+        } else {
+            // 텍스트는 검은색
+            data[i] = data[i + 1] = data[i + 2] = 0;
+        }
+    }
+}
+
+// Sauvola 지역 적응형 이진화 알고리즘 (동아시아 문자에 효과적)
+function applySauvolaThresholding(data, width, height, windowSize, k) {
+    // 그레이스케일 변환 및 임시 배열 생성
+    const grayData = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4;
+            grayData[y * width + x] = Math.round((data[idx] + data[idx + 1] + data[idx + 2]) / 3);
+        }
+    }
+    
+    // 각 픽셀에 대해 주변 윈도우 평균 및 표준편차 계산
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            // 윈도우 영역 설정
+            const startX = Math.max(0, x - windowSize);
+            const endX = Math.min(width - 1, x + windowSize);
+            const startY = Math.max(0, y - windowSize);
+            const endY = Math.min(height - 1, y + windowSize);
+            
+            // 평균 및 분산 계산
+            let sum = 0;
+            let sqSum = 0;
+            let count = 0;
+            
+            for (let wy = startY; wy <= endY; wy++) {
+                for (let wx = startX; wx <= endX; wx++) {
+                    const value = grayData[wy * width + wx];
+                    sum += value;
+                    sqSum += value * value;
+                    count++;
                 }
             }
+            
+            const mean = sum / count;
+            const variance = sqSum / count - mean * mean;
+            const stdDev = Math.sqrt(variance);
+            
+            // Sauvola 임계값 계산
+            const threshold = mean * (1 + k * ((stdDev / 128) - 1));
+            
+            // 이진화 적용
+            const idx = (y * width + x) * 4;
+            const value = grayData[y * width + x];
+            
+            if (value > threshold) {
+                data[idx] = data[idx + 1] = data[idx + 2] = 255; // 배경
+            } else {
+                data[idx] = data[idx + 1] = data[idx + 2] = 0; // 텍스트
+            }
+        }
+    }
+}
+
+// 형태학적 연산 (팽창/침식) - 문자 형태 개선
+function applyMorphologicalOperation(data, width, height, operation, radius) {
+    // 이미지를 이진 배열로 변환
+    const binaryImage = new Uint8Array(width * height);
+    for (let i = 0; i < width * height; i++) {
+        binaryImage[i] = data[i * 4] > 128 ? 1 : 0;
+    }
+    
+    // 결과 저장용 배열
+    const result = new Uint8Array(width * height);
+    
+    // 작업 수행
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            let found = (operation === 'dilate') ? 0 : 1;
+            
+            // 주변 픽셀 검사
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        const value = binaryImage[ny * width + nx];
+                        
+                        if (operation === 'dilate' && value === 1) {
+                            found = 1;
+                            break;
+                        } else if (operation === 'erode' && value === 0) {
+                            found = 0;
+                            break;
+                        }
+                    }
+                }
+                if ((operation === 'dilate' && found === 1) || 
+                    (operation === 'erode' && found === 0)) {
+                    break;
+                }
+            }
+            
+            result[y * width + x] = found;
+        }
+    }
+    
+    // 결과를 원본 데이터에 적용
+    for (let i = 0; i < width * height; i++) {
+        const value = result[i] === 1 ? 255 : 0;
+        const idx = i * 4;
+        data[idx] = data[idx + 1] = data[idx + 2] = value;
+    }
+}
+
+// 대비 향상 - 텍스트와 배경 구분 강화
+function applyContrastEnhancement(data, width, height, factor) {
+    for (let i = 0; i < data.length; i += 4) {
+        // RGB 각 채널에 대해 대비 향상
+        for (let c = 0; c < 3; c++) {
+            // 픽셀 값을 -128~127 범위로 조정
+            let value = data[i + c] - 128;
+            // 대비 인자 적용
+            value = value * factor;
+            // 다시 0-255 범위로 조정
+            value = value + 128;
+            // 범위 제한
+            data[i + c] = Math.min(255, Math.max(0, value));
+        }
+    }
+}
+
+// 언샤프 마스킹 - 텍스트 선명도 향상
+function applyUnsharpMasking(data, width, height, amount) {
+    // 블러된 이미지 생성 (간소화 구현)
+    const tempData = new Uint8ClampedArray(data.length);
+    for (let i = 0; i < data.length; i++) {
+        tempData[i] = data[i];
+    }
+    
+    // 3x3 평균 블러 적용
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            for (let c = 0; c < 3; c++) {
+                let sum = 0;
+                
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const idx = ((y + dy) * width + (x + dx)) * 4 + c;
+                        sum += data[idx];
+                    }
+                }
+                
+                const avgValue = sum / 9;
+                tempData[(y * width + x) * 4 + c] = avgValue;
+            }
+        }
+    }
+    
+    // 언샤프 마스킹 적용 (원본 - 블러 = 디테일)
+    for (let i = 0; i < data.length; i += 4) {
+        for (let c = 0; c < 3; c++) {
+            const detail = data[i + c] - tempData[i + c];
+            data[i + c] = Math.min(255, Math.max(0, data[i + c] + detail * amount));
+        }
+    }
+}
+
+// 고급 OCR 처리 함수 - 여러 인식 엔진 결합
+async function enhancedOCRProcess(imageData, langCode) {
+    try {
+        // 인식 품질 향상을 위한 여러 단계 적용
+        
+        // 1. 전처리된 이미지 정보 가져오기
+        const { processed, original, width, height } = imageData;
+        
+        // 2. 메인 Tesseract 작업 생성
+        const mainWorker = await createOptimizedWorker(langCode);
+        
+        // 3. OCR 메인 처리 - 최적화된 설정
+        let mainResult = null;
+        
+        try {
+            // 메인 인식 시작
+            showStatus('텍스트 인식 중... (1/2)', 'info');
+            
+            // 프로 수준의 OCR 설정
+            await mainWorker.setParameters({
+                tessjs_create_hocr: '1',           // HOCR 출력 활성화
+                tessjs_create_tsv: '1',            // 좌표 정보 획득
+                tessedit_pageseg_mode: 'PSM_AUTO', // 자동 페이지 세그먼트 모드
+                tessedit_ocr_engine_mode: 'OEM_LSTM_ONLY', // 신경망 전용 모드
+                preserve_interword_spaces: '1',    // 단어 간 간격 유지
+                textord_heavy_nr: '1',             // 강한 노이즈 제거
+                textord_min_linesize: '2.5',       // 최소 라인 크기 설정
+                language_model_penalty_non_dict_word: '0.8', // 사전 외 단어 페널티 감소
+                language_model_penalty_non_freq_dict_word: '0.9' // 빈도수 낮은 단어 페널티 감소
+            });
+            
+            // 메인 OCR 실행
+            mainResult = await mainWorker.recognize(processed);
+            
+            // 워커 종료
+            mainWorker.terminate();
+            
+        } catch (error) {
+            console.error('메인 OCR 처리 오류:', error);
+            if (mainWorker) {
+                try {
+                    await mainWorker.terminate();
+                } catch (e) {
+                    console.warn('메인 워커 종료 실패:', e);
+                }
+            }
+            // 오류 시 더 간단한 설정으로 재시도
+            return fallbackOCRProcess(original, langCode);
+        }
+        
+        // 4. 보조 OCR 실행 - 다른 세그먼트 모드로 시도
+        let secondaryResult = null;
+        
+        try {
+            // 보조 인식용 워커 생성
+            showStatus('텍스트 인식 중... (2/2)', 'info');
+            const secondaryWorker = await createOptimizedWorker(langCode);
+            
+            // 싱글 라인 모드 설정 (명함의 경우 각 줄이 중요한 정보를 담고 있음)
+            await secondaryWorker.setParameters({
+                tessedit_pageseg_mode: 'PSM_SINGLE_LINE',  // 한 줄씩 인식
+                tessedit_ocr_engine_mode: 'OEM_LSTM_ONLY', // 신경망 모드
+                preserve_interword_spaces: '1'             // 단어 간격 유지
+            });
+            
+            // 보조 OCR 실행
+            secondaryResult = await secondaryWorker.recognize(processed);
+            
+            // 워커 종료
+            secondaryWorker.terminate();
+            
+        } catch (error) {
+            console.error('보조 OCR 처리 오류:', error);
+            // 보조 OCR 실패해도 계속 진행
+        }
+        
+        // 5. 결과 병합 및 후처리
+        const mergedText = mergeOCRResults(mainResult, secondaryResult);
+        
+        // 6. 결과 반환
+        return {
+            text: mergedText,
+            confidence: mainResult?.data?.confidence || 0,
+            words: mainResult?.data?.words || [],
+            hocr: mainResult?.data?.hocr || null,
         };
         
-        // 언어 선택 이벤트
-        languageButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // 이전 활성화된 버튼 비활성화
-                document.querySelector('.language-btn.active').classList.remove('active');
-                
-                // 현재 버튼 활성화
-                btn.classList.add('active');
-                
-                // 선택된 언어 설정
-                selectedLanguage = btn.getAttribute('data-lang');
-            });
-        });
-        
-        // 탭 전환 이벤트
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetTab = tab.getAttribute('data-tab');
-                
-                // 탭 활성화
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // 콘텐츠 활성화
-                contents.forEach(content => {
-                    content.classList.remove('active');
-                });
-                
-                document.getElementById(targetTab + 'Content').classList.add('active');
-                
-                // 대시보드 탭 클릭 시 명함 목록 새로고침
-                if (targetTab === 'dashboard') {
-                    renderCardList();
+    } catch (error) {
+        console.error('고급 OCR 전체 처리 오류:', error);
+        // 모든 오류 상황에서 대비책 함수 호출
+        return fallbackOCRProcess(imageData.original, langCode);
+    }
+}
+
+// 최적화된 Tesseract 워커 생성
+async function createOptimizedWorker(langCode) {
+    const worker = Tesseract.createWorker({
+        // 로거 및 진행률 표시
+        logger: progress => {
+            if (progress.status === 'recognizing text') {
+                const percentage = Math.round(progress.progress * 100);
+                progressBarFill.style.width = `${percentage}%`;
+            }
+        },
+        // Tesseract 작업자 메모리 제한
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/worker.min.js',
+        // 언어 데이터 경로 설정
+        langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+        // 코어 스크립트 경로
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@2.2.0/tesseract-core.wasm.js'
+    });
+    
+    // 초기화
+    await worker.load();
+    await worker.loadLanguage(langCode);
+    await worker.initialize(langCode);
+    
+    return worker;
+}
+
+// 대체 OCR 처리 (간소화된 접근)
+async function fallbackOCRProcess(imageUrl, langCode) {
+    try {
+        const worker = Tesseract.createWorker({
+            logger: progress => {
+                if (progress.status === 'recognizing text') {
+                    const percentage = Math.round(progress.progress * 100);
+                    progressBarFill.style.width = `${percentage}%`;
                 }
-            });
-        });
-        
-        // 카메라 접근 버튼 클릭 이벤트
-        accessCameraBtn.addEventListener('click', async () => {
-            try {
-                // 카메라 스트림 가져오기 전에 이전 스트림 정리
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                }
-                
-                // 카메라 접근 요청
-                const constraints = {
-                    audio: false,
-                    video: {
-                        facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                };
-                
-                console.log('카메라 접근 요청 중...');
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('카메라 접근 성공!', stream);
-                
-                video.srcObject = stream;
-                video.style.display = 'block';
-                captureBtn.style.display = 'inline-block';
-                accessCameraBtn.style.display = 'none';
-                
-                showStatus('카메라 접근 성공! 명함을 촬영해주세요.', 'success');
-                
-            } catch (error) {
-                console.error('카메라 접근 오류:', error);
-                showStatus(`카메라 접근 오류: ${error.name} - ${error.message}`, 'error');
             }
         });
         
-        // 상태 메시지 표시 함수
-        function showStatus(message, type = 'info') {
-            statusMessage.textContent = message;
-            
-            // 기존 클래스 제거
-            statusMessage.classList.remove('info', 'success', 'error');
-            
-            // 새 클래스 추가
-            statusMessage.classList.add(type);
-            
-            // 메시지 표시
-            statusMessage.style.display = 'block';
-            
-            // 성공 메시지는 3초 후 자동으로 숨김
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusMessage.style.display = 'none';
-                }, 3000);
-            }
-        }
+        await worker.load();
+        await worker.loadLanguage(langCode);
+        await worker.initialize(langCode);
         
-        // 페이지 로드 시 저장된 명함 불러오기
-        document.addEventListener('DOMContentLoaded', () => {
-            // 카메라 접근 버튼 초기 표시
-            accessCameraBtn.style.display = 'block';
-            video.style.display = 'none';
-            captureBtn.style.display = 'none';
-            
-            // 저장된 명함 불러오기
-            loadBusinessCards();
-            
-            // MediaDevices API 지원 확인
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showStatus('이 브라우저는 카메라 접근을 지원하지 않습니다. 최신 Chrome, Safari 또는 Firefox를 사용해주세요.', 'error');
-                accessCameraBtn.disabled = true;
-                accessCameraBtn.textContent = '카메라 지원되지 않음';
-            }
-            
-            // 오류 저항성 높은 앱 설정
-            setupErrorResistantApp();
+        // 기본 설정만 사용
+        await worker.setParameters({
+            preserve_interword_spaces: '1'
         });
         
-        // 명함 데이터 로컬 스토리지에서 불러오기
-        function loadBusinessCards() {
-            try {
-                const savedCards = localStorage.getItem('businessCards');
-                
-                if (savedCards) {
-                    businessCards = JSON.parse(savedCards);
-                    renderCardList();
-                }
-            } catch (error) {
-                console.error('저장된 명함 로드 오류:', error);
-                showStatus('저장된 명함을 불러오는 중 오류가 발생했습니다.', 'error');
-                businessCards = []; // 오류 시 빈 배열로 초기화
-            }
-        }
+        // 이미지 인식
+        const result = await worker.recognize(imageUrl);
         
-        // 명함 데이터 로컬 스토리지에 저장
-        function saveBusinessCards() {
-            try {
-                localStorage.setItem('businessCards', JSON.stringify(businessCards));
-            } catch (error) {
-                console.error('명함 저장 오류:', error);
-                showStatus('명함 저장 중 오류가 발생했습니다.', 'error');
-            }
-        }
+        // 워커 종료
+        await worker.terminate();
         
-        // 명함 목록 렌더링
-        function renderCardList(filterText = '') {
-            let filteredCards = businessCards;
+        return {
+            text: result.data.text,
+            confidence: result.data.confidence,
+            words: [],
+            hocr: null
+        };
+        
+    } catch (error) {
+        console.error('대체 OCR 처리 오류:', error);
+        return {
+            text: '',
+            confidence: 0,
+            words: [],
+            hocr: null
+        };
+    }
+}
+
+// OCR 결과 병합 함수
+function mergeOCRResults(mainResult, secondaryResult) {
+    if (!mainResult) return '';
+    
+    let mainText = mainResult.data.text;
+    
+    // 보조 결과가 있으면 병합
+    if (secondaryResult && secondaryResult.data) {
+        const secondaryText = secondaryResult.data.text;
+        const mainLines = mainText.split('\n');
+        const secondaryLines = secondaryText.split('\n');
+        
+        // 각 라인별로 더 나은 결과 선택
+        const mergedLines = [];
+        
+        for (let i = 0; i < Math.max(mainLines.length, secondaryLines.length); i++) {
+            const mainLine = i < mainLines.length ? mainLines[i] : '';
+            const secondaryLine = i < secondaryLines.length ? secondaryLines[i] : '';
             
-            // 검색어가 있으면 필터링
-            if (filterText) {
-                const searchTerms = filterText.toLowerCase().split(' ');
-                
-                filteredCards = businessCards.filter(card => {
-                    const cardText = (
-                        (card.name || '') + ' ' + 
-                        (card.company || '') + ' ' + 
-                        (card.position || '') + ' ' + 
-                        (card.department || '') + ' ' + 
-                        (card.phone || '') + ' ' + 
-                        (card.email || '') + ' ' + 
-                        (card.address || '') + ' ' + 
-                        (card.notes || '')
-                    ).toLowerCase();
-                    
-                    return searchTerms.every(term => cardText.includes(term));
-                });
-            }
+            // 공백이 아닌 단어 수 계산
+            const mainWordCount = mainLine.split(/\s+/).filter(w => w.length > 0).length;
+            const secondaryWordCount = secondaryLine.split(/\s+/).filter(w => w.length > 0).length;
             
-            // 빈 상태 처리
-            if (filteredCards.length === 0) {
-                cardList.innerHTML = '';
-                emptyState.style.display = 'block';
+            // 특수문자 비율 계산
+            const mainSpecialChar = countSpecialCharacters(mainLine);
+            const secondarySpecialChar = countSpecialCharacters(secondaryLine);
+            
+            // 휴리스틱: 더 많은 단어와 더 적은 특수문자를 가진 결과 선택
+            if (mainWordCount > secondaryWordCount && mainSpecialChar <= secondarySpecialChar) {
+                mergedLines.push(mainLine);
+            } else if (secondaryWordCount > 0 && 
+                      (secondaryWordCount > mainWordCount || secondarySpecialChar < mainSpecialChar)) {
+                mergedLines.push(secondaryLine);
             } else {
-                emptyState.style.display = 'none';
-                
-                cardList.innerHTML = filteredCards.map((card, index) => `
-                    <div class="card-item" data-id="${card.id}">
-                        <h3>${card.name || '이름 없음'}</h3>
-                        <div class="card-details">
-                            <p><strong>회사:</strong> ${card.company || '-'}</p>
-                            <p><strong>직책:</strong> ${card.position || '-'}</p>
-                            <p><strong>부서:</strong> ${card.department || '-'}</p>
-                            <p><strong>전화:</strong> ${card.phone || '-'}</p>
-                            <p><strong>이메일:</strong> ${card.email || '-'}</p>
-                            <p><strong>주소:</strong> ${card.address || '-'}</p>
-                            <p><strong>등록일:</strong> ${new Date(card.registeredDate).toLocaleDateString()}</p>
-                            ${card.notes ? `<p><strong>메모:</strong> ${card.notes}</p>` : ''}
-                        </div>
-                        <div class="card-actions">
-                            <button class="edit-btn" data-id="${card.id}">수정</button>
-                            <button class="delete-btn" data-id="${card.id}">삭제</button>
-                        </div>
-                    </div>
-                `).join('');
-                
-                // 수정 버튼 이벤트 연결
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = e.target.getAttribute('data-id');
-                        openEditModal(id);
-                    });
-                });
-                
-                // 삭제 버튼 이벤트 연결
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = e.target.getAttribute('data-id');
-                        deleteBusinessCard(id);
-                    });
-                });
+                mergedLines.push(mainLine || secondaryLine);
             }
         }
         
-        // 검색 기능
-        searchInput.addEventListener('input', (e) => {
-            renderCardList(e.target.value);
-        });
-        
-        // 명함 촬영
-        captureBtn.addEventListener('click', () => {
-            try {
-                // 캔버스 설정
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-                
-                // 비디오 프레임 캡처
-                const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // 캡처된 이미지 표시
-                capturedImage.src = canvas.toDataURL('image/png');
-                capturedImage.style.display = 'block';
-                
-                // 버튼 상태 변경
-                captureBtn.style.display = 'none';
-                retakeBtn.style.display = 'inline-block';
-                analyzeBtn.style.display = 'inline-block';
-                improveImageBtn.style.display = 'inline-block';
-                video.style.display = 'none';
-                
-                showStatus('명함 촬영 완료! 이미지를 개선하거나 바로 분석할 수 있습니다.', 'success');
-            } catch (error) {
-                console.error('촬영 오류:', error);
-                showStatus('촬영 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-            }
-        });
-        
-        // 다시 촬영
-        retakeBtn.addEventListener('click', () => {
-            capturedImage.style.display = 'none';
-            captureBtn.style.display = 'inline-block';
-            retakeBtn.style.display = 'none';
-            analyzeBtn.style.display = 'none';
-            improveImageBtn.style.display = 'none';
-            video.style.display = 'block';
-            statusMessage.style.display = 'none';
-        });
-        
-        // 안전한 이미지 개선 함수
-        async function simpleEnhanceImage(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    // 원본 이미지 URL이 유효한지 확인
-                    if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.startsWith('data:image/')) {
-                        console.error('유효하지 않은 이미지 URL:', imageUrl?.substring(0, 30) + '...');
-                        reject(new Error('유효하지 않은 이미지입니다.'));
-                        return;
-                    }
+        mainText = mergedLines.join('\n');
+    }
+    
+    // 후처리: 불필요한 공백 제거 및 텍스트 정리
+    mainText = mainText.replace(/\s+/g, ' ').trim();  // 연속된 공백을 하나로
+    mainText = mainText.replace(/(\n\s*)+/g, '\n');   // 연속된 줄바꿈 제거
+    
+    return mainText;
+}
 
-                    const img = new Image();
-                    
-                    // 이미지 로딩 성공 핸들러
-                    img.onload = function() {
-                        try {
-                            // 이미지 크기 검증
-                            if (img.width <= 0 || img.height <= 0) {
-                                console.error('유효하지 않은 이미지 크기:', img.width, img.height);
-                                resolve(imageUrl); // 원본 이미지를 그대로 반환
-                                return;
-                            }
+// 특수 문자 개수 세기
+function countSpecialCharacters(text) {
+    if (!text) return 0;
+    return (text.match(/[^\w\s가-힣ぁ-んァ-ン一-龯]/g) || []).length;
+}
 
-                            // 캔버스 생성 및 이미지 그리기
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 원본 이미지 그리기
-                            ctx.drawImage(img, 0, 0, img.width, img.height);
-                            
-                            // 이미지 데이터 가져오기
-                            let imageData;
-                            try {
-                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            } catch (e) {
-                                console.error('이미지 데이터 가져오기 실패:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                                return;
-                            }
-                            
-                            const data = imageData.data;
-                            
-                            // 간단한 이미지 처리
-                            try {
-                                for (let i = 0; i < data.length; i += 4) {
-                                    // 대비 향상 (간단한 방식)
-                                    const contrast = 1.2; // 대비 값 (1.0보다 크면 대비 증가)
-                                    const brightness = 5; // 밝기 값 (양수면 밝게, 음수면 어둡게)
-                                    
-                                    // R, G, B 채널에 대비와 밝기 적용
-                                    data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + brightness));
-                                    data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * contrast + 128 + brightness));
-                                    data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * contrast + 128 + brightness));
-                                    
-                                    // 언어에 따라 흑백 변환 (옵션)
-                                    if (!selectedLanguage.includes('chi_sim') && !selectedLanguage.includes('jpn')) {
-                                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                        data[i] = data[i + 1] = data[i + 2] = avg;
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('이미지 처리 중 오류:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                                return;
-                            }
-                            
-                            // 수정된 이미지 데이터 적용
-                            try {
-                                ctx.putImageData(imageData, 0, 0);
-                                
-                                // 결과 이미지를 데이터 URL로 변환
-                                const resultUrl = canvas.toDataURL('image/png');
-                                
-                                // 결과 URL 검증
-                                if (!resultUrl || !resultUrl.startsWith('data:image/')) {
-                                    console.error('잘못된 결과 URL:', resultUrl?.substring(0, 30) + '...');
-                                    resolve(imageUrl); // 원본 이미지 반환
-                                    return;
-                                }
-                                
-                                resolve(resultUrl);
-                            } catch (e) {
-                                console.error('이미지 데이터 반영 중 오류:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                            }
-                        } catch (e) {
-                            console.error('캔버스 처리 중 오류:', e);
-                            resolve(imageUrl); // 원본 이미지 반환
-                        }
-                    };
-                    
-                    // 이미지 로딩 실패 핸들러
-                    img.onerror = function(error) {
-                        console.error('이미지 로딩 오류:', error);
-                        resolve(imageUrl); // 원본 이미지 반환
-                    };
-                    
-                    // 이미지 로딩 시작 (crossOrigin을 anonymous로 설정)
-                    img.crossOrigin = 'anonymous';
-                    img.src = imageUrl;
-                    
-                    // 타임아웃 설정 (5초 후 자동으로 원본 이미지 반환)
-                    setTimeout(() => {
-                        if (!img.complete) {
-                            console.warn('이미지 처리 타임아웃');
-                            resolve(imageUrl);
-                        }
-                    }, 5000);
-                    
-                } catch (error) {
-                    console.error('이미지 개선 전체 오류:', error);
-                    resolve(imageUrl); // 원본 이미지 반환
-                }
-            });
+// 전문적인 명함 정보 추출 로직
+function advancedBusinessCardExtraction(text, hocrData, words, keywords, langCode) {
+    try {
+        console.log("고급 명함 정보 추출 시작", text);
+        
+        // 기본 정보 객체
+        const info = {
+            name: '',
+            position: '',
+            company: '',
+            department: '',
+            phone: '',
+            email: '',
+            address: '',
+            fax: '',
+            website: '',
+            mobile: '',
+            tel: ''
+        };
+        
+        // 정제된 텍스트 라인 분리
+        const lines = text.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+        
+        console.log("처리할 라인:", lines);
+        
+        // 1. 정규 표현식을 통한 정확한 정보 추출
+        
+        // 이메일 추출 - 가장 신뢰할 수 있는 패턴
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const emailMatches = text.match(emailRegex);
+        if (emailMatches && emailMatches.length > 0) {
+            info.email = emailMatches[0];
+            console.log("이메일 발견:", info.email);
         }
         
-        // 이미지 개선 버튼 설정 함수
-        function setupSafeImageEnhancement() {
-            improveImageBtn.addEventListener('click', async () => {
-                try {
-                    improveImageBtn.disabled = true;
-                    improveImageBtn.textContent = '이미지 개선 중...';
-                    
-                    // 원본 이미지가 있는지 확인
-                    if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
-                        console.error('유효한 이미지가 없습니다.');
-                        improveImageBtn.textContent = '이미지 개선 (이미지 없음)';
-                        improveImageBtn.disabled = false;
-                        showStatus('유효한 이미지가 없습니다. 다시 촬영해주세요.', 'error');
-                        return;
-                    }
-                    
-                    // 원본 이미지 백업
-                    const originalSrc = capturedImage.src;
-                    
-                    showStatus('이미지 개선 중...', 'info');
-                    
-                    try {
-                        // 간단한 이미지 개선 적용
-                        const enhancedImage = await simpleEnhanceImage(originalSrc);
-                        
-                        // 원본 이미지와 개선된 이미지가 다른지 확인
-                        if (enhancedImage !== originalSrc) {
-                            capturedImage.src = enhancedImage;
-                        }
-                        
-                        // 이미지 표시 확인
-                        capturedImage.style.display = 'block';
-                        
-                        improveImageBtn.textContent = '이미지 개선 완료';
-                        showStatus('이미지 개선 완료!', 'success');
-                        
-                        setTimeout(() => {
-                            improveImageBtn.textContent = '이미지 다시 개선';
-                            improveImageBtn.disabled = false;
-                        }, 1500);
-                    } catch (error) {
-                        console.error('이미지 개선 처리 오류:', error);
-                        capturedImage.src = originalSrc; // 원본 이미지로 복원
-                        capturedImage.style.display = 'block';
-                        improveImageBtn.textContent = '이미지 개선 (실패)';
-                        improveImageBtn.disabled = false;
-                        showStatus('이미지 개선 중 오류가 발생했습니다.', 'error');
-                    }
-                } catch (error) {
-                    console.error('이미지 개선 버튼 오류:', error);
-                    improveImageBtn.textContent = '이미지 개선';
-                    improveImageBtn.disabled = false;
-                    showStatus('이미지 개선 중 오류가 발생했습니다.', 'error');
+        // 웹사이트 추출
+        const websiteRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})+/g;
+        const websiteMatches = text.match(websiteRegex);
+        if (websiteMatches && websiteMatches.length > 0) {
+            // 이메일 주소와 겹치지 않는 첫 번째 웹사이트 선택
+            for (const website of websiteMatches) {
+                if (!website.includes('@')) {
+                    info.website = website;
+                    console.log("웹사이트 발견:", info.website);
+                    break;
                 }
-            });
-        }
-        
-        // 안전한 OCR 처리 함수
-        async function safeOCRProcess(imageUrl, langCode) {
-            try {
-                // 이미지 전처리 (기본 전처리만 수행)
-                const preprocessedImage = await safePreprocessImage(imageUrl);
-                
-                // Tesseract Worker 생성 시도
-                const worker = Tesseract.createWorker({
-                    logger: progress => {
-                        if (progress.status === 'recognizing text') {
-                            const percentage = Math.round(progress.progress * 100);
-                            progressBarFill.style.width = `${percentage}%`;
-                        }
-                    }
-                });
-                
-                try {
-                    await worker.load();
-                    await worker.loadLanguage(langCode);
-                    await worker.initialize(langCode);
-                    
-                    // 기본 매개변수만 설정 (안정성 위주)
-                    await worker.setParameters({
-                        preserve_interword_spaces: '1',
-                        tessedit_pageseg_mode: '1'
-                    });
-                    
-                    // 이미지 인식 시도
-                    const result = await worker.recognize(preprocessedImage);
-                    
-                    // 작업 완료 후 워커 종료
-                    await worker.terminate();
-                    
-                    return result.data.text;
-                } catch (ocrError) {
-                    console.error('OCR 처리 중 오류:', ocrError);
-                    
-                    // 워커 종료 시도
-                    try {
-                        await worker.terminate();
-                    } catch (e) {
-                        console.warn('워커 종료 실패:', e);
-                    }
-                    
-                    throw new Error('텍스트 인식에 실패했습니다: ' + ocrError.message);
-                }
-            } catch (error) {
-                console.error('OCR 전체 처리 오류:', error);
-                throw error;
             }
         }
         
-        // 안전한 이미지 전처리 함수
-        async function safePreprocessImage(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    // 이미지 URL 검증
-                    if (!imageUrl || typeof imageUrl !== 'string') {
-                        console.error('유효하지 않은 이미지 URL');
-                        reject(new Error('유효하지 않은 이미지입니다.'));
-                        return;
-                    }
+        // 전화번호 추출 (여러 종류의 전화번호 구분)
+        const phonePatterns = [
+            // 모바일 패턴 (대부분의 국가 포맷)
+            { 
+                regex: /(?:M|Mobile|모바일|휴대폰|핸드폰|手机|携帯)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                type: 'mobile'
+            },
+            // 일반 전화 패턴
+            { 
+                regex: /(?:Tel|TEL|전화|T|P|Ph|电话)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                type: 'tel'
+            },
+            // 팩스 패턴
+            { 
+                regex: /(?:Fax|FAX|팩스|F)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                type: 'fax'
+            },
+            // 일반 숫자 패턴 (위에서 매치되지 않은 것)
+            { 
+                regex: /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/g,
+                type: 'phone'
+            }
+        ];
+        
+        // 매칭된 전화번호 저장 집합
+        const matchedNumbers = new Set();
+        
+        // 각 패턴 유형에 따라 검색
+        for (const pattern of phonePatterns) {
+            const matches = text.match(pattern.regex);
+            if (matches && matches.length > 0) {
+                for (const match of matches) {
+                    // 이미 추출한 번호는 건너뛰기
+                    if (matchedNumbers.has(match)) continue;
                     
-                    const img = new Image();
+                    // 숫자만 추출
+                    const digitsOnly = match.replace(/\D/g, '');
                     
-                    img.onload = () => {
-                        try {
-                            // 이미지 크기 검증
-                            if (img.width <= 0 || img.height <= 0) {
-                                reject(new Error('유효하지 않은 이미지 크기'));
-                                return;
-                            }
-                            
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 이미지 크기 설정 (너무 큰 이미지는 OCR 처리 속도를 저하시킴)
-                            const MAX_WIDTH = 1280;
-                            let width = img.width;
-                            let height = img.height;
-                            
-                            if (width > MAX_WIDTH) {
-                                height = (MAX_WIDTH / width) * height;
-                                width = MAX_WIDTH;
-                            }
-                            
-                            canvas.width = width;
-                            canvas.height = height;
-                            
-                            // 이미지 그리기
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            // 간단한 전처리만 수행 (복잡한 처리는 오류 가능성이 높음)
-                            try {
-                                // 그레이스케일 변환 (OCR 정확도 향상에 도움)
-                                const imageData = ctx.getImageData(0, 0, width, height);
-                                const data = imageData.data;
-                                
-                                for (let i = 0; i < data.length; i += 4) {
-                                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                    data[i] = data[i + 1] = data[i + 2] = avg;
-                                }
-                                
-                                ctx.putImageData(imageData, 0, 0);
-                            } catch (e) {
-                                console.warn('이미지 전처리 중 오류, 원본 이미지 사용:', e);
-                                // 전처리 오류 시 원본 이미지 계속 사용
-                            }
-                            
-                            // 전처리된 이미지 반환
-                            resolve(canvas.toDataURL('image/png'));
-                        } catch (error) {
-                            console.error('전처리 과정 중 오류:', error);
-                            // 오류 발생 시 원본 이미지 반환
-                            resolve(imageUrl);
+                    // 전화번호가 너무 짧거나 길면 건너뛰기
+                    if (digitsOnly.length < 7 || digitsOnly.length > 15) continue;
+                    
+                    // 숫자 부분 추출하여 형식화
+                    let formattedNumber = match;
+                    
+                    // 이미 추출한 다른 타입과 겹치는지 확인
+                    const isUnique = ![info.phone, info.tel, info.mobile, info.fax]
+                        .filter(Boolean)
+                        .some(num => num.replace(/\D/g, '') === digitsOnly);
+                    
+                    if (isUnique) {
+                        // 타입에 따라 저장
+                        if (pattern.type === 'mobile' && !info.mobile) {
+                            info.mobile = formattedNumber;
+                            console.log("모바일 번호 발견:", info.mobile);
+                        } else if (pattern.type === 'tel' && !info.tel) {
+                            info.tel = formattedNumber;
+                            console.log("전화번호 발견:", info.tel);
+                        } else if (pattern.type === 'fax' && !info.fax) {
+                            info.fax = formattedNumber;
+                            console.log("팩스 번호 발견:", info.fax);
+                        } else if (pattern.type === 'phone' && !info.phone) {
+                            info.phone = formattedNumber;
+                            console.log("기타 전화번호 발견:", info.phone);
                         }
-                    };
-                    
-                    img.onerror = () => {
-                        console.error('이미지 로딩 실패');
-                        reject(new Error('이미지 로딩에 실패했습니다.'));
-                    };
-                    
-                    img.src = imageUrl;
-                } catch (error) {
-                    console.error('전처리 초기화 오류:', error);
-                    reject(error);
-                }
-            });
-        }
-        
-        // 간소화된 정보 추출 함수 (오류 감소)
-        function extractBasicInfo(text, keywords) {
-            try {
-                // 기본 정보 객체
-                const info = {
-                    name: '',
-                    position: '',
-                    company: '',
-                    department: '',
-                    phone: '',
-                    email: '',
-                    address: ''
-                };
-                
-                // 인식된 텍스트를 줄별로 분할
-                const lines = text.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line && line.length > 1);
-                
-                // 1. 이메일 추출 (가장 신뢰할 수 있는 패턴)
-                const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                const emailMatches = text.match(emailRegex);
-                if (emailMatches && emailMatches.length > 0) {
-                    info.email = emailMatches[0];
-                }
-                
-                // 2. 전화번호 추출 (기본 패턴)
-                const phoneRegex = /(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?(\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4})/g;
-                const phoneMatches = text.match(phoneRegex);
-                if (phoneMatches && phoneMatches.length > 0) {
-                    // 가장 긴 전화번호 패턴 선택 (더 완전한 번호일 가능성이 높음)
-                    const longestMatch = phoneMatches.reduce((a, b) => 
-                        a.replace(/\D/g, '').length >= b.replace(/\D/g, '').length ? a : b
-                    );
-                    info.phone = longestMatch.replace(/\s+/g, '-');
-                }
-                
-                // 3. 가장 짧은 줄을 이름으로 가정 (일반적으로 이름은 짧은 편)
-                if (lines.length > 0) {
-                    const shortLines = lines.filter(line => line.length < 15);
-                    if (shortLines.length > 0) {
-                        // 가장 짧은 줄을 이름으로 설정
-                        info.name = shortLines.reduce((a, b) => a.length <= b.length ? a : b);
-                    } else {
-                        // 짧은 줄이 없으면 첫 번째 줄을 이름으로 설정
-                        info.name = lines[0];
+                        
+                        // 매칭된 번호 저장
+                        matchedNumbers.add(match);
                     }
                 }
-                
-                // 4. 키워드 기반 회사명 탐색
-                for (const line of lines) {
-                    if (keywords.company.some(keyword => line.includes(keyword))) {
-                        info.company = line;
-                        break;
-                    }
-                }
-                
-                // 회사명이 없으면 첫 번째나 두 번째 줄 중 하나를 회사명으로 가정
-                if (!info.company && lines.length > 1) {
-                    info.company = lines[1]; // 두 번째 줄을 회사명으로 가정
-                }
-                
-                // 5. 키워드 기반 직함 탐색
-                for (const line of lines) {
-                    if (keywords.position.some(keyword => line.includes(keyword))) {
-                        info.position = line;
-                        break;
-                    }
-                }
-                
-                // 6. 가장 긴 줄을 주소로 가정
-                if (lines.length > 0) {
-                    const longLines = lines.filter(line => 
-                        line.length > 20 && !line.includes('@') && !/^\d+$/.test(line)
-                    );
-                    if (longLines.length > 0) {
-                        info.address = longLines.reduce((a, b) => a.length >= b.length ? a : b);
-                    }
-                }
-                
-                return info;
-            } catch (error) {
-                console.error('정보 추출 중 오류:', error);
-                // 오류 발생 시 빈 객체 반환
-                return {
-                    name: '',
-                    position: '',
-                    company: '',
-                    department: '',
-                    phone: '',
-                    email: '',
-                    address: ''
-                };
             }
         }
         
-        // 분석 버튼에 연결할 새로운 핸들러
-        function setupSafeAnalysisButton() {
-            analyzeBtn.addEventListener('click', async () => {
-                // 진행 상태 표시
-                showStatus('명함 분석 준비 중...', 'info');
-                progressBar.style.display = 'block';
-                progressBarFill.style.width = '0%';
-                analyzeBtn.disabled = true;
-                
-                try {
-                    // 이미지 검증
-                    if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
-                        throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
-                    }
-                    
-                    // 언어 설정 가져오기
-                    const langConfig = languageMap[selectedLanguage];
-                    if (!langConfig) {
-                        throw new Error('지원되지 않는 언어입니다.');
-                    }
-                    
-                    // OCR 처리 시작
-                    showStatus('텍스트 인식 중...', 'info');
-                    
-                    // 안전한 OCR 처리 함수 호출
-                    const text = await safeOCRProcess(capturedImage.src, langConfig.lang);
-                    
-                    // 인식 결과 검증
-                    if (!text || text.trim().length === 0) {
-                        throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
-                    }
-                    
-                    console.log('인식된 텍스트:', text);
-                    
-                    // 정보 추출 (간소화된 버전)
-                    showStatus('정보 추출 중...', 'info');
-                    const extractedInfo = extractBasicInfo(text, langConfig.keywords);
-                    
-                    // 추출된 정보를 폼에 채우기
-                    document.getElementById('name').value = extractedInfo.name || '';
-                    document.getElementById('position').value = extractedInfo.position || '';
-                    document.getElementById('company').value = extractedInfo.company || '';
-                    document.getElementById('department').value = extractedInfo.department || '';
-                    document.getElementById('phone').value = extractedInfo.phone || '';
-                    document.getElementById('email').value = extractedInfo.email || '';
-                    document.getElementById('address').value = extractedInfo.address || '';
-                    
-                    // 폼 표시
-                    cardForm.style.display = 'block';
-                    
-                    // 진행 상태 업데이트
-                    showStatus('명함 분석 완료!', 'success');
-                    progressBarFill.style.width = '100%';
-                    setTimeout(() => {
-                        progressBar.style.display = 'none';
-                        analyzeBtn.disabled = false;
-                    }, 1500);
-                    
-                } catch (error) {
-                    console.error('명함 분석 오류:', error);
-                    
-                    // 오류 메시지 표시
-                    showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
-                    
-                    setTimeout(() => {
-                        progressBar.style.display = 'none';
-                        analyzeBtn.disabled = false;
-                    }, 3000);
-                }
-            });
+        // 전화번호가 없는데 mobile이 있으면 phone에 할당
+        if (!info.phone && info.mobile) {
+            info.phone = info.mobile;
         }
         
-        // 명함 저장
-        saveBtn.addEventListener('click', () => {
-            try {
-                const newCard = {
-                    id: Date.now().toString(), // 고유 ID 생성
-                    name: document.getElementById('name').value,
-                    position: document.getElementById('position').value,
-                    company: document.getElementById('company').value,
-                    department: document.getElementById('department').value,
-                    phone: document.getElementById('phone').value,
-                    email: document.getElementById('email').value,
-                    address: document.getElementById('address').value,
-                    notes: document.getElementById('notes').value,
-                    registeredDate: new Date().toISOString()
-                };
-                
-                // 명함 데이터 배열에 추가
-                businessCards.push(newCard);
-                
-                // 로컬 스토리지에 저장
-                saveBusinessCards();
-                
-                // 폼 초기화
-                resetForm();
-                
-                // 대시보드 탭으로 전환
-                tabs[1].click();
-                
-                showStatus('명함이 성공적으로 저장되었습니다!', 'success');
-            } catch (error) {
-                console.error('명함 저장 오류:', error);
-                showStatus('명함 저장 중 오류가 발생했습니다.', 'error');
-            }
-        });
+        // 2. 언어별 패턴 및 키워드 분석으로 회사, 이름, 직책 추출
         
-        // 폼 초기화
-        function resetForm() {
-            document.getElementById('name').value = '';
-            document.getElementById('position').value = '';
-            document.getElementById('company').value = '';
-            document.getElementById('department').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('notes').value = '';
+        // 라인 데이터를 복사 (사용한 라인은 제거할 예정)
+        let remainingLines = [...lines];
+        
+        // 회사명 추출 (키워드 기반)
+        for (let i = 0; i < remainingLines.length; i++) {
+            const line = remainingLines[i];
+            if (keywords.company.some(keyword => line.includes(keyword))) {
+                info.company = line;
+                console.log("회사명 발견:", info.company);
+                remainingLines.splice(i, 1);
+                break;
+            }
+        }
+        
+        // 회사명이 없으면, 위치 기반 추론
+        if (!info.company && remainingLines.length > 1) {
+            // 명함에서 회사명은 종종 첫 번째나 두 번째 줄에 있음
+            const possibleCompanyLines = remainingLines.slice(0, Math.min(3, remainingLines.length));
             
-            capturedImage.style.display = 'none';
-            captureBtn.style.display = 'inline-block';
-            retakeBtn.style.display = 'none';
-            analyzeBtn.style.display = 'none';
-            improveImageBtn.style.display = 'none';
-            cardForm.style.display = 'none';
-            video.style.display = 'block';
-            
-            analyzeBtn.disabled = false;
-            improveImageBtn.disabled = false;
-            improveImageBtn.textContent = '이미지 개선';
-            statusMessage.style.display = 'none';
-        }
-        
-        // 명함 삭제
-        function deleteBusinessCard(id) {
-            if (confirm('이 명함을 삭제하시겠습니까?')) {
-                businessCards = businessCards.filter(card => card.id !== id);
-                saveBusinessCards();
-                renderCardList(searchInput.value);
-                showStatus('명함이 삭제되었습니다.', 'success');
-            }
-        }
-        
-        // 수정 모달 열기
-        function openEditModal(id) {
-            const card = businessCards.find(card => card.id === id);
-            
-            if (card) {
-                currentEditId = id;
+            // 가장 긴 첫 번째, 두 번째 줄을 회사명으로 간주
+            const longestLine = possibleCompanyLines.reduce((a, b) => 
+                (a.length >= b.length) ? a : b, '');
                 
-                document.getElementById('editName').value = card.name || '';
-                document.getElementById('editPosition').value = card.position || '';
-                document.getElementById('editCompany').value = card.company || '';
-                document.getElementById('editDepartment').value = card.department || '';
-                document.getElementById('editPhone').value = card.phone || '';
-                document.getElementById('editEmail').value = card.email || '';
-                document.getElementById('editAddress').value = card.address || '';
-                document.getElementById('editNotes').value = card.notes || '';
-                
-                editModal.style.display = 'block';
-            }
-        }
-        
-        // 모달 닫기
-        closeModal.addEventListener('click', () => {
-            editModal.style.display = 'none';
-        });
-        
-        // 모달 외부 클릭 시 닫기
-        window.addEventListener('click', (e) => {
-            if (e.target === editModal) {
-                editModal.style.display = 'none';
-            }
-        });
-        
-        // 명함 정보 업데이트
-        updateBtn.addEventListener('click', () => {
-            if (currentEditId) {
-                const index = businessCards.findIndex(card => card.id === currentEditId);
-                
+            if (longestLine && longestLine.length > 3) {
+                info.company = longestLine;
+                console.log("추정 회사명:", info.company);
+                const index = remainingLines.indexOf(longestLine);
                 if (index !== -1) {
-                    businessCards[index] = {
-                        ...businessCards[index],
-                        name: document.getElementById('editName').value,
-                        position: document.getElementById('editPosition').value,
-                        company: document.getElementById('editCompany').value,
-                        department: document.getElementById('editDepartment').value,
-                        phone: document.getElementById('editPhone').value,
-                        email: document.getElementById('editEmail').value,
-                        address: document.getElementById('editAddress').value,
-                        notes: document.getElementById('editNotes').value
-                    };
-                    
-                    saveBusinessCards();
-                    renderCardList(searchInput.value);
-                    
-                    editModal.style.display = 'none';
-                    showStatus('명함 정보가 업데이트되었습니다.', 'success');
+                    remainingLines.splice(index, 1);
                 }
             }
-        });
-        
-        // 오류 저항성 높은 앱 설정
-        function setupErrorResistantApp() {
-            // 안전한 이미지 개선 설정
-            setupSafeImageEnhancement();
-            
-            // 안전한 분석 버튼 설정
-            setupSafeAnalysisButton();
-            
-            // 오류 처리를 위한 전역 핸들러 추가
-            window.addEventListener('error', function(event) {
-                console.error('전역 오류 발생:', event.error);
-                // 치명적 오류 발생 시 사용자에게 알림
-                if (event.error && event.error.message && event.error.message.includes('Tesseract')) {
-                    showStatus('OCR 엔진 오류가 발생했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
-                }
-            });
         }
-    </script>
-</body>
-</html>
+        
+        // 이름 추출 (언어별 패턴 기반)
+        let nameFound = false;
+        
+        // 언어별 이름 패턴 적용
+        switch(langCode) {
+            case 'kor':
+                // 한국어 이름 패턴 (2-4자 한글)
+                for (let i = 0; i < remainingLines.length; i++) {
+                    const line = remainingLines[i].trim();
+                    // 직책이 붙은 이름 패턴 (예: "홍길동 대표이사" 또는 "대표이사 홍길동")
+                    const nameWithTitleMatch = line.match(/^([가-힣]{2,4})\s+.+$/) || line.match(/^.+\s+([가-힣]{2,4})$/);
+                    if (nameWithTitleMatch) {
+                        info.name = nameWithTitleMatch[1];
+                        // 직책 부분 추출
+                        const titlePart = line.replace(info.name, '').trim();
+                        if (titlePart && !info.position) {
+                            info.position = titlePart;
+                        }
+                        nameFound = true;
+                        console.log("이름과 직책 발견:", info.name, info.position);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                    
+                    // 단독 이름 패턴
+                    const soloNameMatch = line.match(/^[가-힣]{2,4}$/);
+                    if (soloNameMatch) {
+                        info.name = line;
+                        nameFound = true;
+                        console.log("이름 발견:", info.name);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                }
+                break;
+                
+            case 'eng':
+                // 영어 이름 패턴 (First Last 또는 Last, First)
+                for (let i = 0; i < remainingLines.length; i++) {
+                    const line = remainingLines[i].trim();
+                    // 영어 이름 패턴 (1-2단어, 각 단어는 대문자로 시작)
+                    const engNamePattern = /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)$/;
+                    if (engNamePattern.test(line)) {
+                        info.name = line;
+                        nameFound = true;
+                        console.log("영어 이름 발견:", info.name);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                }
+                break;
+                
+            case 'jpn':
+                // 일본어 이름 패턴
+                for (let i = 0; i < remainingLines.length; i++) {
+                    const line = remainingLines[i].trim();
+                    // 한자나 히라가나/가타카나로 구성된 2-4자 이름
+                    if (/^[一-龯ぁ-んァ-ン]{2,4}$/.test(line)) {
+                        info.name = line;
+                        nameFound = true;
+                        console.log("일본어 이름 발견:", info.name);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                }
+                break;
+                
+            case 'chi_sim':
+                // 중국어 이름 패턴
+                for (let i = 0; i < remainingLines.length; i++) {
+                    const line = remainingLines[i].trim();
+                    // 한자로 구성된 2-4자 이름
+                    if (/^[\u4e00-\u9fff]{2,4}$/.test(line)) {
+                        info.name = line;
+                        nameFound = true;
+                        console.log("중국어 이름 발견:", info.name);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                }
+                break;
+                
+            default:
+                // 다국어 지원 - 모든 패턴 시도
+                for (let i = 0; i < remainingLines.length; i++) {
+                    const line = remainingLines[i].trim();
+                    
+                    // 가장 짧은 줄이 이름일 가능성이 높음 (2-10자 사이)
+                    if (line.length >= 2 && line.length <= 10 && 
+                        !/^\d+$/.test(line) && // 숫자만으로 구성되지 않음
+                        !line.includes('@') && // 이메일 아님
+                        !line.includes('http')) { // URL 아님
+                        info.name = line;
+                        nameFound = true;
+                        console.log("다국어 이름 추정:", info.name);
+                        remainingLines.splice(i, 1);
+                        break;
+                    }
+                }
+                break;
+        }
+        
+        // 이름을 찾지 못한 경우, 가장 짧은 줄을 이름으로 추정
+        if (!nameFound && remainingLines.length > 0) {
+            // 짧은 줄 중에서 선택 (이메일, URL 제외)
+            const shortLines = remainingLines
+                .filter(line => line.length <= 15 && !line.includes('@') && !line.includes('http'));
+                
+            if (shortLines.length > 0) {
+                // 가장 짧은 줄을 이름으로 간주
+                const shortestLine = shortLines.reduce((a, b) => a.length <= b.length ? a : b);
+                info.name = shortestLine;
+                console.log("추정 이름:", info.name);
+                const index = remainingLines.indexOf(shortestLine);
+                if (index !== -1) {
+                    remainingLines.splice(index, 1);
+                }
+            }
+        }
+        
+        // 직책 추출 (키워드 기반)
+        if (!info.position) {
+            for (let i = 0; i < remainingLines.length; i++) {
+                const line = remainingLines[i];
+                if (keywords.position.some(keyword => line.includes(keyword))) {
+                    info.position = line;
+                    console.log("직책 발견:", info.position);
+                    remainingLines.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        
+        // 부서 추출 (키워드 기반)
+        for (let i = 0; i < remainingLines.length; i++) {
+            const line = remainingLines[i];
+            if (keywords.department.some(keyword => line.includes(keyword))) {
+                info.department = line;
+                console.log("부서 발견:", info.department);
+                remainingLines.splice(i, 1);
+                break;
+            }
+        }
+        
+        // 주소 추출 (가장 긴 줄 또는 특수 패턴)
+        const addressPatterns = {
+            kor: /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[\s,].*(?:로|길|동|구|시|군|읍|면|번지|층|호)/,
+            eng: /\d+\s+[A-Za-z\s,]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Way|Court|Ct|Plaza|Square|Sq|Highway|Hwy|Freeway|Fwy)/i,
+            jpn: /(?:東京都|大阪府|京都府|北海道|[一-龯]{1,3}県)[\s,].*(市|区|町|村|丁目|番地)/,
+            chi_sim: /(?:北京市|上海市|天津市|重庆市|[一-龯]{1,3}省)[\s,].*(市|区|县|路|街|号)/
+        };
+        
+        // 언어별 주소 패턴 확인
+        const currentLangPattern = addressPatterns[langCode.split('+')[0]] || 
+                                 addressPatterns[langCode === 'multi' ? 'eng' : langCode];
+        
+        if (currentLangPattern) {
+            for (let i = 0; i < remainingLines.length; i++) {
+                const line = remainingLines[i];
+                if (currentLangPattern.test(line)) {
+                    info.address = line;
+                    console.log("주소 패턴 발견:", info.address);
+                    remainingLines.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        
+        // 주소를 못 찾았으면 남은 줄 중 가장 긴 줄을 주소로 간주
+        if (!info.address && remainingLines.length > 0) {
+            // 이메일, URL 제외하고 가장 긴 줄 찾기
+            const longLines = remainingLines
+                .filter(line => !line.includes('@') && !line.includes('http'));
+                
+            if (longLines.length > 0) {
+                // 가장 긴 줄을 주소로 간주
+                const longestLine = longLines.reduce((a, b) => a.length >= b.length ? a : b);
+                if (longestLine.length > 10) { // 최소 길이 제한
+                    info.address = longestLine;
+                    console.log("추정 주소:", info.address);
+                    const index = remainingLines.indexOf(longestLine);
+                    if (index !== -1) {
+                        remainingLines.splice(index, 1);
+                    }
+                }
+            }
+        }
+        
+        // 3. 결과 후처리 및 정제
+        
+        // 불필요한 접두사/접미사 제거
+        if (info.name) {
+            // 이름에서 직함 제거
+            const titlePrefixes = ['Mr.', 'Ms.', 'Dr.', 'Prof.', 'MD', 'PhD', '대리', '과장', '차장', '부장', '이사', '상무', '전무', '사장', '대표'];
+            for (const prefix of titlePrefixes) {
+                if (info.name.includes(prefix)) {
+                    info.name = info.name.replace(prefix, '').trim();
+                }
+            }
+        }
+        
+        // 전화번호 포맷 통일
+        if (info.phone) {
+            info.phone = formatPhoneNumber(info.phone);
+        }
+        
+        // 최종 결과 반환
+        return info;
+        
+    } catch (error) {
+        console.error('고급 명함 정보 추출 오류:', error);
+        // 오류 발생 시 기본 추출 함수 사용
+        return extractBasicInfo(text, keywords);
+    }
+}
+
+// 전화번호 포맷팅 함수
+function formatPhoneNumber(phoneNumber) {
+    // 숫자만 추출
+    const digits = phoneNumber.replace(/\D/g, '');
+    
+    // 국가 코드 확인
+    if (digits.startsWith('82')) {
+        // 한국 번호
+        const withoutCountryCode = digits.substring(2);
+        if (withoutCountryCode.length === 10) {
+            // 02-XXXX-XXXX 또는 010-XXX-XXXX 등의 형식
+            return withoutCountryCode.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+        } else if (withoutCountryCode.length === 9) {
+            // 02-XXX-XXXX 형식
+            return withoutCountryCode.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3');
+        }
+    }
+    
+    // 기본 포맷팅
+    if (digits.length === 11) {
+        return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    } else if (digits.length === 10) {
+        return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    } else if (digits.length === 8) {
+        return digits.replace(/(\d{4})(\d{4})/, '$1-$2');
+    }
+    
+    // 기본값 반환
+    return phoneNumber;
+}
+
+// 분석 버튼에 연결할 전문적인 분석 함수
+function setupProfessionalAnalysisButton() {
+    analyzeBtn.addEventListener('click', async () => {
+        // 진행 상태 표시
+        showStatus('명함 분석 준비 중...', 'info');
+        progressBar.style.display = 'block';
+        progressBarFill.style.width = '0%';
+        analyzeBtn.disabled = true;
+        
+        try {
+            // 이미지 검증
+            if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
+                throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
+            }
+            
+            // 언어 설정 가져오기
+            const langConfig = languageMap[selectedLanguage];
+            if (!langConfig) {
+                throw new Error('지원되지 않는 언어입니다.');
+            }
+            
+            // 1. 고급 이미지 전처리
+            showStatus('이미지 최적화 중...', 'info');
+            const enhancedImage = await advancedPreprocessImage(capturedImage.src);
+            
+            // 2. 고급 OCR 처리
+            showStatus('텍스트 인식 중...', 'info');
+            const ocrResult = await enhancedOCRProcess(enhancedImage, langConfig.lang);
+            
+            // 인식 결과 검증
+            if (!ocrResult.text || ocrResult.text.trim().length === 0) {
+                throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
+            }
+            
+            console.log('인식된 텍스트:', ocrResult.text);
+            console.log('인식 신뢰도:', ocrResult.confidence);
+            
+            // 3. 고급 명함 정보 추출
+            showStatus('정보 분석 중...', 'info');
+            const extractedInfo = advancedBusinessCardExtraction(
+                ocrResult.text, 
+                ocrResult.hocr, 
+                ocrResult.words,
+                langConfig.keywords,
+                langConfig.lang
+            );
+            
+            // 4. 추출된 정보를 폼에 채우기
+            document.getElementById('name').value = extractedInfo.name || '';
+            document.getElementById('position').value = extractedInfo.position || '';
+            document.getElementById('company').value = extractedInfo.company || '';
+            document.getElementById('department').value = extractedInfo.department || '';
+            document.getElementById('phone').value = extractedInfo.phone || extractedInfo.mobile || extractedInfo.tel || '';
+            document.getElementById('email').value = extractedInfo.email || '';
+            document.getElementById('address').value = extractedInfo.address || '';
+            
+            // 폼에 웹사이트나 팩스 정보가 있으면 메모 필드에 추가
+            const additionalInfo = [];
+            if (extractedInfo.website) additionalInfo.push(`웹사이트: ${extractedInfo.website}`);
+            if (extractedInfo.fax) additionalInfo.push(`팩스: ${extractedInfo.fax}`);
+            
+            if (additionalInfo.length > 0) {
+                document.getElementById('notes').value = additionalInfo.join('\n');
+            }
+            
+            // 폼 표시
+            cardForm.style.display = 'block';
+            
+            // 진행 상태 업데이트
+            showStatus(`명함 분석 완료! (신뢰도: ${Math.round(ocrResult.confidence)}%)`, 'success');
+            progressBarFill.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }, 1500);
+            
+        } catch (error) {
+            console.error('명함 분석 오류:', error);
+            
+            // 오류 메시지 표시
+            showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
+            
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }, 3000);
+        }
+    });
+}
