@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>명함 관리 앱</title>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 15px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .tab.active {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .content {
+            display: none;
+        }
+        
+        .content.active {
+            display: block;
+        }
+        
+        .card-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .camera-container {
+            width: 100%;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        #video, #canvas, #capturedImage {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+        
+        #capturedImage {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 5px;
+            background-color: #f0f0f0;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .card-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .card-item {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            position: relative;
+        }
+        
+        .card-item h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .card-details {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .card-details p {
+            margin-bottom: 5px;
+        }
+        
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .card-actions button {
+            padding: 8px 12px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .edit-btn {
+            background-color: #6c757d;
+        }
+        
+        .edit-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 0;
+            color: #6c757d;
+        }
+        
+        #processingMessage {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>명함 관리 앱</h1>
+        </header>
+        
+        <div class="tab-container">
+            <div class="tab active" data-tab="camera">명함 추가</div>
+            <div class="tab" data-tab="dashboard">대시보드</div>
+        </div>
+        
+        <div id="cameraContent" class="content active">
+            <div class="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <img id="capturedImage" alt="촬영된 이미지">
+            </div>
+            
+            <div class="button-group" style="text-align: center; margin-bottom: 20px;">
+                <button id="captureBtn">명함 촬영</button>
+                <button id="retakeBtn" style="display: none;">다시 촬영</button>
+                <button id="analyzeBtn" style="display: none;">명함 분석</button>
+            </div>
+            
+            <div id="processingMessage" style="display: none;">명함 분석 중... 잠시만 기다려주세요.</div>
+            
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+            
+            <div class="card-form" id="cardForm" style="display: none;">
+                <div class="form-group">
+                    <label for="name">이름</label>
+                    <input type="text" id="name" placeholder="이름을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="position">직책</label>
+                    <input type="text" id="position" placeholder="직책을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="company">회사</label>
+                    <input type="text" id="company" placeholder="회사명을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="department">부서</label>
+                    <input type="text" id="department" placeholder="부서를 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">휴대폰 번호</label>
+                    <input type="tel" id="phone" placeholder="휴대폰 번호를 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">이메일</label>
+                    <input type="email" id="email" placeholder="이메일을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">주소</label>
+                    <input type="text" id="address" placeholder="주소를 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">메모</label>
+                    <textarea id="notes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
+                </div>
+                
+                <button id="saveBtn">명함 저장</button>
+            </div>
+        </div>
+        
+        <div id="dashboardContent" class="content">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="이름, 회사, 직책 등으로 검색">
+            </div>
+            
+            <div id="cardList" class="card-list">
+                <!-- 명함 목록이 여기에 동적으로 표시됩니다 -->
+            </div>
+            
+            <div id="emptyState" class="empty-state">
+                <p>등록된 명함이 없습니다.</p>
+                <p>카메라 탭에서 새 명함을 추가해보세요.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 명함 수정 모달 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>명함 수정</h2>
+            
+            <div class="form-group">
+                <label for="editName">이름</label>
+                <input type="text" id="editName" placeholder="이름을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editPosition">직책</label>
+                <input type="text" id="editPosition" placeholder="직책을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editCompany">회사</label>
+                <input type="text" id="editCompany" placeholder="회사명을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editDepartment">부서</label>
+                <input type="text" id="editDepartment" placeholder="부서를 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editPhone">휴대폰 번호</label>
+                <input type="tel" id="editPhone" placeholder="휴대폰 번호를 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editEmail">이메일</label>
+                <input type="email" id="editEmail" placeholder="이메일을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editAddress">주소</label>
+                <input type="text" id="editAddress" placeholder="주소를 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="editNotes">메모</label>
+                <textarea id="editNotes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
+            </div>
+            
+            <button id="updateBtn">수정 완료</button>
+        </div>
+    </div>
+    
+    <script>
+        // DOM 요소
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const capturedImage = document.getElementById('capturedImage');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const cardForm = document.getElementById('cardForm');
+        const saveBtn = document.getElementById('saveBtn');
+        const processingMessage = document.getElementById('processingMessage');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const cardList = document.getElementById('cardList');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const editModal = document.getElementById('editModal');
+        const closeModal = document.querySelector('.close-modal');
+        const updateBtn = document.getElementById('updateBtn');
+        
+        // 탭 관련 변수
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.content');
+        
+        // 현재 편집 중인 명함 ID
+        let currentEditId = null;
+        
+        // 명함 데이터 변수
+        let businessCards = [];
+        
+        // 탭 전환 이벤트
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+                
+                // 탭 활성화
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // 콘텐츠 활성화
+                contents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                document.getElementById(targetTab + 'Content').classList.add('active');
+                
+                // 대시보드 탭 클릭 시 명함 목록 새로고침
+                if (targetTab === 'dashboard') {
+                    renderCardList();
+                }
+            });
+        });
+        
+        // 카메라 초기화
+        async function initCamera() {
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                return true;
+            } catch (error) {
+                console.error('카메라 접근 오류:', error);
+                alert('카메라에 접근할 수 없습니다. 카메라 권한을 허용해주세요.');
+                return false;
+            }
+        }
+        
+        // 페이지 로드 시 카메라 초기화 및 저장된 명함 불러오기
+        document.addEventListener('DOMContentLoaded', () => {
+            initCamera();
+            loadBusinessCards();
+        });
+        
+        // 명함 데이터 로컬 스토리지에서 불러오기
+        function loadBusinessCards() {
+            const savedCards = localStorage.getItem('businessCards');
+            
+            if (savedCards) {
+                businessCards = JSON.parse(savedCards);
+                renderCardList();
+            }
+        }
+        
+        // 명함 데이터 로컬 스토리지에 저장
+        function saveBusinessCards() {
+            localStorage.setItem('businessCards', JSON.stringify(businessCards));
+        }
+        
+        // 명함 목록 렌더링
+        function renderCardList(filterText = '') {
+            let filteredCards = businessCards;
+            
+            // 검색어가 있으면 필터링
+            if (filterText) {
+                const searchTerms = filterText.toLowerCase().split(' ');
+                
+                filteredCards = businessCards.filter(card => {
+                    const cardText = (
+                        card.name + ' ' + 
+                        card.company + ' ' + 
+                        card.position + ' ' + 
+                        card.department + ' ' + 
+                        card.phone + ' ' + 
+                        card.email + ' ' + 
+                        card.address + ' ' + 
+                        card.notes
+                    ).toLowerCase();
+                    
+                    return searchTerms.every(term => cardText.includes(term));
+                });
+            }
+            
+            // 빈 상태 처리
+            if (filteredCards.length === 0) {
+                cardList.innerHTML = '';
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+                
+                cardList.innerHTML = filteredCards.map((card, index) => `
+                    <div class="card-item" data-id="${card.id}">
+                        <h3>${card.name || '이름 없음'}</h3>
+                        <div class="card-details">
+                            <p><strong>회사:</strong> ${card.company || '-'}</p>
+                            <p><strong>직책:</strong> ${card.position || '-'}</p>
+                            <p><strong>부서:</strong> ${card.department || '-'}</p>
+                            <p><strong>전화:</strong> ${card.phone || '-'}</p>
+                            <p><strong>이메일:</strong> ${card.email || '-'}</p>
+                            <p><strong>주소:</strong> ${card.address || '-'}</p>
+                            <p><strong>등록일:</strong> ${new Date(card.registeredDate).toLocaleDateString()}</p>
+                            ${card.notes ? `<p><strong>메모:</strong> ${card.notes}</p>` : ''}
+                        </div>
+                        <div class="card-actions">
+                            <button class="edit-btn" data-id="${card.id}">수정</button>
+                            <button class="delete-btn" data-id="${card.id}">삭제</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // 수정 버튼 이벤트 연결
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        openEditModal(id);
+                    });
+                });
+                
+                // 삭제 버튼 이벤트 연결
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        deleteBusinessCard(id);
+                    });
+                });
+            }
+        }
+        
+        // 검색 기능
+        searchInput.addEventListener('input', (e) => {
+            renderCardList(e.target.value);
+        });
+        
+        // 명함 촬영
+        captureBtn.addEventListener('click', () => {
+            // 캔버스 설정
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // 비디오 프레임 캡처
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // 캡처된 이미지 표시
+            capturedImage.src = canvas.toDataURL('image/png');
+            capturedImage.style.display = 'block';
+            
+            // 버튼 상태 변경
+            captureBtn.style.display = 'none';
+            retakeBtn.style.display = 'inline-block';
+            analyzeBtn.style.display = 'inline-block';
+            video.style.display = 'none';
+        });
+        
+        // 다시 촬영
+        retakeBtn.addEventListener('click', () => {
+            capturedImage.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            video.style.display = 'block';
+        });
+        
+        // 명함 분석
+        analyzeBtn.addEventListener('click', async () => {
+            // 진행 상태 표시
+            processingMessage.style.display = 'block';
+            progressBar.style.display = 'block';
+            analyzeBtn.disabled = true;
+            
+            try {
+                // Tesseract OCR 설정
+                const worker = Tesseract.createWorker({
+                    logger: progress => {
+                        if (progress.status === 'recognizing text') {
+                            const percentage = Math.round(progress.progress * 100);
+                            progressBarFill.style.width = `${percentage}%`;
+                        }
+                    }
+                });
+                
+                await worker.load();
+                await worker.loadLanguage('kor+eng');
+                await worker.initialize('kor+eng');
+                
+                // 이미지 인식
+                const result = await worker.recognize(capturedImage.src);
+                await worker.terminate();
+                
+                // 인식된 텍스트에서 정보 추출
+                const text = result.data.text;
+                console.log('인식된 텍스트:', text);
+                
+                // 간단한 정보 추출 로직
+                const extractedInfo = extractBusinessCardInfo(text);
+                
+                // 추출된 정보를 폼에 채우기
+                document.getElementById('name').value = extractedInfo.name || '';
+                document.getElementById('position').value = extractedInfo.position || '';
+                document.getElementById('company').value = extractedInfo.company || '';
+                document.getElementById('department').value = extractedInfo.department || '';
+                document.getElementById('phone').value = extractedInfo.phone || '';
+                document.getElementById('email').value = extractedInfo.email || '';
+                document.getElementById('address').value = extractedInfo.address || '';
+                
+                // 폼 표시
+                cardForm.style.display = 'block';
+                
+                // 진행 상태 숨기기
+                processingMessage.style.display = 'none';
+                progressBar.style.display = 'none';
+                
+            } catch (error) {
+                console.error('OCR 처리 오류:', error);
+                alert('명함 인식 중 오류가 발생했습니다. 다시 시도해주세요.');
+                
+                processingMessage.style.display = 'none';
+                progressBar.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        });
+        
+        // 명함 정보 추출 함수
+        function extractBusinessCardInfo(text) {
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+            
+            const info = {
+                name: '',
+                position: '',
+                company: '',
+                department: '',
+                phone: '',
+                email: '',
+                address: ''
+            };
+            
+            // 이메일 추출
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const emailMatches = text.match(emailRegex);
+            if (emailMatches && emailMatches.length > 0) {
+                info.email = emailMatches[0];
+            }
+            
+            // 전화번호 추출
+            const phoneRegex = /(?:Tel|전화|T|P|Ph|휴대폰|M|HP|H\.P)?[.:)]?\s*(?:\+82|0)[-\s]?[0-9]{1,2}[-\s]?[0-9]{3,4}[-\s]?[0-9]{4}/g;
+            const phoneMatches = text.match(phoneRegex);
+            if (phoneMatches && phoneMatches.length > 0) {
+                // 전화번호에서 불필요한 문자 제거
+                info.phone = phoneMatches[0].replace(/(?:Tel|전화|T|P|Ph|휴대폰|M|HP|H\.P)[.:)]?\s*/gi, '');
+            }
+            
+            // 회사명 추출 (보통 첫 번째 또는 두 번째 줄에 위치)
+            if (lines.length > 0) {
+                // 첫 번째 줄이 사람 이름일 가능성이 높음
+                info.name = lines[0];
+                
+                // 두 번째 줄이 있으면 직책일 가능성이 높음
+                if (lines.length > 1) {
+                    info.position = lines[1];
+                }
+                
+                // 세 번째 줄이 있으면 회사명일 가능성이 높음
+                if (lines.length > 2) {
+                    info.company = lines[2];
+                }
+                
+                // 부서는 직책 근처에 있을 가능성이 높음
+                if (lines.length > 3) {
+                    info.department = lines[3];
+                }
+            }
+            
+            // 주소 추출 (주소는 보통 길고 숫자와 문자가 혼합되어 있음)
+            for (const line of lines) {
+                // 주소로 의심되는 줄 찾기 (길이가 길고 숫자가 포함된 줄)
+                if (line.length > 15 && /\d/.test(line) && !/^[0-9-]+$/.test(line) && !line.includes('@')) {
+                    info.address = line;
+                    break;
+                }
+            }
+            
+            return info;
+        }
+        
+        // 명함 저장
+        saveBtn.addEventListener('click', () => {
+            const newCard = {
+                id: Date.now().toString(), // 고유 ID 생성
+                name: document.getElementById('name').value,
+                position: document.getElementById('position').value,
+                company: document.getElementById('company').value,
+                department: document.getElementById('department').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                notes: document.getElementById('notes').value,
+                registeredDate: new Date().toISOString()
+            };
+            
+            // 명함 데이터 배열에 추가
+            businessCards.push(newCard);
+            
+            // 로컬 스토리지에 저장
+            saveBusinessCards();
+            
+            // 폼 초기화
+            resetForm();
+            
+            // 대시보드 탭으로 전환
+            tabs[1].click();
+            
+            alert('명함이 저장되었습니다.');
+        });
+        
+        // 폼 초기화
+        function resetForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('position').value = '';
+            document.getElementById('company').value = '';
+            document.getElementById('department').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('notes').value = '';
+            
+            capturedImage.style.display = 'none';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            cardForm.style.display = 'none';
+            video.style.display = 'block';
+            
+            analyzeBtn.disabled = false;
+        }
+        
+        // 명함 삭제
+        function deleteBusinessCard(id) {
+            if (confirm('이 명함을 삭제하시겠습니까?')) {
+                businessCards = businessCards.filter(card => card.id !== id);
+                saveBusinessCards();
+                renderCardList(searchInput.value);
+            }
+        }
+        
+        // 수정 모달 열기
+        function openEditModal(id) {
+            const card = businessCards.find(card => card.id === id);
+            
+            if (card) {
+                currentEditId = id;
+                
+                document.getElementById('editName').value = card.name || '';
+                document.getElementById('editPosition').value = card.position || '';
+                document.getElementById('editCompany').value = card.company || '';
+                document.getElementById('editDepartment').value = card.department || '';
+                document.getElementById('editPhone').value = card.phone || '';
+                document.getElementById('editEmail').value = card.email || '';
+                document.getElementById('editAddress').value = card.address || '';
+                document.getElementById('editNotes').value = card.notes || '';
+                
+                editModal.style.display = 'block';
+            }
+        }
+        
+        // 모달 닫기
+        closeModal.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+        
+        // 모달 외부 클릭 시 닫기
+        window.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                editModal.style.display = 'none';
+            }
+        });
+        
+        // 명함 정보 업데이트
+        updateBtn.addEventListener('click', () => {
+            if (currentEditId) {
+                const index = businessCards.findIndex(card => card.id === currentEditId);
+                
+                if (index !== -1) {
+                    businessCards[index] = {
+                        ...businessCards[index],
+                        name: document.getElementById('editName').value,
+                        position: document.getElementById('editPosition').value,
+                        company: document.getElementById('editCompany').value,
+                        department: document.getElementById('editDepartment').value,
+                        phone: document.getElementById('editPhone').value,
+                        email: document.getElementById('editEmail').value,
+                        address: document.getElementById('editAddress').value,
+                        notes: document.getElementById('editNotes').value
+                    };
+                    
+                    saveBusinessCards();
+                    renderCardList(searchInput.value);
+                    
+                    editModal.style.display = 'none';
+                    alert('명함 정보가 업데이트되었습니다.');
+                }
+            }
+        });
+    </script>
+</head>
+</html>
