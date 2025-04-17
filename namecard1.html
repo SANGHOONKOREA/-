@@ -311,6 +311,145 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+        
+        /* 추가된 스타일: 이미지 전처리 옵션 메뉴 */
+        .preprocessing-options {
+            background-color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .preprocessing-options h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .option-item input {
+            margin-right: 5px;
+        }
+        
+        /* 미리보기 컨테이너 스타일 */
+        .preview-container {
+            display: flex;
+            margin-top: 10px;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 10px;
+        }
+        
+        .preview-item {
+            flex: 0 0 auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 120px;
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .preview-item p {
+            font-size: 12px;
+            text-align: center;
+            padding: 4px;
+            background-color: #f5f5f5;
+        }
+        
+        /* 처리 단계 표시 */
+        .steps-indicator {
+            display: flex;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .step {
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+            padding: 8px 4px;
+            background-color: #f0f0f0;
+            border-right: 1px solid #ddd;
+            font-size: 12px;
+            position: relative;
+        }
+        
+        .step:last-child {
+            border-right: none;
+        }
+        
+        .step.active {
+            background-color: #e6f7ff;
+            font-weight: bold;
+        }
+        
+        .step.completed {
+            background-color: #d4edda;
+        }
+        
+        .step.current {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        /* 결과 신뢰도 표시 */
+        .confidence-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .confidence-bar {
+            flex: 1;
+            height: 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+        }
+        
+        .confidence-text {
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: right;
+        }
+        
+        /* 이미지 회전 버튼 */
+        .rotate-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .rotate-buttons button {
+            padding: 6px 12px;
+            margin: 0 5px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -338,19 +477,83 @@
                 <video id="video" autoplay playsinline style="display: none;"></video>
                 <canvas id="canvas" style="display: none;"></canvas>
                 <img id="capturedImage" alt="촬영된 이미지">
+                
+                <!-- 이미지 회전 버튼 추가 -->
+                <div class="rotate-buttons" style="display: none;" id="rotateButtons">
+                    <button id="rotateLeftBtn">← 90° 회전</button>
+                    <button id="rotateRightBtn">90° 회전 →</button>
+                </div>
             </div>
             
             <div class="button-group" style="text-align: center; margin-bottom: 20px;">
                 <button id="captureBtn" style="display: none;">명함 촬영</button>
                 <button id="retakeBtn" style="display: none;">다시 촬영</button>
                 <button id="analyzeBtn" style="display: none;">명함 분석</button>
+                <button id="advancedBtn" style="display: none; background-color: #6c757d;">고급 옵션</button>
                 <button id="improveImageBtn" style="display: none; background-color: #28a745;">이미지 개선</button>
+            </div>
+            
+            <!-- 고급 전처리 옵션 -->
+            <div class="preprocessing-options" id="preprocessingOptions">
+                <h3>이미지 처리 옵션</h3>
+                <div class="options-grid">
+                    <div class="option-item">
+                        <input type="checkbox" id="optGrayscale" checked>
+                        <label for="optGrayscale">그레이스케일</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optContrast" checked>
+                        <label for="optContrast">대비 향상</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optSharpen" checked>
+                        <label for="optSharpen">선명하게</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optDenoise">
+                        <label for="optDenoise">노이즈 제거</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optThreshold">
+                        <label for="optThreshold">이진화</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optEdgeEnhance">
+                        <label for="optEdgeEnhance">윤곽선 강화</label>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button id="applyPreprocessingBtn">적용하기</button>
+                    <button id="resetPreprocessingBtn" style="background-color: #6c757d;">원본으로 되돌리기</button>
+                </div>
+            </div>
+            
+            <!-- 처리 단계 표시 -->
+            <div class="steps-indicator" id="stepsIndicator" style="display: none;">
+                <div class="step" data-step="capture">이미지 촬영</div>
+                <div class="step" data-step="preprocess">이미지 처리</div>
+                <div class="step" data-step="ocr">텍스트 인식</div>
+                <div class="step" data-step="extract">정보 추출</div>
+                <div class="step" data-step="review">결과 확인</div>
             </div>
             
             <div id="statusMessage" class="status-message info" style="display: none;">명함 분석 준비 중...</div>
             
             <div class="progress-bar" id="progressBar" style="display: none;">
                 <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+            
+            <!-- 신뢰도 표시 -->
+            <div class="confidence-indicator" id="confidenceIndicator" style="display: none;">
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill"></div>
+                </div>
+                <div class="confidence-text" id="confidenceText">0%</div>
+            </div>
+            
+            <!-- 미리보기 컨테이너 -->
+            <div class="preview-container" id="previewContainer" style="display: none;">
+                <!-- 여기에 미리보기 이미지가 추가됩니다 -->
             </div>
             
             <div class="card-form" id="cardForm" style="display: none;">
@@ -486,6 +689,18 @@
         const accessCameraBtn = document.getElementById('accessCameraBtn');
         const languageButtons = document.querySelectorAll('.language-btn');
         const improveImageBtn = document.getElementById('improveImageBtn');
+        const advancedBtn = document.getElementById('advancedBtn');
+        const preprocessingOptions = document.getElementById('preprocessingOptions');
+        const applyPreprocessingBtn = document.getElementById('applyPreprocessingBtn');
+        const resetPreprocessingBtn = document.getElementById('resetPreprocessingBtn');
+        const confidenceIndicator = document.getElementById('confidenceIndicator');
+        const confidenceFill = document.getElementById('confidenceFill');
+        const confidenceText = document.getElementById('confidenceText');
+        const stepsIndicator = document.getElementById('stepsIndicator');
+        const previewContainer = document.getElementById('previewContainer');
+        const rotateButtons = document.getElementById('rotateButtons');
+        const rotateLeftBtn = document.getElementById('rotateLeftBtn');
+        const rotateRightBtn = document.getElementById('rotateRightBtn');
         
         // 언어 선택
         let selectedLanguage = 'kor';
@@ -497,6 +712,18 @@
         // 현재 편집 중인 명함 ID
         let currentEditId = null;
         
+        // 원본 이미지 데이터 저장
+        let originalImageData = null;
+        
+        // 현재 이미지 회전 각도
+        let currentRotation = 0;
+        
+        // 처리 단계 진행 상태
+        let processingStep = 'capture';
+        
+        // OCR 결과 저장용 변수
+        let lastOcrResult = null;
+        
         // 명함 데이터 변수
         let businessCards = [];
         
@@ -506,36 +733,48 @@
                 lang: 'kor',
                 label: '한국어',
                 keywords: {
-                    company: ['주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단'],
-                    position: ['대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트'],
-                    department: ['부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계']
+                    company: ['주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단', '협회', '센터', '공사', '은행'],
+                    position: ['대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트', '변호사', '교수', '원장', '소장', '실장', '전문가', '대표이사', '부사장', '전무', '상무', '센터장', '팀장', '교사', '강사'],
+                    department: ['부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계', '관리', '생산', '품질', 'R&D', '비서', '법무', '홍보', '교육', '서비스', '고객', '지원'],
+                    contactKeywords: ['전화', '휴대폰', '핸드폰', '모바일', '연락처', 'Tel', 'Mobile', '팩스', 'Fax', '이메일', 'Email', 'e-mail', '메일', '주소', 'Address', '홈페이지', '웹사이트', 'Website', 'Homepage', 'http', 'www'],
+                    emailRegex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+                    phoneRegex: /(?:(?:\+|00)?82|0)?[ -]?(?:(?:(?:1[0-9]|[2-6][1-3]|70)[ -]?[0-9]{3,4})|(?:50[1-9])[ -]?[0-9]{2,3})[ -]?[0-9]{4}$/
                 }
             },
             'eng': { 
                 lang: 'eng',
                 label: '영어',
                 keywords: {
-                    company: ['Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College'],
-                    position: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer'],
-                    department: ['Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service']
+                    company: ['Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College', 'Association', 'Foundation', 'Society', 'Partners', 'Consultants', 'Agency', 'Bank', 'Industries', 'International', 'Systems', 'Solutions', 'Services'],
+                    position: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer', 'Supervisor', 'Coordinator', 'Representative', 'Developer', 'Designer', 'Chief', 'Lead', 'Senior', 'Junior', 'VP', 'Head', 'Partner', 'Founder', 'Chairman', 'Principal', 'Attorney', 'Lawyer', 'Doctor', 'Professor'],
+                    department: ['Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service', 'Operations', 'Accounting', 'Administration', 'Management', 'Legal', 'Communications', 'Research', 'Production', 'Quality', 'Procurement', 'Customer', 'Product', 'Business', 'Corporate'],
+                    contactKeywords: ['Tel', 'Phone', 'Mobile', 'Cell', 'Contact', 'Fax', 'Email', 'E-mail', 'Mail', 'Address', 'Website', 'Homepage', 'Web', 'URL', 'http', 'www'],
+                    emailRegex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+                    phoneRegex: /(?:\+?1[-\s\.]?)?\(?([0-9]{3})\)?[-\s\.]?([0-9]{3})[-\s\.]?([0-9]{4})/g
                 }
             },
             'jpn': { 
                 lang: 'jpn',
                 label: '일본어',
                 keywords: {
-                    company: ['株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団'],
-                    position: ['代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント'],
-                    department: ['部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理']
+                    company: ['株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団', '協会', 'センター', '公社', '銀行', '合同会社', '相互会社', '企業', '事務所'],
+                    position: ['代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント', '教授', '講師', '秘書', '専門家', '弁護士', '医師', '技師', 'エンジニア', 'デザイナー', 'ディレクター', 'プロデューサー', 'コーディネーター'],
+                    department: ['部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理', '管理', '生産', '品質', '調達', '購買', 'カスタマー', '顧客', 'サポート', 'サービス'],
+                    contactKeywords: ['電話', 'Tel', '携帯', 'Mobile', 'ファックス', 'Fax', 'メール', 'Email', 'E-mail', '住所', 'Address', 'ウェブサイト', 'ホームページ', 'Website', 'Homepage', 'http', 'www'],
+                    emailRegex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+                    phoneRegex: /(?:(?:\+?81)|0)[-\s]?(?:[1-9]0(?:[1-9]|0)|\d{2}|\d{1})[-\s]?\d{4}[-\s]?\d{4}/g
                 }
             },
             'chi_sim': { 
                 lang: 'chi_sim',
                 label: '중국어',
                 keywords: {
-                    company: ['有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'],
-                    position: ['总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'],
-                    department: ['部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计']
+                    company: ['有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会', '协会', '中心', '银行', '企业', '事务所', '工作室', '合伙人', '工厂', '制造'],
+                    position: ['总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问', '专家', '工程师', '设计师', '总监', '副总', '执行官', '律师', '医生', '教授', '讲师', '助理', '主席', '秘书', '负责人'],
+                    department: ['部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计', '管理', '生产', '品质', '采购', '客户', '服务', '支持', '技术', '法务', '宣传', '教育'],
+                    contactKeywords: ['电话', 'Tel', '手机', 'Mobile', '传真', 'Fax', '电子邮件', 'Email', 'E-mail', '邮箱', '地址', 'Address', '网站', 'Website', '主页', 'Homepage', 'http', 'www'],
+                    emailRegex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+                    phoneRegex: /(?:\+?86)?[-\s]?(?:(?:1[3-9][0-9]))[-\s]?[0-9]{4}[-\s]?[0-9]{4}|(?:\d{3,4})[-\s]?(?:\d{7,8})/g
                 }
             },
             'multi': { 
@@ -544,34 +783,49 @@
                 keywords: {
                     company: [
                         // 한국어
-                        '주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단',
+                        '주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단', '협회', '센터', '공사', '은행',
                         // 영어
-                        'Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College',
+                        'Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College', 'Association', 'Foundation', 'Society', 'Partners', 'Consultants', 'Agency', 'Bank',
                         // 일본어
-                        '株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団',
+                        '株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団', '協会', 'センター', '公社', '銀行',
                         // 중국어
-                        '有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'
+                        '有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会', '协会', '中心', '银行'
                     ],
                     position: [
                         // 한국어
-                        '대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트',
+                        '대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트', '변호사', '교수', '원장', '소장',
                         // 영어
-                        'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer',
+                        'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer', 'Supervisor', 'Coordinator', 'Representative', 'Developer', 'Designer',
                         // 일본어
-                        '代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント',
+                        '代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント', '教授', '講師',
                         // 중국어
-                        '总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'
+                        '总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问', '专家', '工程师', '设计师', '总监'
                     ],
                     department: [
                         // 한국어
-                        '부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계',
+                        '부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계', '관리', '생산', '품질',
                         // 영어
-                        'Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service',
+                        'Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service', 'Operations', 'Accounting', 'Administration', 'Management',
                         // 일본어
                         '部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理',
                         // 중국어
                         '部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计'
-                    ]
+                    ],
+                    contactKeywords: [
+                        // 한국어
+                        '전화', '휴대폰', '핸드폰', '모바일', '팩스', '이메일', '메일', '주소', '홈페이지', '웹사이트',
+                        // 영어
+                        'Tel', 'Phone', 'Mobile', 'Cell', 'Fax', 'Email', 'E-mail', 'Mail', 'Address', 'Website', 'Homepage',
+                        // 일본어
+                        '電話', '携帯', 'ファックス', 'メール', '住所', 'ウェブサイト', 'ホームページ',
+                        // 중국어
+                        '电话', '手机', '传真', '电子邮件', '邮箱', '地址', '网站', '主页',
+                        // 공통
+                        'http', 'www'
+                    ],
+                    emailRegex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+                    // 통합 전화번호 패턴
+                    phoneRegex: /(?:(?:\+|00)?82|0)?[ -]?(?:(?:(?:1[0-9]|[2-6][1-3]|70)[ -]?[0-9]{3,4})|(?:50[1-9])[ -]?[0-9]{2,3})[ -]?[0-9]{4}$|(?:\+?1[-\s\.]?)?\(?([0-9]{3})\)?[-\s\.]?([0-9]{3})[-\s\.]?([0-9]{4})|(?:(?:\+?81)|0)[-\s]?(?:[1-9]0(?:[1-9]|0)|\d{2}|\d{1})[-\s]?\d{4}[-\s]?\d{4}|(?:\+?86)?[-\s]?(?:(?:1[3-9][0-9]))[-\s]?[0-9]{4}[-\s]?[0-9]{4}|(?:\d{3,4})[-\s]?(?:\d{7,8})/g
                 }
             }
         };
@@ -643,6 +897,9 @@
                 
                 showStatus('카메라 접근 성공! 명함을 촬영해주세요.', 'success');
                 
+                // 처리 단계 업데이트
+                updateProcessingStep('capture');
+                
             } catch (error) {
                 console.error('카메라 접근 오류:', error);
                 showStatus(`카메라 접근 오류: ${error.name} - ${error.message}`, 'error');
@@ -686,6 +943,31 @@
                 accessCameraBtn.disabled = true;
                 accessCameraBtn.textContent = '카메라 지원되지 않음';
             }
+            
+            // 고급 옵션 토글 버튼 설정
+            advancedBtn.addEventListener('click', () => {
+                preprocessingOptions.style.display = preprocessingOptions.style.display === 'none' ? 'block' : 'none';
+                advancedBtn.textContent = preprocessingOptions.style.display === 'none' ? '고급 옵션' : '옵션 닫기';
+            });
+            
+            // 전처리 적용 버튼 설정
+            applyPreprocessingBtn.addEventListener('click', () => {
+                applyPreprocessing();
+            });
+            
+            // 전처리 초기화 버튼 설정
+            resetPreprocessingBtn.addEventListener('click', () => {
+                resetPreprocessing();
+            });
+            
+            // 이미지 회전 버튼 설정
+            rotateLeftBtn.addEventListener('click', () => {
+                rotateImage(-90);
+            });
+            
+            rotateRightBtn.addEventListener('click', () => {
+                rotateImage(90);
+            });
             
             // 오류 저항성 높은 앱 설정
             setupErrorResistantApp();
@@ -806,19 +1088,75 @@
                 capturedImage.src = canvas.toDataURL('image/png');
                 capturedImage.style.display = 'block';
                 
+                // 원본 이미지 저장
+                originalImageData = capturedImage.src;
+                
                 // 버튼 상태 변경
                 captureBtn.style.display = 'none';
                 retakeBtn.style.display = 'inline-block';
                 analyzeBtn.style.display = 'inline-block';
+                advancedBtn.style.display = 'inline-block';
                 improveImageBtn.style.display = 'inline-block';
                 video.style.display = 'none';
+                rotateButtons.style.display = 'flex';
+                
+                // 회전 각도 초기화
+                currentRotation = 0;
                 
                 showStatus('명함 촬영 완료! 이미지를 개선하거나 바로 분석할 수 있습니다.', 'success');
+                
+                // 처리 단계 표시
+                stepsIndicator.style.display = 'flex';
+                updateProcessingStep('preprocess');
+                
+                // 미리보기 초기화
+                previewContainer.innerHTML = '';
+                previewContainer.style.display = 'none';
+                
             } catch (error) {
                 console.error('촬영 오류:', error);
                 showStatus('촬영 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
             }
         });
+        
+        // 이미지 회전 함수
+        function rotateImage(degrees) {
+            try {
+                // 현재 회전 각도 업데이트
+                currentRotation = (currentRotation + degrees) % 360;
+                if (currentRotation < 0) currentRotation += 360;
+                
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 회전에 따라 캔버스 크기 조정
+                    if (currentRotation === 90 || currentRotation === 270) {
+                        canvas.width = img.height;
+                        canvas.height = img.width;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    
+                    // 캔버스 중앙으로 이동하고 회전
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(currentRotation * Math.PI / 180);
+                    
+                    // 이미지 그리기 (중앙 기준으로)
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    
+                    // 회전된 이미지 표시
+                    capturedImage.src = canvas.toDataURL('image/png');
+                };
+                img.src = originalImageData || capturedImage.src;
+                
+            } catch (error) {
+                console.error('이미지 회전 오류:', error);
+                showStatus('이미지 회전 중 오류가 발생했습니다.', 'error');
+            }
+        }
         
         // 다시 촬영
         retakeBtn.addEventListener('click', () => {
@@ -826,10 +1164,413 @@
             captureBtn.style.display = 'inline-block';
             retakeBtn.style.display = 'none';
             analyzeBtn.style.display = 'none';
+            advancedBtn.style.display = 'none';
             improveImageBtn.style.display = 'none';
             video.style.display = 'block';
             statusMessage.style.display = 'none';
+            preprocessingOptions.style.display = 'none';
+            rotateButtons.style.display = 'none';
+            stepsIndicator.style.display = 'none';
+            confidenceIndicator.style.display = 'none';
+            previewContainer.style.display = 'none';
+            
+            // 원본 이미지 데이터 초기화
+            originalImageData = null;
+            
+            // 회전 각도 초기화
+            currentRotation = 0;
+            
+            // 처리 단계 초기화
+            updateProcessingStep('capture');
         });
+        
+        // 전처리 옵션 가져오기
+        function getPreprocessingOptions() {
+            return {
+                grayscale: document.getElementById('optGrayscale').checked,
+                contrast: document.getElementById('optContrast').checked,
+                sharpen: document.getElementById('optSharpen').checked,
+                denoise: document.getElementById('optDenoise').checked,
+                threshold: document.getElementById('optThreshold').checked,
+                edgeEnhance: document.getElementById('optEdgeEnhance').checked
+            };
+        }
+        
+        // 이미지 전처리 적용
+        function applyPreprocessing() {
+            if (!originalImageData) {
+                showStatus('이미지가 없습니다. 먼저 명함을 촬영해주세요.', 'error');
+                return;
+            }
+            
+            showStatus('이미지 처리 중...', 'info');
+            
+            const options = getPreprocessingOptions();
+            
+            // 이미지 전처리 실행
+            enhanceBusinessCardImage(originalImageData, options)
+                .then(enhancedImage => {
+                    capturedImage.src = enhancedImage;
+                    showStatus('이미지 처리 완료!', 'success');
+                    
+                    // 미리보기 추가
+                    addPreview('처리됨', enhancedImage);
+                })
+                .catch(error => {
+                    console.error('이미지 처리 오류:', error);
+                    showStatus('이미지 처리 중 오류가 발생했습니다.', 'error');
+                });
+        }
+        
+        // 이미지 전처리 초기화
+        function resetPreprocessing() {
+            if (originalImageData) {
+                capturedImage.src = originalImageData;
+                showStatus('원본 이미지로 복원되었습니다.', 'success');
+            }
+        }
+        
+        // 미리보기 추가 함수
+        function addPreview(label, imageUrl) {
+            // 미리보기 컨테이너가 비어있으면 원본 이미지 추가
+            if (previewContainer.children.length === 0 && originalImageData) {
+                const originalPreview = document.createElement('div');
+                originalPreview.className = 'preview-item';
+                originalPreview.innerHTML = `
+                    <img src="${originalImageData}" alt="원본 이미지">
+                    <p>원본</p>
+                `;
+                previewContainer.appendChild(originalPreview);
+                
+                // 원본 이미지 클릭 이벤트
+                originalPreview.addEventListener('click', () => {
+                    capturedImage.src = originalImageData;
+                });
+            }
+            
+            // 새 미리보기 추가
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.innerHTML = `
+                <img src="${imageUrl}" alt="${label} 이미지">
+                <p>${label}</p>
+            `;
+            
+            // 미리보기 클릭 이벤트
+            previewItem.addEventListener('click', () => {
+                capturedImage.src = imageUrl;
+            });
+            
+            // 컨테이너에 추가
+            previewContainer.appendChild(previewItem);
+            previewContainer.style.display = 'flex';
+        }
+        
+        // 개선된 명함 이미지 전처리 함수
+        async function enhanceBusinessCardImage(imageUrl, options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            // 캔버스 크기 설정
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            
+                            // 원본 이미지 그리기
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // 이미지 데이터 가져오기
+                            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            let data = imageData.data;
+                            
+                            // 1. 그레이스케일 변환
+                            if (options.grayscale) {
+                                for (let i = 0; i < data.length; i += 4) {
+const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                                    data[i] = data[i + 1] = data[i + 2] = avg;
+                                }
+                            }
+                            
+                            // 2. 대비 향상
+                            if (options.contrast) {
+                                const contrast = 1.5; // 대비 강화 계수
+                                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                                
+                                for (let i = 0; i < data.length; i += 4) {
+                                    data[i] = factor * (data[i] - 128) + 128;
+                                    data[i + 1] = factor * (data[i + 1] - 128) + 128;
+                                    data[i + 2] = factor * (data[i + 2] - 128) + 128;
+                                }
+                            }
+                            
+                            // 현재까지의 변경사항 적용
+                            ctx.putImageData(imageData, 0, 0);
+                            
+                            // 3. 선명도 향상
+                            if (options.sharpen) {
+                                // 컨볼루션 필터를 사용한 선명화
+                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                data = imageData.data;
+                                
+                                const tempCanvas = document.createElement('canvas');
+                                const tempCtx = tempCanvas.getContext('2d');
+                                tempCanvas.width = canvas.width;
+                                tempCanvas.height = canvas.height;
+                                tempCtx.putImageData(imageData, 0, 0);
+                                
+                                // 선명화 커널
+                                const kernel = [
+                                    0, -1, 0,
+                                    -1, 5, -1,
+                                    0, -1, 0
+                                ];
+                                
+                                // 컨볼루션 적용
+                                const newImageData = ctx.createImageData(canvas.width, canvas.height);
+                                const newData = newImageData.data;
+                                
+                                // 컨볼루션 계산 (가장자리 제외)
+                                for (let y = 1; y < canvas.height - 1; y++) {
+                                    for (let x = 1; x < canvas.width - 1; x++) {
+                                        const idx = (y * canvas.width + x) * 4;
+                                        
+                                        for (let c = 0; c < 3; c++) {
+                                            let val = 0;
+                                            
+                                            // 커널 적용
+                                            for (let ky = -1; ky <= 1; ky++) {
+                                                for (let kx = -1; kx <= 1; kx++) {
+                                                    const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                                                    const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
+                                                    
+                                                    val += data[pixelIdx + c] * kernel[kernelIdx];
+                                                }
+                                            }
+                                            
+                                            // 결과 값 설정 (범위 내로 제한)
+                                            newData[idx + c] = Math.min(255, Math.max(0, val));
+                                        }
+                                        
+                                        // 알파 채널 유지
+                                        newData[idx + 3] = data[idx + 3];
+                                    }
+                                }
+                                
+                                // 가장자리 복사 (경계 처리)
+                                for (let y = 0; y < canvas.height; y++) {
+                                    for (let x = 0; x < canvas.width; x++) {
+                                        if (x === 0 || x === canvas.width - 1 || y === 0 || y === canvas.height - 1) {
+                                            const idx = (y * canvas.width + x) * 4;
+                                            newData[idx] = data[idx];
+                                            newData[idx + 1] = data[idx + 1];
+                                            newData[idx + 2] = data[idx + 2];
+                                            newData[idx + 3] = data[idx + 3];
+                                        }
+                                    }
+                                }
+                                
+                                // 결과 적용
+                                ctx.putImageData(newImageData, 0, 0);
+                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                data = imageData.data;
+                            }
+                            
+                            // 4. 노이즈 제거 (간단한 미디안 필터)
+                            if (options.denoise) {
+                                const tempCanvas = document.createElement('canvas');
+                                const tempCtx = tempCanvas.getContext('2d');
+                                tempCanvas.width = canvas.width;
+                                tempCanvas.height = canvas.height;
+                                tempCtx.putImageData(imageData, 0, 0);
+                                
+                                const newImageData = ctx.createImageData(canvas.width, canvas.height);
+                                const newData = newImageData.data;
+                                
+                                // 3x3 미디안 필터
+                                for (let y = 1; y < canvas.height - 1; y++) {
+                                    for (let x = 1; x < canvas.width - 1; x++) {
+                                        const idx = (y * canvas.width + x) * 4;
+                                        
+                                        for (let c = 0; c < 3; c++) {
+                                            const values = [];
+                                            
+                                            // 주변 픽셀 값 수집
+                                            for (let ky = -1; ky <= 1; ky++) {
+                                                for (let kx = -1; kx <= 1; kx++) {
+                                                    const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
+                                                    values.push(data[pixelIdx + c]);
+                                                }
+                                            }
+                                            
+                                            // 값 정렬 및 중간값 선택
+                                            values.sort((a, b) => a - b);
+                                            newData[idx + c] = values[4]; // 9개 중 중간값
+                                        }
+                                        
+                                        // 알파 채널 유지
+                                        newData[idx + 3] = data[idx + 3];
+                                    }
+                                }
+                                
+                                // 가장자리 복사
+                                for (let y = 0; y < canvas.height; y++) {
+                                    for (let x = 0; x < canvas.width; x++) {
+                                        if (x === 0 || x === canvas.width - 1 || y === 0 || y === canvas.height - 1) {
+                                            const idx = (y * canvas.width + x) * 4;
+                                            newData[idx] = data[idx];
+                                            newData[idx + 1] = data[idx + 1];
+                                            newData[idx + 2] = data[idx + 2];
+                                            newData[idx + 3] = data[idx + 3];
+                                        }
+                                    }
+                                }
+                                
+                                // 결과 적용
+                                ctx.putImageData(newImageData, 0, 0);
+                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                data = imageData.data;
+                            }
+                            
+                            // 5. 이진화 (적응형 임계값 - OCR 인식 향상)
+                            if (options.threshold) {
+                                // 이진화 전 그레이스케일 확보
+                                for (let i = 0; i < data.length; i += 4) {
+                                    if (data[i] !== data[i + 1] || data[i] !== data[i + 2]) {
+                                        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                                        data[i] = data[i + 1] = data[i + 2] = gray;
+                                    }
+                                }
+                                
+                                // 적응형 임계값 처리 (지역 평균 기반)
+                                const blockSize = 15; // 블록 크기
+                                const C = 5; // 상수값 (임계값 조정)
+                                
+                                // 원본 데이터 복사
+                                const origData = new Uint8ClampedArray(data);
+                                
+                                for (let y = 0; y < canvas.height; y++) {
+                                    for (let x = 0; x < canvas.width; x++) {
+                                        const idx = (y * canvas.width + x) * 4;
+                                        
+                                        // 블록 범위
+                                        const xStart = Math.max(0, x - Math.floor(blockSize / 2));
+                                        const yStart = Math.max(0, y - Math.floor(blockSize / 2));
+                                        const xEnd = Math.min(canvas.width - 1, x + Math.floor(blockSize / 2));
+                                        const yEnd = Math.min(canvas.height - 1, y + Math.floor(blockSize / 2));
+                                        
+                                        // 지역 평균 계산
+                                        let sum = 0;
+                                        let count = 0;
+                                        
+                                        for (let by = yStart; by <= yEnd; by++) {
+                                            for (let bx = xStart; bx <= xEnd; bx++) {
+                                                const bidx = (by * canvas.width + bx) * 4;
+                                                sum += origData[bidx];
+                                                count++;
+                                            }
+                                        }
+                                        
+                                        const threshold = sum / count - C;
+                                        
+                                        // 임계값 적용
+                                        const pixelValue = origData[idx] > threshold ? 255 : 0;
+                                        data[idx] = data[idx + 1] = data[idx + 2] = pixelValue;
+                                    }
+                                }
+                            }
+                            
+                            // 6. 윤곽선 강화
+                            if (options.edgeEnhance) {
+                                // 현재 상태 저장
+                                const origImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                const origData = origImageData.data;
+                                
+                                // 엣지 검출 (소벨 필터)
+                                const sobelX = [
+                                    -1, 0, 1,
+                                    -2, 0, 2,
+                                    -1, 0, 1
+                                ];
+                                
+                                const sobelY = [
+                                    -1, -2, -1,
+                                    0, 0, 0,
+                                    1, 2, 1
+                                ];
+                                
+                                const edgeData = new Uint8ClampedArray(data.length);
+                                
+                                // 엣지 강도 계산
+                                for (let y = 1; y < canvas.height - 1; y++) {
+                                    for (let x = 1; x < canvas.width - 1; x++) {
+                                        const idx = (y * canvas.width + x) * 4;
+                                        
+                                        let gx = 0;
+                                        let gy = 0;
+                                        
+                                        // 소벨 필터 적용
+                                        for (let ky = -1; ky <= 1; ky++) {
+                                            for (let kx = -1; kx <= 1; kx++) {
+                                                const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
+                                                const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                                                
+                                                gx += origData[pixelIdx] * sobelX[kernelIdx];
+                                                gy += origData[pixelIdx] * sobelY[kernelIdx];
+                                            }
+                                        }
+                                        
+                                        // 엣지 강도
+                                        const magnitude = Math.sqrt(gx * gx + gy * gy);
+                                        
+                                        // 엣지 데이터 저장
+                                        edgeData[idx] = edgeData[idx + 1] = edgeData[idx + 2] = Math.min(255, magnitude);
+                                        edgeData[idx + 3] = 255;
+                                    }
+                                }
+                                
+                                // 원본과 엣지 혼합
+                                for (let i = 0; i < data.length; i += 4) {
+                                    // 엣지가 있는 위치는 텍스트일 가능성이 높으므로 어둡게 처리
+                                    if (edgeData[i] > 50) {
+                                        data[i] = Math.max(0, data[i] - edgeData[i] * 0.5);
+                                        data[i + 1] = Math.max(0, data[i + 1] - edgeData[i] * 0.5);
+                                        data[i + 2] = Math.max(0, data[i + 2] - edgeData[i] * 0.5);
+                                    }
+                                }
+                            }
+                            
+                            // 최종 이미지 데이터 적용
+                            ctx.putImageData(imageData, 0, 0);
+                            
+                            // 결과 이미지 반환
+                            resolve(canvas.toDataURL('image/png'));
+                            
+                        } catch (error) {
+                            console.error('이미지 처리 중 오류:', error);
+                            // 오류 발생 시 원본 이미지 반환
+                            resolve(imageUrl);
+                        }
+                    };
+                    
+                    img.onerror = function(error) {
+                        console.error('이미지 로딩 오류:', error);
+                        reject(new Error('이미지 로딩에 실패했습니다.'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('이미지 처리 초기화 오류:', error);
+                    reject(error);
+                }
+            });
+        }
         
         // 안전한 이미지 개선 함수
         async function simpleEnhanceImage(imageUrl) {
@@ -913,6 +1654,9 @@
                                     return;
                                 }
                                 
+                                // 미리보기에 추가
+                                addPreview('기본 개선', resultUrl);
+                                
                                 resolve(resultUrl);
                             } catch (e) {
                                 console.error('이미지 데이터 반영 중 오류:', e);
@@ -971,7 +1715,7 @@
                     showStatus('이미지 개선 중...', 'info');
                     
                     try {
-                        // 간단한 이미지 개선 적용
+                        // 자동 이미지 개선 적용
                         const enhancedImage = await simpleEnhanceImage(originalSrc);
                         
                         // 원본 이미지와 개선된 이미지가 다른지 확인
@@ -1004,6 +1748,47 @@
                     showStatus('이미지 개선 중 오류가 발생했습니다.', 'error');
                 }
             });
+        }
+        
+        // 처리 단계 업데이트 함수
+        function updateProcessingStep(step) {
+            processingStep = step;
+            
+            // 모든 단계 스타일 초기화
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active', 'completed', 'current');
+            });
+            
+            // 현재 단계까지 활성화
+            const steps = ['capture', 'preprocess', 'ocr', 'extract', 'review'];
+            const currentIndex = steps.indexOf(step);
+            
+            if (currentIndex >= 0) {
+                for (let i = 0; i < steps.length; i++) {
+                    const el = document.querySelector(`.step[data-step="${steps[i]}"]`);
+                    if (i < currentIndex) {
+                        el.classList.add('completed');
+                    } else if (i === currentIndex) {
+                        el.classList.add('current');
+                    }
+                }
+            }
+        }
+        
+        // 신뢰도 표시 함수
+        function showConfidence(confidence) {
+            confidenceIndicator.style.display = 'flex';
+            confidenceFill.style.width = `${confidence}%`;
+            confidenceText.textContent = `${Math.round(confidence)}%`;
+            
+            // 신뢰도에 따른 색상 변경
+            if (confidence >= 80) {
+                confidenceFill.style.backgroundColor = '#28a745'; // 높음 (녹색)
+            } else if (confidence >= 60) {
+                confidenceFill.style.backgroundColor = '#ffc107'; // 중간 (노란색)
+            } else {
+                confidenceFill.style.backgroundColor = '#dc3545'; // 낮음 (빨간색)
+            }
         }
         
         // 안전한 OCR 처리 함수
@@ -1254,13 +2039,12 @@
                         throw new Error('지원되지 않는 언어입니다.');
                     }
                     
-                    // 1. 고급 이미지 전처리
-                    showStatus('이미지 최적화 중...', 'info');
-                    const enhancedImage = await advancedPreprocessImage(capturedImage.src);
+                    // 처리 단계 업데이트
+                    updateProcessingStep('ocr');
                     
-                    // 2. 고급 OCR 처리
+                    // 1. OCR 처리
                     showStatus('텍스트 인식 중...', 'info');
-                    const ocrResult = await enhancedOCRProcess(enhancedImage, langConfig.lang);
+                    const ocrResult = await enhancedOCRProcess(capturedImage.src, langConfig.lang);
                     
                     // 인식 결과 검증
                     if (!ocrResult.text || ocrResult.text.trim().length === 0) {
@@ -1270,17 +2054,27 @@
                     console.log('인식된 텍스트:', ocrResult.text);
                     console.log('인식 신뢰도:', ocrResult.confidence);
                     
-                    // 3. 고급 명함 정보 추출
+                    // 신뢰도 표시
+                    showConfidence(ocrResult.confidence);
+                    
+                    // OCR 결과 저장
+                    lastOcrResult = ocrResult;
+                    
+                    // 처리 단계 업데이트
+                    updateProcessingStep('extract');
+                    
+                    // 2. 명함 정보 추출
                     showStatus('정보 분석 중...', 'info');
-                    const extractedInfo = advancedBusinessCardExtraction(
+                    const extractedInfo = enhancedBusinessCardExtraction(
                         ocrResult.text, 
-                        ocrResult.hocr, 
-                        ocrResult.words,
                         langConfig.keywords,
                         langConfig.lang
                     );
                     
-                    // 4. 추출된 정보를 폼에 채우기
+                    // 처리 단계 업데이트
+                    updateProcessingStep('review');
+                    
+                    // 3. 추출된 정보를 폼에 채우기
                     document.getElementById('name').value = extractedInfo.name || '';
                     document.getElementById('position').value = extractedInfo.position || '';
                     document.getElementById('company').value = extractedInfo.company || '';
@@ -1359,15 +2153,14 @@
             });
         }
         
-        // 고급 OCR 처리 함수 - 여러 인식 엔진 결합
-        async function enhancedOCRProcess(imageData, langCode) {
+        // 개선된 OCR 처리 함수
+        async function enhancedOCRProcess(imageUrl, langCode) {
             try {
-                // 인식 품질 향상을 위한 여러 단계 적용
+                // 진행률 표시
+                progressBar.style.display = 'block';
+                progressBarFill.style.width = '0%';
                 
-                // 1. 전처리된 이미지 정보 가져오기
-                const { processed, original } = imageData;
-                
-                // 2. OCR 실행
+                // Tesseract Worker 초기화
                 const worker = Tesseract.createWorker({
                     logger: progress => {
                         if (progress.status === 'recognizing text') {
@@ -1381,53 +2174,41 @@
                 await worker.loadLanguage(langCode);
                 await worker.initialize(langCode);
                 
-                // OCR 설정
+                // OCR 인식 품질 향상을 위한 매개변수 설정
                 await worker.setParameters({
+                    // 중요: 띄어쓰기 유지 (이름, 주소 등에서 중요)
                     preserve_interword_spaces: '1',
+                    
+                    // 페이지 세분화 모드: 자동 (OCR 라이브러리가 페이지 레이아웃 자동 감지)
                     tessedit_pageseg_mode: 'PSM_AUTO',
-                    tessedit_ocr_engine_mode: 'OEM_LSTM_ONLY'
+                    
+                    // 명함에 적합한 OCR 엔진 모드 설정 (LSTM 신경망)
+                    tessedit_ocr_engine_mode: 'OEM_LSTM_ONLY',
+                    
+                    // 숫자 인식 개선
+                    tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@.,-_/:() ',
+                    
+                    // 희귀 단어 처리 활성화 (이름이나 회사명에 도움)
+                    load_system_dawg: '1',
+                    
+                    // 철자 수정 해제 (전문 용어나 이름이 수정되는 것 방지)
+                    language_model_penalty_non_dict_word: '0.5',
+                    
+                    // 전체 페이지에 단일 텍스트 블록을 사용하는 대신, 텍스트 라인 개별 인식
+                    textord_tabfind_find_tables: '0'
                 });
                 
-                // 인식 실행
-                const result = await worker.recognize(processed);
-                await worker.terminate();
+                // 추가 언어별 매개변수 설정
+                if (langCode.includes('kor')) {
+                    await worker.setParameters({
+                        // 한글 인식 개선
+                        textord_force_make_prop_words: '0',
+                        textord_noise_rejrows: '1',
+                        textord_noise_rejcols: '1'
+                    });
+                }
                 
-                return {
-                    text: result.data.text,
-                    confidence: result.data.confidence,
-                    words: result.data.words || [],
-                    hocr: result.data.hocr || null
-                };
-                
-            } catch (error) {
-                console.error('OCR 처리 오류:', error);
-                // 오류 발생 시 간소화된 버전 시도
-                return fallbackOCRProcess(imageData.original, langCode);
-            }
-        }
-        
-        // 대체 OCR 처리 (간소화된 접근)
-        async function fallbackOCRProcess(imageUrl, langCode) {
-            try {
-                const worker = Tesseract.createWorker({
-                    logger: progress => {
-                        if (progress.status === 'recognizing text') {
-                            const percentage = Math.round(progress.progress * 100);
-                            progressBarFill.style.width = `${percentage}%`;
-                        }
-                    }
-                });
-                
-                await worker.load();
-                await worker.loadLanguage(langCode);
-                await worker.initialize(langCode);
-                
-                // 기본 설정만 사용
-                await worker.setParameters({
-                    preserve_interword_spaces: '1'
-                });
-                
-                // 이미지 인식
+                // 이미지 인식 실행
                 const result = await worker.recognize(imageUrl);
                 
                 // 워커 종료
@@ -1436,132 +2217,20 @@
                 return {
                     text: result.data.text,
                     confidence: result.data.confidence,
-                    words: [],
-                    hocr: null
+                    words: result.data.words || [],
+                    blocks: result.data.blocks || [],
+                    lines: result.data.lines || [],
+                    paragraphs: result.data.paragraphs || []
                 };
                 
             } catch (error) {
-                console.error('대체 OCR 처리 오류:', error);
-                return {
-                    text: '',
-                    confidence: 0,
-                    words: [],
-                    hocr: null
-                };
+                console.error('OCR 처리 오류:', error);
+                throw new Error('OCR 처리 중 오류가 발생했습니다: ' + error.message);
             }
         }
         
-        // 이미지 전처리 파이프라인 - 인식률 향상을 위한 단계별 처리
-        async function advancedPreprocessImage(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    img.onload = function() {
-                        try {
-                            // 원본 캔버스 생성
-                            const originalCanvas = document.createElement('canvas');
-                            originalCanvas.width = img.width;
-                            originalCanvas.height = img.height;
-                            const originalCtx = originalCanvas.getContext('2d');
-                            originalCtx.drawImage(img, 0, 0, img.width, img.height);
-                            
-                            // 처리용 캔버스 생성
-                            const canvas = document.createElement('canvas');
-                            
-                            // OCR에 최적화된 크기는 2000-3000px 범위 (너무 작으면 텍스트 인식이 어렵고, 너무 크면 처리 속도가 느림)
-                            const OPTIMAL_SIZE = 2500;
-                            const MINIMUM_SIZE = 1000;
-                            
-                            let scale = 1;
-                            let processedWidth = img.width;
-                            let processedHeight = img.height;
-                            
-                            if (Math.max(processedWidth, processedHeight) > OPTIMAL_SIZE) {
-                                scale = OPTIMAL_SIZE / Math.max(processedWidth, processedHeight);
-                                processedWidth *= scale;
-                                processedHeight *= scale;
-                            } else if (Math.max(processedWidth, processedHeight) < MINIMUM_SIZE) {
-                                scale = MINIMUM_SIZE / Math.max(processedWidth, processedHeight);
-                                processedWidth *= scale;
-                                processedHeight *= scale;
-                            }
-                            
-                            processedWidth = Math.round(processedWidth);
-                            processedHeight = Math.round(processedHeight);
-                            canvas.width = processedWidth;
-                            canvas.height = processedHeight;
-                            
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 이미지 그리기
-                            ctx.drawImage(img, 0, 0, processedWidth, processedHeight);
-                            
-                            // 대비 및 밝기 조정 (간소화된 처리)
-                            try {
-                                const imageData = ctx.getImageData(0, 0, processedWidth, processedHeight);
-                                const data = imageData.data;
-                                
-                                for (let i = 0; i < data.length; i += 4) {
-                                    // 그레이스케일 변환 (OCR 성능 향상)
-                                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                    
-                                    // 대비 향상
-                                    const contrast = 1.5;
-                                    const brightness = 10;
-                                    
-                                    // 조정된 값 계산
-                                    const adjusted = Math.min(255, Math.max(0, (avg - 128) * contrast + 128 + brightness));
-                                    
-                                    // RGB 채널에 적용
-                                    data[i] = data[i + 1] = data[i + 2] = adjusted;
-                                }
-                                
-                                ctx.putImageData(imageData, 0, 0);
-                            } catch (e) {
-                                console.error('이미지 처리 중 오류:', e);
-                                // 오류 시 원본 크기 조정된 이미지만 사용
-                            }
-                            
-                            // 처리된 이미지를 반환
-                            const processedImageUrl = canvas.toDataURL('image/png');
-                            
-                            // 결과 반환
-                            resolve({
-                                original: imageUrl,
-                                processed: processedImageUrl,
-                                width: processedWidth,
-                                height: processedHeight
-                            });
-                        } catch (error) {
-                            console.error('이미지 처리 오류:', error);
-                            // 오류 시 원본 반환
-                            resolve({
-                                original: imageUrl,
-                                processed: imageUrl,
-                                width: img.width,
-                                height: img.height
-                            });
-                        }
-                    };
-                    
-                    img.onerror = function(error) {
-                        console.error('이미지 로딩 오류:', error);
-                        reject(new Error('이미지 로딩에 실패했습니다.'));
-                    };
-                    
-                    img.src = imageUrl;
-                    
-                } catch (error) {
-                    console.error('이미지 전처리 초기화 오류:', error);
-                    reject(error);
-                }
-            });
-        }
-        
-        // 고급 명함 정보 추출 함수
-        function advancedBusinessCardExtraction(text, hocrData, words, keywords, langCode) {
+        // 향상된 명함 정보 추출 함수
+        function enhancedBusinessCardExtraction(text, keywords, langCode) {
             try {
                 // 기본 정보 객체
                 const info = {
@@ -1570,64 +2239,81 @@
                     company: '',
                     department: '',
                     phone: '',
-                    email: '',
-                    address: '',
-                    fax: '',
-                    website: '',
                     mobile: '',
-                    tel: ''
+                    tel: '',
+                    fax: '',
+                    email: '',
+                    website: '',
+                    address: ''
                 };
                 
-                // 정제된 텍스트 라인 분리
-                const lines = text.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
+                // 인식된 텍스트를 줄별로 분할 및 정제
+                const rawLines = text.split('\n');
                 
-                // 1. 이메일 추출
-                const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                const emailMatches = text.match(emailRegex);
+                // 줄 정제: 빈 줄 제거, 공백 제거, 특수문자 처리
+                let lines = rawLines
+                    .map(line => line.trim())
+                    .filter(line => line && line.length > 1);
+                
+                // 줄 병합: 잘린 줄 연결 (추후 구현)
+                
+                // 1. 이메일 추출 (신뢰성 높은 패턴)
+                const emailMatches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
                 if (emailMatches && emailMatches.length > 0) {
-                    info.email = emailMatches[0];
+                    // 가장 긴 이메일 주소 선택 (더 완전한 정보일 가능성 높음)
+                    info.email = emailMatches.reduce((a, b) => a.length >= b.length ? a : b);
+                    
+                    // 추출된 이메일이 포함된 줄 찾기
+                    const emailLine = lines.find(line => line.includes(info.email));
+                    if (emailLine) {
+                        // 이메일 포함 라인 제거
+                        lines = lines.filter(line => line !== emailLine);
+                    }
                 }
                 
-                // 2. 웹사이트 추출
-                const websiteRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})+/g;
-                const websiteMatches = text.match(websiteRegex);
-                if (websiteMatches && websiteMatches.length > 0) {
-                    // 이메일 주소와 겹치지 않는 첫 번째 웹사이트 선택
-                    for (const website of websiteMatches) {
-                        if (!website.includes('@')) {
-                            info.website = website;
-                            break;
+                // 2. 웹사이트 URL 추출
+                const urlMatches = text.match(/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})+/g);
+                if (urlMatches && urlMatches.length > 0) {
+                    // 유효한 URL 필터링 (이메일 주소가 아닌 것)
+                    const validUrls = urlMatches.filter(url => !url.includes('@'));
+                    if (validUrls.length > 0) {
+                        info.website = validUrls[0];
+                        
+                        // 추출된 URL이 포함된 줄 찾기
+                        const urlLine = lines.find(line => line.includes(info.website));
+                        if (urlLine) {
+                            // URL 포함 라인 제거
+                            lines = lines.filter(line => line !== urlLine);
                         }
                     }
                 }
                 
-                // 3. 전화번호 추출 (여러 종류의 전화번호 구분)
+                // 3. 전화번호 추출 (다양한 형식)
+                // 전화번호 유형별 패턴 정의
                 const phonePatterns = [
                     // 모바일 패턴
-                    { 
-                        regex: /(?:M|Mobile|모바일|휴대폰|핸드폰|手机|携帯)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                    {
+                        regex: new RegExp(`(?:(?:휴대(?:폰|전화)|핸드폰|Mobile|모바일|携帯|手机)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
                         type: 'mobile'
                     },
                     // 일반 전화 패턴
-                    { 
-                        regex: /(?:Tel|TEL|전화|T|P|Ph|电话)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                    {
+                        regex: new RegExp(`(?:(?:전화|사무실|Tel|TEL|电话|電話|T|P|Ph)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
                         type: 'tel'
                     },
                     // 팩스 패턴
-                    { 
-                        regex: /(?:Fax|FAX|팩스|F)[.:)]?\s*(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{4}/gi,
+                    {
+                        regex: new RegExp(`(?:(?:팩스|Fax|FAX|传真|F)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
                         type: 'fax'
                     },
                     // 일반 숫자 패턴 (위에서 매치되지 않은 것)
-                    { 
+                    {
                         regex: /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?/g,
                         type: 'phone'
                     }
                 ];
                 
-                // 매칭된 전화번호 저장 집합
+                // 매칭된 전화번호 저장
                 const matchedNumbers = new Set();
                 
                 // 각 패턴 유형에 따라 검색
@@ -1635,125 +2321,187 @@
                     const matches = text.match(pattern.regex);
                     if (matches && matches.length > 0) {
                         for (const match of matches) {
-                            // 이미 추출한 번호는 건너뛰기
-                            if (matchedNumbers.has(match)) continue;
-                            
                             // 숫자만 추출
                             const digitsOnly = match.replace(/\D/g, '');
                             
                             // 전화번호가 너무 짧거나 길면 건너뛰기
                             if (digitsOnly.length < 7 || digitsOnly.length > 15) continue;
                             
-                            // 숫자 부분 추출하여 형식화
-                            let formattedNumber = match;
+                            // 이미 추출한 번호는 건너뛰기
+                            if (matchedNumbers.has(digitsOnly)) continue;
                             
-                            // 이미 추출한 다른 타입과 겹치는지 확인
-                            const isUnique = ![info.phone, info.tel, info.mobile, info.fax]
-                                .filter(Boolean)
-                                .some(num => num.replace(/\D/g, '') === digitsOnly);
+                            // 전화번호 형식화
+                            let formattedNumber = match.trim();
                             
-                            if (isUnique) {
-                                // 타입에 따라 저장
-                                if (pattern.type === 'mobile' && !info.mobile) {
-                                    info.mobile = formattedNumber;
-                                } else if (pattern.type === 'tel' && !info.tel) {
-                                    info.tel = formattedNumber;
-                                } else if (pattern.type === 'fax' && !info.fax) {
-                                    info.fax = formattedNumber;
-                                } else if (pattern.type === 'phone' && !info.phone) {
-                                    info.phone = formattedNumber;
-                                }
-                                
-                                // 매칭된 번호 저장
-                                matchedNumbers.add(match);
+                            // 전화번호 유형 저장
+                            if (pattern.type === 'mobile' && !info.mobile) {
+                                info.mobile = formattedNumber;
+                            } else if (pattern.type === 'tel' && !info.tel) {
+                                info.tel = formattedNumber;
+                            } else if (pattern.type === 'fax' && !info.fax) {
+                                info.fax = formattedNumber;
+                            } else if (pattern.type === 'phone' && !info.phone) {
+                                info.phone = formattedNumber;
+                            }
+                            
+                            // 매칭된 번호 저장
+                            matchedNumbers.add(digitsOnly);
+                            
+                            // 추출된 전화번호가 포함된 줄 찾기 및 제거
+                            const phoneLine = lines.find(line => line.includes(match));
+                            if (phoneLine) {
+                                lines = lines.filter(line => line !== phoneLine);
                             }
                         }
                     }
                 }
                 
-                // 전화번호가 없는데 mobile이 있으면 phone에 할당
-                if (!info.phone && info.mobile) {
-                    info.phone = info.mobile;
+                // phone이 비어있고 mobile, tel이 있으면 대체
+                if (!info.phone) {
+                    info.phone = info.mobile || info.tel || '';
                 }
                 
-                // 4. 라인 데이터 복사 (사용한 라인은 제거할 예정)
-                let remainingLines = [...lines];
+                // 4. 코드페이지 및 언어별 처리
+                let nameFirst = true;
+                if (langCode.includes('kor') || langCode.includes('jpn') || langCode.includes('chi_sim')) {
+                    nameFirst = true; // 동아시아 언어는 이름이 먼저 나옴
+                } else {
+                    nameFirst = false; // 서양 언어는 회사/직책이 먼저 나오는 경우가 많음
+                }
                 
-                // 5. 회사명 추출 (키워드 기반)
-                for (let i = 0; i < remainingLines.length; i++) {
-                    const line = remainingLines[i];
+                // 5. 이름 추출
+                // 짧고 특수 문자가 없는 첫 번째/두 번째 줄을 이름으로 추정
+                const nameLines = lines.filter(line => 
+                    line.length < 25 && 
+                    line.length > 1 &&
+                    !line.includes('@') && 
+                    !line.includes('http') &&
+                    !/\d{4,}/.test(line) && // 긴 숫자가 없는 줄
+                    !/^[\d\s\-+.()]+$/.test(line) // 전화번호만 있는 줄이 아닌 것
+                );
+                
+                if (nameLines.length > 0) {
+                    // 위치 기반 이름 추출
+                    if (nameFirst && nameLines.length > 0) {
+                        // 동아시아 언어: 첫 번째 짧은 줄을 이름으로
+                        info.name = nameLines[0];
+                    } else if (nameLines.length > 1) {
+                        // 서양 언어: 두 번째 또는 세 번째 짧은 줄을 이름으로
+                        info.name = nameLines[1] || nameLines[0];
+                    } else {
+                        info.name = nameLines[0];
+                    }
+                    
+                    // 이름 정제
+                    info.name = info.name.replace(/^\s*[.•*-]\s*/, ''); // 줄 앞의 기호 제거
+                    
+                    // 이름 줄 제거
+                    lines = lines.filter(line => line !== info.name);
+                }
+                
+                // 6. 회사명 추출
+                // 키워드 기반 회사명 탐색
+                let companyFound = false;
+                
+                // 키워드 기반 회사명 탐색
+                for (const line of lines) {
                     if (keywords.company.some(keyword => line.includes(keyword))) {
                         info.company = line;
-                        remainingLines.splice(i, 1);
+                        companyFound = true;
+                        // 회사명이 포함된 줄 제거
+                        lines = lines.filter(l => l !== line);
                         break;
                     }
                 }
                 
-                // 회사명이 없으면, 위치 기반 추론
-                if (!info.company && remainingLines.length > 1) {
-                    // 명함에서 회사명은 종종 첫 번째나 두 번째 줄에 있음
-                    const possibleCompanyLines = remainingLines.slice(0, Math.min(3, remainingLines.length));
-                    
-                    // 가장 긴 첫 번째, 두 번째 줄을 회사명으로 간주
-                    const longestLine = possibleCompanyLines.reduce((a, b) => 
-                        (a.length >= b.length) ? a : b, '');
-                        
-                    if (longestLine && longestLine.length > 3) {
-                        info.company = longestLine;
-                        const index = remainingLines.indexOf(longestLine);
-                        if (index !== -1) {
-                            remainingLines.splice(index, 1);
+                // 회사명을 찾지 못했다면 위치 기반 추정
+                if (!companyFound && lines.length > 1) {
+                    if (nameFirst && lines.length > 0) {
+                        // 동아시아 형식: 이름 다음 줄이 회사/직책일 가능성 높음
+                        const possibleCompany = lines[0];
+                        if (possibleCompany && !info.position) {
+                            info.company = possibleCompany;
+                            lines = lines.filter(l => l !== possibleCompany);
+                        }
+                    } else {
+                        // 서양 형식: 첫 번째 줄이 회사일 가능성 높음
+                        const possibleCompany = lines[0];
+                        if (possibleCompany) {
+                            info.company = possibleCompany;
+                            lines = lines.filter(l => l !== possibleCompany);
                         }
                     }
                 }
                 
-                // 6. 이름 추출 
-                // 가장 짧은 줄을 이름으로 추정
-                const shortLines = remainingLines.filter(line => 
-                    line.length < 15 && !line.includes('@') && !line.includes('http')
-                );
+                // 7. 직책 추출
+                // 키워드 기반 직책 탐색
+                let positionFound = false;
                 
-                if (shortLines.length > 0) {
-                    info.name = shortLines.reduce((a, b) => a.length <= b.length ? a : b);
-                    const index = remainingLines.indexOf(info.name);
-                    if (index !== -1) {
-                        remainingLines.splice(index, 1);
-                    }
-                }
-                
-                // 7. 직책 추출 (키워드 기반)
-                for (let i = 0; i < remainingLines.length; i++) {
-                    const line = remainingLines[i];
+                for (const line of lines) {
                     if (keywords.position.some(keyword => line.includes(keyword))) {
                         info.position = line;
-                        remainingLines.splice(i, 1);
+                        positionFound = true;
+                        // 직책이 포함된 줄 제거
+                        lines = lines.filter(l => l !== line);
                         break;
                     }
                 }
                 
-                // 8. 부서 추출 (키워드 기반)
-                for (let i = 0; i < remainingLines.length; i++) {
-                    const line = remainingLines[i];
+                // 직책을 찾지 못했다면 위치 기반 추정
+                if (!positionFound && lines.length > 0) {
+                    // 이름, 회사 다음에 오는 짧은 줄이 직책일 가능성
+                    const shortLines = lines.filter(line => line.length < 20);
+                    if (shortLines.length > 0) {
+                        info.position = shortLines[0];
+                        lines = lines.filter(l => l !== shortLines[0]);
+                    }
+                }
+                
+                // 8. 부서 추출
+                // 키워드 기반 부서 탐색
+                for (const line of lines) {
                     if (keywords.department.some(keyword => line.includes(keyword))) {
                         info.department = line;
-                        remainingLines.splice(i, 1);
+                        // 부서가 포함된 줄 제거
+                        lines = lines.filter(l => l !== line);
                         break;
                     }
                 }
                 
                 // 9. 주소 추출 (가장 긴 줄)
-                if (remainingLines.length > 0) {
-                    const longLines = remainingLines.filter(line => 
-                        line.length > 15 && !line.includes('@')
-                    );
-                    
-                    if (longLines.length > 0) {
-                        info.address = longLines.reduce((a, b) => a.length >= b.length ? a : b);
-                    }
+                const longLines = lines.filter(line => 
+                    line.length > 20 && 
+                    !line.includes('@') && 
+                    !line.includes('www.') && 
+                    !line.includes('http')
+                );
+                
+                if (longLines.length > 0) {
+                    // 가장 긴 줄을 주소로 설정
+                    info.address = longLines.reduce((a, b) => a.length >= b.length ? a : b);
+                    // 주소 제거
+                    lines = lines.filter(l => l !== info.address);
                 }
                 
-                return info;
+                // 10. 정보 정제
+                // 이름에서 호칭어 제거
+                if (info.name) {
+                    info.name = info.name.replace(/\s*(씨|님|先生|小姐|Mr\.|Ms\.|Mrs\.|Dr\.|Prof\.)\s*$/, '');
+                }
                 
+                // 회사명 정제
+                if (info.company) {
+                    // 불필요한 기호 제거
+                    info.company = info.company.replace(/^[\s\-•*]+|[\s\-•*]+$/g, '');
+                }
+                
+                // 직책 정제
+                if (info.position) {
+                    // 불필요한 기호 제거
+                    info.position = info.position.replace(/^[\s\-•*]+|[\s\-•*]+$/g, '');
+}
+                
+                return info;
             } catch (error) {
                 console.error('명함 정보 추출 오류:', error);
                 return extractBasicInfo(text, keywords);
@@ -1810,14 +2558,29 @@
             captureBtn.style.display = 'inline-block';
             retakeBtn.style.display = 'none';
             analyzeBtn.style.display = 'none';
+            advancedBtn.style.display = 'none';
             improveImageBtn.style.display = 'none';
             cardForm.style.display = 'none';
             video.style.display = 'block';
+            rotateButtons.style.display = 'none';
+            confidenceIndicator.style.display = 'none';
+            stepsIndicator.style.display = 'none';
+            preprocessingOptions.style.display = 'none';
+            previewContainer.style.display = 'none';
             
             analyzeBtn.disabled = false;
             improveImageBtn.disabled = false;
             improveImageBtn.textContent = '이미지 개선';
             statusMessage.style.display = 'none';
+            
+            // 원본 이미지 데이터 초기화
+            originalImageData = null;
+            
+            // 회전 각도 초기화
+            currentRotation = 0;
+            
+            // 처리 단계 초기화
+            updateProcessingStep('capture');
         }
         
         // 명함 삭제
@@ -1917,6 +2680,125 @@
                 console.error('Tesseract.js 로드 확인 오류:', error);
                 showStatus('OCR 엔진 로드에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
             }
+            
+            // 메모리 및 성능 최적화
+            setupPerformanceOptimization();
+        }
+        
+        // 성능 최적화 설정
+        function setupPerformanceOptimization() {
+            // 1. 비활성 탭에서 카메라 중지
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && video.srcObject) {
+                    // 페이지가 숨겨지면 카메라 중지
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                    
+                    // 사용자에게 알림
+                    showStatus('페이지가 백그라운드로 이동하여 카메라가 중지되었습니다. 다시 접근하려면 새로고침하세요.', 'info');
+                    accessCameraBtn.style.display = 'block';
+                    accessCameraBtn.textContent = '카메라 다시 접근';
+                }
+            });
+            
+            // 2. 대형 자원 해제
+            window.addEventListener('beforeunload', () => {
+                // 카메라 스트림 정리
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+                
+                // 캔버스 컨텍스트 해제
+                const context = canvas.getContext('2d');
+                if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 이미지 참조 제거
+                capturedImage.src = '';
+            });
+            
+            // 3. 디바운스 구현 (검색 필드)
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    renderCardList(e.target.value);
+                }, 300); // 300ms 지연
+            });
+        }
+        
+        // 고급 언어 모델 기반 명함 정보 추출
+        function aiEnhancedBusinessCardExtraction(ocrText, language) {
+            // 이 함수는 향후 AI 모델 연동을 위한 자리 표시자입니다
+            // 현재는 simpleBusinessCardExtraction 함수의 결과를 반환합니다
+            return enhancedBusinessCardExtraction(ocrText, languageMap[language].keywords, language);
+        }
+        
+        // 명함 OCR 신뢰도 개선을 위한 휴리스틱
+        function improveOCRConfidence(text) {
+            if (!text) return text;
+            
+            // 1. 이메일 주소 수정
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            let improvedText = text.replace(emailRegex, match => {
+                // 이메일에서 흔한 OCR 오류 수정
+                return match
+                    .replace(/[oO0]/g, m => m === '0' ? 'o' : (m === 'O' ? 'o' : '0')) // 0, o, O 혼동
+                    .replace(/[iI1l|]/g, m => m === '1' || m === '|' ? 'i' : (m === 'I' ? 'i' : m)) // i, I, 1, | 혼동
+                    .replace(/[sS5]/g, m => m === '5' ? 's' : (m === 'S' ? 's' : m)) // s, S, 5 혼동
+                    .replace(/[zZ2]/g, m => m === '2' ? 'z' : (m === 'Z' ? 'z' : m)) // z, Z, 2 혼동
+                    .replace(/[gq9]/g, m => m === '9' ? 'g' : (m === 'q' ? 'g' : m)); // g, q, 9 혼동
+            });
+            
+            // 2. 전화번호 수정
+            const phoneRegex = /(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?(\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4})/g;
+            improvedText = improvedText.replace(phoneRegex, match => {
+                // 전화번호에서 흔한 OCR 오류 수정
+                return match
+                    .replace(/[oO]/g, '0') // o, O를 0으로
+                    .replace(/[iIlL|]/g, '1') // i, I, l, L, |를 1로
+                    .replace(/[zZ]/g, '2') // z, Z를 2로
+                    .replace(/[bB]/g, '8') // b, B를 8로
+                    .replace(/[gq]/g, '9'); // g, q를 9로
+            });
+            
+            return improvedText;
+        }
+        
+        // 다국어 선택 시 자동 언어 감지
+        function detectLanguage(text) {
+            if (!text) return 'multi';
+            
+            // 간단한 언어 감지 로직
+            // 한글 감지
+            if (/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/.test(text)) {
+                return 'kor';
+            }
+            
+            // 일본어 감지
+            if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
+                return 'jpn';
+            }
+            
+            // 중국어 감지
+            if (/[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text) && !/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) {
+                return 'chi_sim';
+            }
+            
+            // 기본값은 영어
+            return 'eng';
+        }
+        
+        // OCR 결과에서 중요한 정보 마크업 준비 함수
+        function prepareOCRResultsMarkup(ocrResult, extractedInfo) {
+            // 이 함수는 사용자에게 OCR 결과를 시각적으로 표시하기 위한 준비를 합니다
+            // 미래 업데이트를 위한 자리 표시자 함수
+            return {
+                markedText: ocrResult.text,
+                highlightRanges: []
+            };
         }
     </script>
 </body>
