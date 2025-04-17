@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>명함 관리 앱</title>
+    <title>다국어 명함 관리 앱</title>
     <!-- Tesseract.js for OCR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
     <!-- 이미지 처리 라이브러리 -->
@@ -13,7 +13,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Noto Sans KR', sans-serif;
+            font-family: 'Noto Sans', 'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
         }
         
         body {
@@ -85,7 +85,7 @@
             font-weight: bold;
         }
         
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -232,6 +232,27 @@
             display: none;
         }
         
+        /* 언어 선택 */
+        .language-selector {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .language-btn {
+            margin: 0 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        
+        .language-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
         /* 모달 스타일 */
         .modal {
             display: none;
@@ -272,7 +293,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>명함 관리 앱</h1>
+            <h1>다국어 명함 관리 앱</h1>
         </header>
         
         <div class="tab-container">
@@ -281,14 +302,23 @@
         </div>
         
         <div id="cameraContent" class="content active">
+            <div class="language-selector">
+                <button class="language-btn active" data-lang="kor">한국어</button>
+                <button class="language-btn" data-lang="eng">영어</button>
+                <button class="language-btn" data-lang="jpn">일본어</button>
+                <button class="language-btn" data-lang="chi_sim">중국어</button>
+                <button class="language-btn" data-lang="multi">다국어</button>
+            </div>
+            
             <div class="camera-container">
-                <video id="video" autoplay playsinline></video>
+                <button id="accessCameraBtn" class="primary-button">카메라 접근 허용</button>
+                <video id="video" autoplay playsinline style="display: none;"></video>
                 <canvas id="canvas" style="display: none;"></canvas>
                 <img id="capturedImage" alt="촬영된 이미지">
             </div>
             
             <div class="button-group" style="text-align: center; margin-bottom: 20px;">
-                <button id="captureBtn">명함 촬영</button>
+                <button id="captureBtn" style="display: none;">명함 촬영</button>
                 <button id="retakeBtn" style="display: none;">다시 촬영</button>
                 <button id="analyzeBtn" style="display: none;">명함 분석</button>
                 <button id="improveImageBtn" style="display: none; background-color: #28a745;">이미지 개선</button>
@@ -430,6 +460,12 @@
         const editModal = document.getElementById('editModal');
         const closeModal = document.querySelector('.close-modal');
         const updateBtn = document.getElementById('updateBtn');
+        const accessCameraBtn = document.getElementById('accessCameraBtn');
+        const languageButtons = document.querySelectorAll('.language-btn');
+        const improveImageBtn = document.getElementById('improveImageBtn');
+        
+        // 언어 선택
+        let selectedLanguage = 'kor';
         
         // 탭 관련 변수
         const tabs = document.querySelectorAll('.tab');
@@ -440,6 +476,96 @@
         
         // 명함 데이터 변수
         let businessCards = [];
+        
+        // 언어별 인식 설정
+        const languageMap = {
+            'kor': { 
+                lang: 'kor',
+                label: '한국어',
+                keywords: {
+                    company: ['주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단'],
+                    position: ['대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트'],
+                    department: ['부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계']
+                }
+            },
+            'eng': { 
+                lang: 'eng',
+                label: '영어',
+                keywords: {
+                    company: ['Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College'],
+                    position: ['CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer'],
+                    department: ['Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service']
+                }
+            },
+            'jpn': { 
+                lang: 'jpn',
+                label: '일본어',
+                keywords: {
+                    company: ['株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団'],
+                    position: ['代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント'],
+                    department: ['部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理']
+                }
+            },
+            'chi_sim': { 
+                lang: 'chi_sim',
+                label: '중국어',
+                keywords: {
+                    company: ['有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'],
+                    position: ['总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'],
+                    department: ['部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计']
+                }
+            },
+            'multi': { 
+                lang: 'kor+eng+jpn+chi_sim',
+                label: '다국어',
+                keywords: {
+                    company: [
+                        // 한국어
+                        '주식회사', '(주)', '㈜', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단',
+                        // 영어
+                        'Inc.', 'LLC', 'Corp', 'Corporation', 'Company', 'Co.', 'Ltd', 'Limited', 'Group', 'Institute', 'University', 'College',
+                        // 일본어
+                        '株式会社', '(株)', '有限会社', '団体', 'グループ', '研究所', '学校', '大学', '財団',
+                        // 중국어
+                        '有限公司', '股份公司', '公司', '集团', '研究所', '学校', '大学', '基金会'
+                    ],
+                    position: [
+                        // 한국어
+                        '대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트',
+                        // 영어
+                        'CEO', 'CTO', 'CFO', 'COO', 'President', 'Director', 'Manager', 'Executive', 'Associate', 'Assistant', 'Specialist', 'Engineer', 'Consultant', 'Analyst', 'Officer',
+                        // 일본어
+                        '代表', '社長', '取締役', '部長', '課長', '係長', '主任', '社員', '研究員', 'マネージャー', 'コンサルタント',
+                        // 중국어
+                        '总裁', '董事长', '总经理', '经理', '主管', '主任', '职员', '研究员', '顾问'
+                    ],
+                    department: [
+                        // 한국어
+                        '부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계',
+                        // 영어
+                        'Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service',
+                        // 일본어
+                        '部', '課', 'チーム', '本部', 'センター', '研究所', '事業部', '営業', 'マーケティング', '開発', '企画', '人事', '総務', '財務', '経理',
+                        // 중국어
+                        '部', '组', '科', '处', '中心', '研究所', '事业部', '销售', '市场', '开发', '策划', '人事', '行政', '财务', '会计'
+                    ]
+                }
+            }
+        };
+        
+        // 언어 선택 이벤트
+        languageButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 이전 활성화된 버튼 비활성화
+                document.querySelector('.language-btn.active').classList.remove('active');
+                
+                // 현재 버튼 활성화
+                btn.classList.add('active');
+                
+                // 선택된 언어 설정
+                selectedLanguage = btn.getAttribute('data-lang');
+            });
+        });
         
         // 탭 전환 이벤트
         tabs.forEach(tab => {
@@ -464,32 +590,56 @@
             });
         });
         
-        // 카메라 초기화
-        async function initCamera() {
+        // 카메라 접근 버튼 클릭 이벤트
+        accessCameraBtn.addEventListener('click', async () => {
             try {
+                // 카메라 스트림 가져오기 전에 이전 스트림 정리
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                
+                // 카메라 접근 요청
                 const constraints = {
+                    audio: false,
                     video: {
-                        facingMode: 'environment',
+                        facingMode: { ideal: 'environment' },
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
                 };
                 
+                console.log('카메라 접근 요청 중...');
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
+                console.log('카메라 접근 성공!', stream);
                 
-                return true;
+                video.srcObject = stream;
+                video.style.display = 'block';
+                captureBtn.style.display = 'inline-block';
+                accessCameraBtn.style.display = 'none';
+                
             } catch (error) {
                 console.error('카메라 접근 오류:', error);
-                alert('카메라에 접근할 수 없습니다. 카메라 권한을 허용해주세요.');
-                return false;
+                alert(`카메라 접근 오류: ${error.name} - ${error.message}`);
             }
-        }
+        });
         
-        // 페이지 로드 시 카메라 초기화 및 저장된 명함 불러오기
+        // 페이지 로드 시 저장된 명함 불러오기
         document.addEventListener('DOMContentLoaded', () => {
-            initCamera();
+            // 카메라 접근 버튼 초기 표시
+            accessCameraBtn.style.display = 'block';
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            
+            // 저장된 명함 불러오기
             loadBusinessCards();
+            
+            // MediaDevices API 지원 확인
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('이 브라우저는 카메라 접근을 지원하지 않습니다. 최신 Chrome, Safari 또는 Firefox를 사용해주세요.');
+                accessCameraBtn.disabled = true;
+                accessCameraBtn.textContent = '카메라 지원되지 않음';
+            }
         });
         
         // 명함 데이터 로컬 스토리지에서 불러오기
@@ -614,8 +764,6 @@
         });
         
         // 이미지 개선 버튼
-        const improveImageBtn = document.getElementById('improveImageBtn');
-        
         improveImageBtn.addEventListener('click', async () => {
             try {
                 improveImageBtn.disabled = true;
@@ -656,7 +804,16 @@
                             this.contrast(15);        // 대비 증가
                             this.sharpen(20);         // 선명도 증가
                             this.clarity(5);          // 선명도 추가 개선
-                            this.greyscale();         // 흑백 변환 (OCR에 더 효과적)
+                            
+                            // 선택된 언어에 따라 다른 처리
+                            if (selectedLanguage.includes('chi_sim') || selectedLanguage.includes('jpn')) {
+                                // 동아시아 언어는 그레이스케일보다 컬러가 더 나을 수 있음
+                                this.vibrance(20);    // 선명도 증가
+                                this.saturation(-10); // 채도 약간 감소
+                            } else {
+                                this.greyscale();     // 흑백 변환 (OCR에 더 효과적일 수 있음)
+                            }
+                            
                             this.render(function() {
                                 resolve(canvas.toDataURL('image/png'));
                             });
@@ -744,6 +901,9 @@
                 // OCR 처리 시작
                 processingMessage.textContent = '텍스트 인식 중...';
                 
+                // 언어 설정 가져오기
+                const langConfig = languageMap[selectedLanguage];
+                
                 // Tesseract OCR 설정 - 최적화된 설정
                 const worker = Tesseract.createWorker({
                     logger: progress => {
@@ -755,12 +915,12 @@
                 });
                 
                 await worker.load();
-                await worker.loadLanguage('kor+eng');
-                await worker.initialize('kor+eng');
+                await worker.loadLanguage(langConfig.lang);
+                await worker.initialize(langConfig.lang);
                 
-                // 고급 OCR 설정
-                await worker.setParameters({
-                    tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:,;@-_+/()&%# 가-힣', // 허용 문자
+                // 언어별 OCR 설정 최적화
+                let ocrSettings = {
+                    tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:,;@-_+/()&%# ', // 기본 허용 문자
                     tessjs_create_hocr: '0',
                     tessjs_create_tsv: '0',
                     tessjs_create_box: '0',
@@ -769,7 +929,21 @@
                     preserve_interword_spaces: '1', // 단어 간 간격 유지
                     tessedit_pageseg_mode: '1', // 자동 페이지 세분화
                     tessedit_ocr_engine_mode: '2' // 신경망 LSTM만 사용
-                });
+                };
+                
+                // 언어별 화이트리스트 문자 추가
+                if (selectedLanguage === 'kor' || selectedLanguage === 'multi') {
+                    ocrSettings.tessedit_char_whitelist += '가-힣';
+                }
+                if (selectedLanguage === 'jpn' || selectedLanguage === 'multi') {
+                    ocrSettings.tessedit_char_whitelist += 'ぁ-んァ-ン一-龯';
+                }
+                if (selectedLanguage === 'chi_sim' || selectedLanguage === 'multi') {
+                    ocrSettings.tessedit_char_whitelist += '\u4e00-\u9fff'; // 중국어 간체
+                }
+                
+                // OCR 설정 적용
+                await worker.setParameters(ocrSettings);
                 
                 // 이미지 인식 - 전처리된 이미지 사용
                 const result = await worker.recognize(preprocessedImage);
@@ -781,7 +955,7 @@
                 
                 // 고급 정보 추출 로직 사용
                 processingMessage.textContent = '정보 추출 중...';
-                const extractedInfo = extractBusinessCardInfo(text);
+                const extractedInfo = extractBusinessCardInfo(text, langConfig.keywords);
                 
                 // 추출된 정보를 폼에 채우기
                 document.getElementById('name').value = extractedInfo.name || '';
@@ -812,8 +986,8 @@
             }
         });
         
-        // 고급 명함 정보 추출 함수
-        function extractBusinessCardInfo(text) {
+        // 다국어 명함 정보 추출 함수
+        function extractBusinessCardInfo(text, keywords) {
             // 줄 단위로 분할하고 공백 줄 제거
             const lines = text.split('\n')
                 .map(line => line.trim())
@@ -845,16 +1019,14 @@
             }
             
             // 2. 전화번호 추출 (다양한 형식 지원)
-            // 한국 전화번호 다양한 형식 지원: 휴대폰, 사무실 전화 등
+            // 다국어 전화번호 패턴 - 국가별 패턴 통합
             const phonePatterns = [
-                // 휴대폰 번호
-                /(?:휴대폰|핸드폰|Mobile|HP|H\.P|M|전화|TEL|Tel|T)?\s*[.:)]?\s*(?:\+82[\s-]*)?0?1[0|1|6|7|8|9][\s-]*\d{3,4}[\s-]*\d{4}/g,
-                // 일반 전화번호
-                /(?:전화|사무실|Tel|TEL|T|P|Ph)?\s*[.:)]?\s*(?:\+82[\s-]*)?0?[2-6][0-9][\s-]*\d{3,4}[\s-]*\d{4}/g,
-                // 팩스번호
-                /(?:팩스|FAX|Fax)?\s*[.:)]?\s*(?:\+82[\s-]*)?0?[2-6][0-9][\s-]*\d{3,4}[\s-]*\d{4}/g,
-                // 기타 형식
-                /\d{2,3}[\s-]*\d{3,4}[\s-]*\d{4}/g
+                // 국제 형식 (여러 나라)
+                /(?:Tel|전화|T|P|Ph|휴대폰|携帯|手机|电话|TEL|Tel|T)?\s*[.:)]?\s*(?:\+\d{1,3}[\s-]*)?(?:\(\d{1,4}\)[\s-]*)?\d{1,4}[\s-]*\d{1,4}[\s-]*\d{1,4}/g,
+                // 기본 숫자 패턴 (대부분의 경우)
+                /\d{2,4}[\s-]*\d{2,4}[\s-]*\d{2,8}/g,
+                // 특수기호 포함 (괄호 등)
+                /\(\d{2,4}\)[\s-]*\d{2,4}[\s-]*\d{2,4}/g
             ];
             
             // 모든 패턴에 대해 검색
@@ -863,28 +1035,10 @@
                 const phoneMatches = text.match(regex);
                 if (phoneMatches && phoneMatches.length > 0) {
                     // 전화번호에서 불필요한 문자 제거
-                    let phone = phoneMatches[0].replace(/(?:휴대폰|핸드폰|Mobile|HP|H\.P|M|전화|TEL|Tel|T|P|Ph|팩스|FAX|Fax)[.:)]?\s*/gi, '');
+                    let phone = phoneMatches[0].replace(/(?:Tel|전화|T|P|Ph|휴대폰|携帯|手机|电话|TEL|Tel|T)[.:)]?\s*/gi, '');
                     
-                    // 전화번호 형식 정리 (01012345678 → 010-1234-5678)
-                    phone = phone.replace(/[^\d]/g, '');
-                    if (phone.length === 10 || phone.length === 11) {
-                        // 적절한 형식으로 포맷팅
-                        if (phone.startsWith('01')) { // 휴대폰
-                            if (phone.length === 10) { // 01X-XXX-XXXX
-                                phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-                            } else { // 01X-XXXX-XXXX
-                                phone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-                            }
-                        } else { // 일반 전화
-                            if (phone.length === 10) { // 0X-XXXX-XXXX
-                                phone = phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
-                            } else { // 0XX-XXX-XXXX
-                                phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-                            }
-                        }
-                    }
-                    
-                    info.phone = phone;
+                    // 전화번호 형식 정리 - 기본 디지털 형식 유지
+                    info.phone = phone.replace(/\s+/g, '-');
                     phoneFound = true;
                     
                     // 전화번호가 포함된 줄 찾아서 제외
@@ -897,61 +1051,29 @@
                 }
             }
             
-            // 3. 회사 및 직함 추출 (주로 패턴과 위치 기반)
-            // 회사명 및 직함에 자주 사용되는 단어들
-            const companyKeywords = ['주식회사', '(주)', '㈜', 'Inc.', 'LLC', 'Corp', '컴퍼니', '기업', '그룹', '연구소', '학교', '대학교', '유한회사', '재단'];
-            const positionKeywords = ['대표', '사장', '이사', '부장', '차장', '과장', '대리', '사원', '연구원', '책임', '선임', '수석', '팀장', '매니저', '컨설턴트', 'CEO', 'CTO', 'CFO', 'Director', 'Manager'];
-            const departmentKeywords = ['부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계', 'R&D', 'HR'];
-            
-            // 이름 및 직함, 회사, 부서 추출 (위치와 키워드 기반)
-            // 한국 명함의 일반적인 패턴:
-            // 1-3번째 줄: 회사명
-            // 1-4번째 줄: 이름 (짧은 길이의 줄, 주로 2-4글자)
-            // 이름 주변: 직함
+            // 3. 회사 및 직함 추출 (키워드 기반)
+            const companyKeywords = keywords.company;
+            const positionKeywords = keywords.position;
+            const departmentKeywords = keywords.department;
             
             // 회사명 - 키워드 기반 탐색
             for (let i = 0; i < Math.min(lines.length, 5); i++) {
                 const line = lines[i];
-                if (companyKeywords.some(keyword => line.includes(keyword)) || 
-                    // 회사명에 자주 사용되는 패턴 (영문 대문자 다수 등)
-                    /[A-Z]{2,}/.test(line) ||
-                    line.length > 6 && !/[가-힣]{1,2}/.test(line)) {
+                if (companyKeywords.some(keyword => line.includes(keyword))) {
                     info.company = line;
                     lines.splice(i, 1);
                     break;
                 }
             }
             
-            // 회사명을 찾지 못했다면, 첫 번째 또는 두 번째 줄을 회사명으로 간주
+            // 회사명이 없으면 첫 줄을 회사명으로 가정할 수 있음
             if (!info.company && lines.length > 0) {
-                // 첫 번째 줄이 이름으로 의심되는 경우 (2-4글자) 두 번째 줄 사용
-                if (lines[0].length >= 2 && lines[0].length <= 4 && lines.length > 1) {
-                    info.company = lines[1];
-                    lines.splice(1, 1);
-                } else {
-                    info.company = lines[0];
+                // 일반적으로 첫 번째 줄은 회사명일 가능성이 높음
+                const possibleCompany = lines[0];
+                // 첫 줄이 너무 짧지 않으면 (이름일 가능성이 낮으면) 회사명으로 사용
+                if (possibleCompany.length > 4) {
+                    info.company = possibleCompany;
                     lines.splice(0, 1);
-                }
-            }
-            
-            // 이름 - 일반적으로 짧은 길이(2-4글자)의 줄
-            for (let i = 0; i < Math.min(lines.length, 3); i++) {
-                const line = lines[i];
-                const nameCandidate = line.replace(/\s+/g, '');
-                if (nameCandidate.length >= 2 && nameCandidate.length <= 4 && /^[가-힣]+$/.test(nameCandidate)) {
-                    info.name = nameCandidate;
-                    lines.splice(i, 1);
-                    break;
-                }
-            }
-            
-            // 이름을 찾지 못했다면, 남은 줄 중 가장 짧은 줄을 이름으로 간주
-            if (!info.name && lines.length > 0) {
-                const shortestLine = lines.reduce((a, b) => a.length <= b.length ? a : b);
-                const nameCandidate = shortestLine.replace(/\s+/g, '');
-                if (nameCandidate.length <= 10) { // 10글자 이하로 제한
-                    info.name = nameCandidate;
-                    lines.splice(lines.indexOf(shortestLine), 1);
                 }
             }
             
@@ -975,64 +1097,83 @@
                 }
             }
             
-            // 4. 주소 추출 (주소는 보통 길고 숫자와 문자가 혼합되어 있음)
-            const addressKeywords = ['동', '로', '길', '번지', '호', '층', '빌딩', '빌딩', '아파트', '사무실', '오피스', '센터', '시', '구', '읍', '면'];
+            // 이름 찾기 - 다국어 고려
+            // 일반적으로 명함에서 이름은 짧은 텍스트로 되어 있음
+            const nameLineIndex = lines.findIndex(line => {
+                const trimmed = line.replace(/\s+/g, '');
+                // 한국어, 일본어, 중국어 이름은 보통 2-4글자
+                if (/^[가-힣]{2,4}$/.test(trimmed) || /^[ぁ-んァ-ン一-龯]{2,4}$/.test(trimmed) || /^[\u4e00-\u9fff]{2,4}$/.test(trimmed)) {
+                    return true;
+                }
+                // 영어 이름은 보통 공백으로 구분된 2개의 단어
+                if (/^[a-zA-Z]+\s+[a-zA-Z]+$/.test(line) && line.length < 30) {
+                    return true;
+                }
+                return false;
+            });
             
+            if (nameLineIndex >= 0) {
+                info.name = lines[nameLineIndex];
+                lines.splice(nameLineIndex, 1);
+            } else if (lines.length > 0) {
+                // 이름을 찾지 못한 경우, 가장 짧은 줄을 이름으로 추정
+                const shortestLine = lines.reduce((a, b) => a.length <= b.length ? a : b);
+                if (shortestLine.length < 30) {
+                    info.name = shortestLine;
+                    lines.splice(lines.indexOf(shortestLine), 1);
+                }
+            }
+            
+            // 주소 추출 - 다국어를 고려한 다양한 주소 패턴 탐색
+            // 주소는 일반적으로 긴 문자열이고 숫자나 특정 패턴을 포함함
+            const globalAddressPatterns = [
+                // 한국어 주소 패턴
+                /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[\s,].*(?:로|길|동|구|시|군|읍|면|번지|층|호)/,
+                // 영어 주소 패턴
+                /\d+\s+[A-Za-z\s,]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Way|Court|Ct|Plaza|Square|Sq|Highway|Hwy|Freeway|Fwy)/i,
+                // 일본어 주소 패턴
+                /(?:東京都|大阪府|京都府|北海道|[一-龯]{1,3}県)[\s,].*(市|区|町|村|丁目|番地)/,
+                // 중국어 주소 패턴
+                /(?:北京市|上海市|天津市|重庆市|[一-龯]{1,3}省)[\s,].*(市|区|县|路|街|号)/
+            ];
+            
+            // 주소 패턴 검색
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i];
-                
-                // 주소로 의심되는 줄 찾기 (길이가 길고 주소 키워드가 포함된 줄)
-                if (line.length > 10 && 
-                    addressKeywords.some(keyword => line.includes(keyword)) &&
-                    /\d/.test(line) && // 숫자 포함
-                    !line.includes('@')) { // 이메일 주소는 제외
+                // 지역적 특성을 고려한 주소 탐색
+                if (globalAddressPatterns.some(pattern => pattern.test(line)) || 
+                    // 일반적인 주소의 특성 (길고 숫자 포함)
+                    (line.length > 15 && /\d/.test(line) && !line.includes('@'))) {
                     info.address = line;
                     lines.splice(i, 1);
                     break;
                 }
             }
             
-            // 주소를 찾지 못했다면, 가장 긴 줄을 주소로 간주
+            // 주소를 찾지 못한 경우, 가장 긴 줄을 주소로 추정
             if (!info.address && lines.length > 0) {
                 const longestLine = lines.reduce((a, b) => a.length >= b.length ? a : b);
-                if (longestLine.length > 10) { // 10글자 이상 제한
+                if (longestLine.length > 15) {
                     info.address = longestLine;
                     lines.splice(lines.indexOf(longestLine), 1);
                 }
             }
             
-            // 5. 아직 할당되지 않은 정보 처리
-            // 직함이 누락된 경우
+            // 아직 할당되지 않은 정보 처리
+            // 직함이 없으면 남은 짧은 줄을 직함으로 간주
             if (!info.position && lines.length > 0) {
-                // 직함은 일반적으로 짧은 줄
-                const shortLines = lines.filter(line => line.length < 15);
+                const shortLines = lines.filter(line => line.length < 20);
                 if (shortLines.length > 0) {
                     info.position = shortLines[0];
                     lines.splice(lines.indexOf(shortLines[0]), 1);
                 }
             }
             
-            // 부서가 누락된 경우
+            // 부서가 없으면 남은 줄 중에서 적절한 것을 부서로 간주
             if (!info.department && lines.length > 0) {
-                // 직함 다음으로 짧은 줄을 부서로 간주
-                const shortLines = lines.filter(line => line.length < 20);
-                if (shortLines.length > 0) {
-                    info.department = shortLines[0];
-                    lines.splice(lines.indexOf(shortLines[0]), 1);
-                }
-            }
-            
-            // 특수 케이스 처리
-            // 이름+직함이 한 줄에 있는 경우 (예: "홍길동 대표이사")
-            if (info.name && !info.position) {
-                const nameParts = info.name.split(/\s+/);
-                if (nameParts.length > 1) {
-                    // 첫 부분을 이름으로, 나머지를 직함으로 간주
-                    const possibleName = nameParts[0];
-                    if (possibleName.length >= 2 && possibleName.length <= 4) {
-                        info.name = possibleName;
-                        info.position = nameParts.slice(1).join(' ');
-                    }
+                const mediumLines = lines.filter(line => line.length < 30 && line.length > 2);
+                if (mediumLines.length > 0) {
+                    info.department = mediumLines[0];
                 }
             }
             
@@ -1161,5 +1302,5 @@
             }
         });
     </script>
-</head>
+</body>
 </html>
