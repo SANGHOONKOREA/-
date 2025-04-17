@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다국어 명함 관리 앱</title>
-    <!-- Tesseract.js for OCR - 안정적인 버전 사용 -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+    <title>Tesseract OCR 기반 다국어 명함 관리 앱</title>
+    <!-- Tesseract.js for OCR - 최신 안정화 버전 사용 -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+    <!-- OpenCV.js for image preprocessing -->
+    <script src="https://docs.opencv.org/4.7.0/opencv.js" type="text/javascript"></script>
+    <!-- TensorFlow.js for AI-based text analysis -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0"></script>
     <style>
         * {
             margin: 0;
@@ -35,6 +39,11 @@
             font-size: 1.5rem;
             color: #333;
             margin-bottom: 5px;
+        }
+        
+        header p {
+            color: #007bff;
+            font-size: 0.9rem;
         }
         
         .tab-container {
@@ -135,6 +144,7 @@
             margin-bottom: 15px;
             border-radius: 10px;
             overflow: hidden;
+            position: relative;
         }
         
         .progress-bar-fill {
@@ -142,6 +152,27 @@
             background-color: #007bff;
             width: 0%;
             transition: width 0.3s;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .progress-bar-pulse {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                transparent 40%, 
+                rgba(255, 255, 255, 0.5) 50%, 
+                transparent 60%, 
+                transparent 100%);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
         
         .card-list {
@@ -377,6 +408,8 @@
             margin-bottom: 15px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .step {
@@ -450,17 +483,195 @@
             margin: 0 5px;
             font-size: 14px;
         }
+        
+        /* 원시 OCR 결과 */
+        .raw-ocr-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        
+        /* 명함 이미지 업로드 */
+        .upload-container {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .upload-btn {
+            padding: 8px 16px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .upload-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        /* OpenCV 로딩 상태 */
+        #opencvStatus {
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        
+        /* Tesseract 다운로드 상태 */
+        #tesseractStatus {
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        
+        /* AI 모델 상태 */
+        #aiModelStatus {
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        
+        /* 고급 모드 스위치 */
+        .advanced-switch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin: 0 10px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* 로딩 스피너 */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* AI 분석 결과 */
+        .ai-results {
+            background-color: #f0f7ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #b8daff;
+            display: none;
+        }
+        
+        .ai-results h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #0056b3;
+        }
+        
+        .ai-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .ai-category {
+            font-weight: bold;
+            flex: 1;
+        }
+        
+        .ai-text {
+            flex: 2;
+        }
+        
+        .ai-confidence {
+            flex: 0 0 60px;
+            text-align: right;
+            color: #6c757d;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>다국어 명함 관리 앱</h1>
+            <h1>Tesseract OCR 기반 다국어 명함 관리 앱</h1>
+            <p>고급 이미지 처리 및 AI 분석 기술 활용</p>
         </header>
+        
+        <div id="opencvStatus">OpenCV.js 로딩 중...</div>
+        <div id="tesseractStatus">Tesseract 엔진 초기화 중...</div>
+        <div id="aiModelStatus">AI 모델 준비 중...</div>
         
         <div class="tab-container">
             <div class="tab active" data-tab="camera">명함 추가</div>
             <div class="tab" data-tab="dashboard">대시보드</div>
+            <div class="tab" data-tab="settings">설정</div>
         </div>
         
         <div id="cameraContent" class="content active">
@@ -472,11 +683,25 @@
                 <button class="language-btn" data-lang="multi">다국어</button>
             </div>
             
+            <div class="advanced-switch">
+                <span>일반 모드</span>
+                <label class="switch">
+                    <input type="checkbox" id="advancedModeToggle">
+                    <span class="slider"></span>
+                </label>
+                <span>고급 모드</span>
+            </div>
+            
             <div class="camera-container">
                 <button id="accessCameraBtn" class="primary-button">카메라 접근 허용</button>
                 <video id="video" autoplay playsinline style="display: none;"></video>
                 <canvas id="canvas" style="display: none;"></canvas>
                 <img id="capturedImage" alt="촬영된 이미지">
+                
+                <div class="upload-container">
+                    <input type="file" id="fileInput" accept="image/*">
+                    <button id="uploadBtn" class="upload-btn">또는 이미지 업로드</button>
+                </div>
                 
                 <!-- 이미지 회전 버튼 추가 -->
                 <div class="rotate-buttons" style="display: none;" id="rotateButtons">
@@ -493,6 +718,12 @@
                 <button id="improveImageBtn" style="display: none; background-color: #28a745;">이미지 개선</button>
             </div>
             
+            <!-- AI 분석 결과 -->
+            <div class="ai-results" id="aiResults">
+                <h3>AI 분석 결과</h3>
+                <div id="aiResultsList"></div>
+            </div>
+            
             <!-- 고급 전처리 옵션 -->
             <div class="preprocessing-options" id="preprocessingOptions">
                 <h3>이미지 처리 옵션</h3>
@@ -500,6 +731,10 @@
                     <div class="option-item">
                         <input type="checkbox" id="optGrayscale" checked>
                         <label for="optGrayscale">그레이스케일</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optAdaptiveThreshold">
+                        <label for="optAdaptiveThreshold">적응형 이진화</label>
                     </div>
                     <div class="option-item">
                         <input type="checkbox" id="optContrast" checked>
@@ -515,11 +750,15 @@
                     </div>
                     <div class="option-item">
                         <input type="checkbox" id="optThreshold">
-                        <label for="optThreshold">이진화</label>
+                        <label for="optThreshold">일반 이진화</label>
                     </div>
                     <div class="option-item">
                         <input type="checkbox" id="optEdgeEnhance">
                         <label for="optEdgeEnhance">윤곽선 강화</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="checkbox" id="optDeskew">
+                        <label for="optDeskew">기울기 보정</label>
                     </div>
                 </div>
                 <div style="margin-top: 10px;">
@@ -541,6 +780,7 @@
             
             <div class="progress-bar" id="progressBar" style="display: none;">
                 <div class="progress-bar-fill" id="progressBarFill"></div>
+                <div class="progress-bar-pulse" id="progressBarPulse" style="display: none;"></div>
             </div>
             
             <!-- 신뢰도 표시 -->
@@ -550,6 +790,9 @@
                 </div>
                 <div class="confidence-text" id="confidenceText">0%</div>
             </div>
+            
+            <!-- 원시 OCR 결과 표시 -->
+            <div class="raw-ocr-container" id="rawOcrResult" style="display: none;"></div>
             
             <!-- 미리보기 컨테이너 -->
             <div class="preview-container" id="previewContainer" style="display: none;">
@@ -593,6 +836,11 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="website">웹사이트</label>
+                    <input type="url" id="website" placeholder="웹사이트를 입력하세요">
+                </div>
+                
+                <div class="form-group">
                     <label for="notes">메모</label>
                     <textarea id="notes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
                 </div>
@@ -613,6 +861,82 @@
             <div id="emptyState" class="empty-state">
                 <p>등록된 명함이 없습니다.</p>
                 <p>카메라 탭에서 새 명함을 추가해보세요.</p>
+            </div>
+        </div>
+        
+        <div id="settingsContent" class="content">
+            <div class="card-form">
+                <h2>OCR 설정</h2>
+                
+                <div class="form-group">
+                    <label for="tesseractParams">Tesseract 고급 매개변수</label>
+                    <textarea id="tesseractParams" placeholder="형식: 매개변수_이름=값 (한 줄에 하나씩)">tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-@+():;/'\" 
+preserve_interword_spaces=1
+tessedit_pageseg_mode=4
+textord_tabfind_force_vertical_text=0
+textord_tablefind_recognize_tables=0</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="imageQuality">이미지 품질 (업로드 및 캡처)</label>
+                    <select id="imageQuality">
+                        <option value="0.6">낮음 (빠른 처리)</option>
+                        <option value="0.8" selected>중간 (권장)</option>
+                        <option value="0.95">높음 (느린 처리)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="showRawOcr">
+                        OCR 원본 결과 표시
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="autoPreprocess" checked>
+                        자동 이미지 개선 적용
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="useAI" checked>
+                        AI 분석 사용 (더 정확한 명함 정보 인식)
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="psm">PSM (Page Segmentation Mode)</label>
+                    <select id="psm">
+                        <option value="3">3 - 자동 페이지 분할 (기본값)</option>
+                        <option value="4" selected>4 - 가변 크기 텍스트 단일 칼럼 가정</option>
+                        <option value="6">6 - 단일 텍스트 블록 가정</option>
+                        <option value="11">11 - 텍스트 회전 없이 희소 텍스트</option>
+                        <option value="12">12 - 밀집된 텍스트 + OSD</option>
+                    </select>
+                </div>
+                
+                <button id="saveSettingsBtn">설정 저장</button>
+                <button id="resetSettingsBtn" style="background-color: #6c757d;">기본값으로 재설정</button>
+            </div>
+            
+            <div class="card-form" style="margin-top: 20px;">
+                <h2>데이터 관리</h2>
+                
+                <div class="form-group">
+                    <label>내보내기/가져오기</label>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="exportDataBtn">명함 데이터 내보내기</button>
+                        <button id="importDataBtn">명함 데이터 가져오기</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>데이터 초기화</label>
+                    <button id="clearDataBtn" style="background-color: #dc3545; margin-top: 10px;">모든 명함 데이터 삭제</button>
+                </div>
             </div>
         </div>
     </div>
@@ -659,11 +983,32 @@
             </div>
             
             <div class="form-group">
+                <label for="editWebsite">웹사이트</label>
+                <input type="url" id="editWebsite" placeholder="웹사이트를 입력하세요">
+            </div>
+            
+            <div class="form-group">
                 <label for="editNotes">메모</label>
                 <textarea id="editNotes" placeholder="이 사람에 대한 메모를 입력하세요"></textarea>
             </div>
             
             <button id="updateBtn">수정 완료</button>
+        </div>
+    </div>
+    
+    <!-- 데이터 가져오기 모달 -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal import-close">&times;</span>
+            <h2>명함 데이터 가져오기</h2>
+            
+            <div class="form-group">
+                <label for="importData">JSON 데이터</label>
+                <textarea id="importData" placeholder="내보낸 JSON 데이터를 여기에 붙여넣으세요" rows="10"></textarea>
+            </div>
+            
+            <button id="confirmImportBtn">가져오기</button>
+            <button class="import-close" style="background-color: #6c757d;">취소</button>
         </div>
     </div>
     
@@ -680,6 +1025,7 @@
         const statusMessage = document.getElementById('statusMessage');
         const progressBar = document.getElementById('progressBar');
         const progressBarFill = document.getElementById('progressBarFill');
+        const progressBarPulse = document.getElementById('progressBarPulse');
         const cardList = document.getElementById('cardList');
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
@@ -701,9 +1047,52 @@
         const rotateButtons = document.getElementById('rotateButtons');
         const rotateLeftBtn = document.getElementById('rotateLeftBtn');
         const rotateRightBtn = document.getElementById('rotateRightBtn');
+        const rawOcrResult = document.getElementById('rawOcrResult');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const tesseractParams = document.getElementById('tesseractParams');
+        const imageQuality = document.getElementById('imageQuality');
+        const showRawOcr = document.getElementById('showRawOcr');
+        const autoPreprocess = document.getElementById('autoPreprocess');
+        const useAI = document.getElementById('useAI');
+        const psm = document.getElementById('psm');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const importModal = document.getElementById('importModal');
+        const importData = document.getElementById('importData');
+        const confirmImportBtn = document.getElementById('confirmImportBtn');
+        const importClose = document.querySelectorAll('.import-close');
+        const opencvStatus = document.getElementById('opencvStatus');
+        const tesseractStatus = document.getElementById('tesseractStatus');
+        const aiModelStatus = document.getElementById('aiModelStatus');
+        const advancedModeToggle = document.getElementById('advancedModeToggle');
+        const aiResults = document.getElementById('aiResults');
+        const aiResultsList = document.getElementById('aiResultsList');
         
         // 언어 선택
         let selectedLanguage = 'kor';
+        
+        // 설정 객체
+        let appSettings = {
+            tesseractParams: "tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-@+():;/'\" \npreserve_interword_spaces=1\ntessedit_pageseg_mode=4\ntextord_tabfind_force_vertical_text=0\ntextord_tablefind_recognize_tables=0",
+            imageQuality: "0.8",
+            showRawOcr: false,
+            autoPreprocess: true,
+            useAI: true,
+            psm: "4"
+        };
+        
+        // 전역 변수
+        let tesseractWorker = null;
+        let useModel = null;
+        let isOpencvReady = false;
+        let isTesseractReady = false;
+        let isAiModelReady = false;
+        let isModelLoading = false;
+        let isAdvancedMode = false;
         
         // 탭 관련 변수
         const tabs = document.querySelectorAll('.tab');
@@ -726,6 +1115,227 @@
         
         // 명함 데이터 변수
         let businessCards = [];
+        
+        // OpenCV 모듈 로드 체크
+        function onOpenCvReady() {
+            isOpencvReady = true;
+            opencvStatus.textContent = "OpenCV.js 로드 완료";
+            opencvStatus.style.color = "#155724";
+            checkAllModulesReady();
+        }
+        
+        // OpenCV 모듈 초기화
+        window.onOpenCvReady = onOpenCvReady;
+        
+        // 모델 로딩 함수
+// 모델 로딩 함수
+// 모델 로딩 함수
+async function loadUSEModel() {
+    if (useModel) return useModel;
+    if (isModelLoading) return null;
+    
+    isModelLoading = true;
+    try {
+        aiModelStatus.innerHTML = '<div class="spinner"></div> AI 분석 모델 로딩 중...';
+        
+        // TensorFlow.js와 모델을 직접 동적으로 로드
+        try {
+            // 모델을 동적으로 가져오기
+            useModel = await tf.loadGraphModel('https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1', { fromTFHub: true });
+            
+            isAiModelReady = true;
+            aiModelStatus.textContent = "AI 모델 준비 완료";
+            aiModelStatus.style.color = "#155724";
+            
+            checkAllModulesReady();
+            return useModel;
+        } catch (loadError) {
+            console.error('모델 로드 오류:', loadError);
+            throw loadError;
+        }
+    } catch (error) {
+        console.error('AI 모델 로딩 오류:', error);
+        aiModelStatus.textContent = "AI 모델 로드 실패 - 일반 분석을 사용합니다";
+        aiModelStatus.style.color = "#721c24";
+        
+        // AI 기능 비활성화
+        appSettings.useAI = false;
+        localStorage.setItem('appSettings', JSON.stringify(appSettings));
+        
+        return null;
+    } finally {
+        isModelLoading = false;
+    }
+}
+        
+        // 텍스트 유사도 비교 함수
+async function findMostSimilarCategory(text, categories) {
+    try {
+        const model = await loadUSEModel();
+        if (!model) return null;
+        
+        // AI 모델 없이 간단한 규칙 기반 분석으로 대체
+        // 각 카테고리 키워드에 대한 일치 점수 계산
+        const scores = {};
+        const lowerText = text.toLowerCase();
+        
+        Object.keys(categories).forEach(category => {
+            const examples = categories[category].toLowerCase().split(' ');
+            let score = 0;
+            
+            // 단어 일치 검색
+            examples.forEach(example => {
+                if (lowerText.includes(example)) {
+                    score += example.length; // 긴 단어에 더 높은 점수
+                }
+            });
+            
+            // 특정 패턴 검사 (이메일, 전화번호 등)
+            if (category === "이메일" && /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g.test(text)) {
+                score += 100;
+            } else if (category === "전화번호" && /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g.test(text)) {
+                score += 100;
+            } else if (category === "웹사이트" && /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g.test(text)) {
+                score += 100;
+            }
+            
+            scores[category] = score;
+        });
+        
+        // 최고 점수 카테고리 찾기
+        let bestCategory = null;
+        let highestScore = 0;
+        
+        Object.keys(scores).forEach(category => {
+            if (scores[category] > highestScore) {
+                highestScore = scores[category];
+                bestCategory = category;
+            }
+        });
+        
+        // 유사도 점수 정규화 (0-1 범위로)
+        const normalizedScore = highestScore > 0 ? Math.min(highestScore / 100, 1) : 0;
+        
+        return { 
+            category: bestCategory, 
+            similarity: normalizedScore 
+        };
+    } catch (error) {
+        console.error('유사도 분석 오류:', error);
+        return null;
+    }
+}
+        
+        // 코사인 유사도 계산
+        function cosineSimilarity(a, b) {
+            let dotProduct = 0;
+            let normA = 0;
+            let normB = 0;
+            
+            for (let i = 0; i < a.length; i++) {
+                dotProduct += a[i] * b[i];
+                normA += a[i] * a[i];
+                normB += b[i] * b[i];
+            }
+            
+            normA = Math.sqrt(normA);
+            normB = Math.sqrt(normB);
+            
+            return dotProduct / (normA * normB);
+        }
+        
+        // Tesseract 초기화
+        async function initTesseract() {
+            try {
+                tesseractStatus.innerHTML = '<div class="spinner"></div> Tesseract 엔진 초기화 중...';
+                
+                // 기존 워커가 있으면 종료
+                if (tesseractWorker) {
+                    await tesseractWorker.terminate();
+                }
+                
+                // 새 워커 생성
+                tesseractWorker = await Tesseract.createWorker({
+                    logger: progress => {
+                        if (progress.status === 'downloading') {
+                            tesseractStatus.innerHTML = `<div class="spinner"></div> 언어 데이터 다운로드 중: ${Math.round(progress.progress * 100)}%`;
+                        } else if (progress.status === 'recognizing text') {
+                            const percentage = Math.round(progress.progress * 100);
+                            progressBarFill.style.width = `${percentage}%`;
+                        }
+                    }
+                });
+                
+                // 한국어 로드
+                await tesseractWorker.loadLanguage('kor');
+                await tesseractWorker.initialize('kor');
+                
+                // PSM 설정
+                const psmValue = parseInt(appSettings.psm || "4");
+                await tesseractWorker.setParameters({
+                    preserve_interword_spaces: '1',
+                    tessedit_pageseg_mode: psmValue.toString()
+                });
+                
+                // 설정에서 테서렉트 파라미터 로드
+                if (appSettings.tesseractParams) {
+                    const params = parseTesseractParams(appSettings.tesseractParams);
+                    if (Object.keys(params).length > 0) {
+                        await tesseractWorker.setParameters(params);
+                    }
+                }
+                
+                isTesseractReady = true;
+                tesseractStatus.textContent = "Tesseract 엔진 준비 완료";
+                tesseractStatus.style.color = "#155724";
+                checkAllModulesReady();
+                
+            } catch (error) {
+                console.error('Tesseract 초기화 오류:', error);
+                tesseractStatus.textContent = "Tesseract 초기화 실패 - 새로고침 후 다시 시도하세요";
+                tesseractStatus.style.color = "#721c24";
+            }
+        }
+        
+        // 모든 모듈 준비 확인
+        function checkAllModulesReady() {
+            if (isOpencvReady && isTesseractReady) {
+                // UI 활성화
+                accessCameraBtn.disabled = false;
+                uploadBtn.disabled = false;
+                
+                // 상태 메시지 업데이트
+                showStatus('모든 기본 모듈이 로드되었습니다. 명함을 촬영하거나 업로드하세요.', 'success');
+                
+                // 상태 표시 숨기기 (3초 후)
+                setTimeout(() => {
+                    opencvStatus.style.display = 'none';
+                    tesseractStatus.style.display = 'none';
+                    
+                    if (isAiModelReady) {
+                        aiModelStatus.style.display = 'none';
+                    }
+                }, 3000);
+            }
+        }
+        
+        // Tesseract 파라미터 파싱
+        function parseTesseractParams(paramsStr) {
+            const params = {};
+            const lines = paramsStr.split('\n');
+            
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine && !trimmedLine.startsWith('#')) {
+                    const [key, value] = trimmedLine.split('=');
+                    if (key && value !== undefined) {
+                        params[key.trim()] = value.trim();
+                    }
+                }
+            }
+            
+            return params;
+        }
         
         // 언어별 인식 설정
         const languageMap = {
@@ -803,7 +1413,7 @@
                     ],
                     department: [
                         // 한국어
-                        '부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계', '관리', '생산', '품질',
+'부', '팀', '과', '실', '본부', '센터', '연구소', '사업부', '영업', '마케팅', '개발', '기획', '인사', '총무', '재무', '회계', '관리', '생산', '품질',
                         // 영어
                         'Department', 'Division', 'Team', 'Group', 'Unit', 'R&D', 'HR', 'Sales', 'Marketing', 'Finance', 'IT', 'Development', 'Engineering', 'Support', 'Service', 'Operations', 'Accounting', 'Administration', 'Management',
                         // 일본어
@@ -830,9 +1440,81 @@
             }
         };
         
+        // 설정 로드
+        function loadSettings() {
+            try {
+                const savedSettings = localStorage.getItem('appSettings');
+                if (savedSettings) {
+                    appSettings = JSON.parse(savedSettings);
+                    
+                    // 설정 폼에 값 설정
+                    tesseractParams.value = appSettings.tesseractParams || '';
+                    imageQuality.value = appSettings.imageQuality || '0.8';
+                    showRawOcr.checked = appSettings.showRawOcr || false;
+                    autoPreprocess.checked = appSettings.autoPreprocess !== false;
+                    useAI.checked = appSettings.useAI !== false;
+                    psm.value = appSettings.psm || '4';
+                }
+            } catch (error) {
+                console.error('설정 로드 오류:', error);
+                // 기본 설정 유지
+            }
+        }
+        
+        // 설정 저장
+        function saveSettings() {
+            try {
+                appSettings.tesseractParams = tesseractParams.value;
+                appSettings.imageQuality = imageQuality.value;
+                appSettings.showRawOcr = showRawOcr.checked;
+                appSettings.autoPreprocess = autoPreprocess.checked;
+                appSettings.useAI = useAI.checked;
+                appSettings.psm = psm.value;
+                
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                showStatus('설정이 저장되었습니다.', 'success');
+                
+                // Tesseract 워커 재초기화 (설정 변경 적용)
+                initTesseract();
+                
+            } catch (error) {
+                console.error('설정 저장 오류:', error);
+                showStatus('설정 저장 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        
+        // 설정 초기화
+        function resetSettings() {
+            if (confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
+                appSettings = {
+                    tesseractParams: "tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,-@+():;/'\" \npreserve_interword_spaces=1\ntessedit_pageseg_mode=4\ntextord_tabfind_force_vertical_text=0\ntextord_tablefind_recognize_tables=0",
+                    imageQuality: "0.8",
+                    showRawOcr: false,
+                    autoPreprocess: true,
+                    useAI: true,
+                    psm: "4"
+                };
+                
+                // 설정 폼 초기화
+                tesseractParams.value = appSettings.tesseractParams;
+                imageQuality.value = appSettings.imageQuality;
+                showRawOcr.checked = appSettings.showRawOcr;
+                autoPreprocess.checked = appSettings.autoPreprocess;
+                useAI.checked = appSettings.useAI;
+                psm.value = appSettings.psm;
+                
+                // 설정 저장 및 Tesseract 재초기화
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                showStatus('설정이 초기화되었습니다.', 'success');
+                
+                // Tesseract 워커 재초기화
+                initTesseract();
+            }
+        }
+        
         // 언어 선택 이벤트
         languageButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 // 이전 활성화된 버튼 비활성화
                 document.querySelector('.language-btn.active').classList.remove('active');
                 
@@ -840,9 +1522,65 @@
                 btn.classList.add('active');
                 
                 // 선택된 언어 설정
-                selectedLanguage = btn.getAttribute('data-lang');
+                const newLanguage = btn.getAttribute('data-lang');
+                
+                // 언어가 변경된 경우에만 처리
+                if (selectedLanguage !== newLanguage) {
+                    selectedLanguage = newLanguage;
+                    
+                    // Tesseract 워커 언어 변경
+                    await changeTesseractLanguage(selectedLanguage);
+                }
             });
         });
+        
+        // Tesseract 언어 변경 함수
+        async function changeTesseractLanguage(langCode) {
+            try {
+                showStatus(`${languageMap[langCode].label} 언어 모델 로드 중...`, 'info');
+                
+                // 언어 변경
+                // Tesseract.js v4에서는 언어 변경 방법이 다름
+                try {
+                    await tesseractWorker.loadLanguage(languageMap[langCode].lang);
+                    await tesseractWorker.initialize(languageMap[langCode].lang);
+                    
+                    // 파라미터 다시 설정
+                    const psmValue = parseInt(appSettings.psm || "4");
+                    await tesseractWorker.setParameters({
+                        preserve_interword_spaces: '1',
+                        tessedit_pageseg_mode: psmValue.toString()
+                    });
+                    
+                    // 설정에서 테서렉트 파라미터 로드
+                    if (appSettings.tesseractParams) {
+                        const params = parseTesseractParams(appSettings.tesseractParams);
+                        if (Object.keys(params).length > 0) {
+                            await tesseractWorker.setParameters(params);
+                        }
+                    }
+                } catch (error) {
+                    console.error('언어 변경 중 오류:', error);
+                    // 실패 시 워커 재생성 시도
+                    await tesseractWorker.terminate();
+                    tesseractWorker = await Tesseract.createWorker();
+                    await tesseractWorker.loadLanguage(languageMap[langCode].lang);
+                    await tesseractWorker.initialize(languageMap[langCode].lang);
+                    
+                    // 파라미터 다시 설정
+                    const psmValue = parseInt(appSettings.psm || "4");
+                    await tesseractWorker.setParameters({
+                        preserve_interword_spaces: '1',
+                        tessedit_pageseg_mode: psmValue.toString()
+                    });
+                }
+                
+                showStatus(`${languageMap[langCode].label} 언어 모델 로드 완료`, 'success');
+            } catch (error) {
+                console.error('언어 변경 오류:', error);
+                showStatus('언어 모델 변경 중 오류가 발생했습니다.', 'error');
+            }
+        }
         
         // 탭 전환 이벤트
         tabs.forEach(tab => {
@@ -865,6 +1603,26 @@
                     renderCardList();
                 }
             });
+        });
+        
+        // 고급 모드 토글
+        advancedModeToggle.addEventListener('change', function() {
+            isAdvancedMode = this.checked;
+            
+            // 고급 모드에 따라 UI 요소 표시/숨김
+            if (isAdvancedMode) {
+                if (rawOcrResult) rawOcrResult.style.display = 'block';
+                advancedBtn.style.display = 'inline-block';
+                if (aiResults) aiResults.style.display = 'block';
+            } else {
+                if (rawOcrResult) rawOcrResult.style.display = 'none';
+                if (preprocessingOptions.style.display !== 'none') {
+                    preprocessingOptions.style.display = 'none';
+                    advancedBtn.textContent = '고급 옵션';
+                }
+                advancedBtn.style.display = 'none';
+                if (aiResults) aiResults.style.display = 'none';
+            }
         });
         
         // 카메라 접근 버튼 클릭 이벤트
@@ -902,7 +1660,59 @@
                 
             } catch (error) {
                 console.error('카메라 접근 오류:', error);
-                showStatus(`카메라 접근 오류: ${error.name} - ${error.message}`, 'error');
+                showStatus(`카메라 접근 오류: ${error.name} - ${error.message}. 파일 업로드를 사용해보세요.`, 'error');
+            }
+        });
+        
+        // 파일 업로드 버튼 클릭 이벤트
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 파일 선택 이벤트
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    // 이미지 표시
+                    capturedImage.src = event.target.result;
+                    capturedImage.style.display = 'block';
+                    
+                    // 원본 이미지 저장
+                    originalImageData = event.target.result;
+                    
+                    // UI 업데이트
+                    video.style.display = 'none';
+                    accessCameraBtn.style.display = 'none';
+                    captureBtn.style.display = 'none';
+                    retakeBtn.style.display = 'inline-block';
+                    analyzeBtn.style.display = 'inline-block';
+                    improveImageBtn.style.display = 'inline-block';
+                    rotateButtons.style.display = 'flex';
+                    
+                    // 고급 모드면 고급 옵션 버튼 표시
+                    if (isAdvancedMode) {
+                        advancedBtn.style.display = 'inline-block';
+                    }
+                    
+                    // 회전 각도 초기화
+                    currentRotation = 0;
+                    
+                    // 처리 단계 표시
+                    stepsIndicator.style.display = 'flex';
+                    updateProcessingStep('preprocess');
+                    
+                    showStatus('이미지가 업로드되었습니다. 분석을 시작하려면 "명함 분석" 버튼을 클릭하세요.', 'success');
+                };
+                
+                reader.onerror = (error) => {
+                    console.error('파일 읽기 오류:', error);
+                    showStatus('파일을 읽는 중 오류가 발생했습니다.', 'error');
+                };
+                
+                reader.readAsDataURL(file);
             }
         });
         
@@ -927,8 +1737,11 @@
             }
         }
         
-        // 페이지 로드 시 저장된 명함 불러오기
+        // 페이지 로드 시 설정 및 저장된 명함 불러오기
         document.addEventListener('DOMContentLoaded', () => {
+            // 설정 로드
+            loadSettings();
+            
             // 카메라 접근 버튼 초기 표시
             accessCameraBtn.style.display = 'block';
             video.style.display = 'none';
@@ -939,9 +1752,26 @@
             
             // MediaDevices API 지원 확인
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showStatus('이 브라우저는 카메라 접근을 지원하지 않습니다. 최신 Chrome, Safari 또는 Firefox를 사용해주세요.', 'error');
+                showStatus('이 브라우저는 카메라 접근을 지원하지 않습니다. 파일 업로드를 사용해주세요.', 'error');
                 accessCameraBtn.disabled = true;
                 accessCameraBtn.textContent = '카메라 지원되지 않음';
+            }
+            
+            // OpenCV 상태 체크
+            if (typeof cv !== 'undefined') {
+                onOpenCvReady();
+            } else {
+                opencvStatus.innerHTML = '<div class="spinner"></div> OpenCV.js 로딩 중... 잠시 기다려주세요.';
+            }
+            
+            // Tesseract 초기화
+            initTesseract();
+            
+            // AI 모델 사전 로딩 (설정에 따라)
+            if (appSettings.useAI) {
+                setTimeout(() => {
+                    loadUSEModel().catch(err => console.warn('AI 모델 사전 로딩 실패:', err));
+                }, 3000); // 3초 후 모델 로딩 시작
             }
             
             // 고급 옵션 토글 버튼 설정
@@ -967,6 +1797,43 @@
             
             rotateRightBtn.addEventListener('click', () => {
                 rotateImage(90);
+            });
+            
+            // 설정 저장 버튼
+            saveSettingsBtn.addEventListener('click', () => {
+                saveSettings();
+            });
+            
+            // 설정 초기화 버튼
+            resetSettingsBtn.addEventListener('click', () => {
+                resetSettings();
+            });
+            
+            // 데이터 내보내기 버튼
+            exportDataBtn.addEventListener('click', () => {
+                exportData();
+            });
+            
+            // 데이터 가져오기 버튼
+            importDataBtn.addEventListener('click', () => {
+                openImportModal();
+            });
+            
+            // 데이터 확인 가져오기 버튼
+            confirmImportBtn.addEventListener('click', () => {
+                importDataFromJson();
+            });
+            
+            // 가져오기 모달 닫기
+            importClose.forEach(el => {
+                el.addEventListener('click', () => {
+                    importModal.style.display = 'none';
+                });
+            });
+            
+            // 데이터 초기화 버튼
+            clearDataBtn.addEventListener('click', () => {
+                clearAllData();
             });
             
             // 오류 저항성 높은 앱 설정
@@ -999,6 +1866,79 @@
             }
         }
         
+        // 데이터 내보내기 함수
+        function exportData() {
+            try {
+                const dataStr = JSON.stringify(businessCards, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = 'business_cards_' + new Date().toISOString().slice(0, 10) + '.json';
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                showStatus('데이터 내보내기 완료!', 'success');
+            } catch (error) {
+                console.error('데이터 내보내기 오류:', error);
+                showStatus('데이터 내보내기 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        
+        // 가져오기 모달 열기 함수
+        function openImportModal() {
+            importData.value = '';
+            importModal.style.display = 'block';
+        }
+        
+        // JSON 데이터 가져오기 함수
+        function importDataFromJson() {
+            try {
+                const jsonData = importData.value.trim();
+                
+                if (!jsonData) {
+                    throw new Error('가져올 데이터가 없습니다.');
+                }
+                
+                const parsedData = JSON.parse(jsonData);
+                
+                if (!Array.isArray(parsedData)) {
+                    throw new Error('유효하지 않은 데이터 형식입니다. JSON 배열이 필요합니다.');
+                }
+                
+                if (confirm('기존 데이터를 새 데이터로 대체하시겠습니까? "취소"를 선택하면 기존 데이터에 추가됩니다.')) {
+                    // 기존 데이터 대체
+                    businessCards = parsedData;
+                } else {
+                    // 기존 데이터에 추가
+                    businessCards = businessCards.concat(parsedData);
+                }
+                
+                // 데이터 저장 및 목록 새로고침
+                saveBusinessCards();
+                renderCardList();
+                
+                // 모달 닫기
+                importModal.style.display = 'none';
+                
+                showStatus(`${parsedData.length}개의 명함 데이터를 가져왔습니다.`, 'success');
+            } catch (error) {
+                console.error('데이터 가져오기 오류:', error);
+                showStatus(`데이터 가져오기 오류: ${error.message}`, 'error');
+            }
+        }
+        
+        // 모든 데이터 초기화 함수
+        function clearAllData() {
+            if (confirm('모든 명함 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                businessCards = [];
+                saveBusinessCards();
+                renderCardList();
+                showStatus('모든 명함 데이터가 삭제되었습니다.', 'success');
+            }
+        }
+        
         // 명함 목록 렌더링
         function renderCardList(filterText = '') {
             let filteredCards = businessCards;
@@ -1015,6 +1955,7 @@
                         (card.department || '') + ' ' + 
                         (card.phone || '') + ' ' + 
                         (card.email || '') + ' ' + 
+                        (card.website || '') + ' ' + 
                         (card.address || '') + ' ' + 
                         (card.notes || '')
                     ).toLowerCase();
@@ -1039,6 +1980,7 @@
                             <p><strong>부서:</strong> ${card.department || '-'}</p>
                             <p><strong>전화:</strong> ${card.phone || '-'}</p>
                             <p><strong>이메일:</strong> ${card.email || '-'}</p>
+                            ${card.website ? `<p><strong>웹사이트:</strong> ${card.website}</p>` : ''}
                             <p><strong>주소:</strong> ${card.address || '-'}</p>
                             <p><strong>등록일:</strong> ${new Date(card.registeredDate).toLocaleDateString()}</p>
                             ${card.notes ? `<p><strong>메모:</strong> ${card.notes}</p>` : ''}
@@ -1085,7 +2027,7 @@
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
                 // 캡처된 이미지 표시
-                capturedImage.src = canvas.toDataURL('image/png');
+                capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
                 capturedImage.style.display = 'block';
                 
                 // 원본 이미지 저장
@@ -1095,10 +2037,14 @@
                 captureBtn.style.display = 'none';
                 retakeBtn.style.display = 'inline-block';
                 analyzeBtn.style.display = 'inline-block';
-                advancedBtn.style.display = 'inline-block';
                 improveImageBtn.style.display = 'inline-block';
                 video.style.display = 'none';
                 rotateButtons.style.display = 'flex';
+                
+                // 고급 모드면 고급 옵션 버튼 표시
+                if (isAdvancedMode) {
+                    advancedBtn.style.display = 'inline-block';
+                }
                 
                 // 회전 각도 초기화
                 currentRotation = 0;
@@ -1112,6 +2058,15 @@
                 // 미리보기 초기화
                 previewContainer.innerHTML = '';
                 previewContainer.style.display = 'none';
+                
+                // 자동 이미지 개선 적용 (설정에 따라)
+                if (appSettings.autoPreprocess) {
+                    setTimeout(() => {
+                        if (improveImageBtn.disabled === false) {
+                            improveImageBtn.click();
+                        }
+                    }, 300);
+                }
                 
             } catch (error) {
                 console.error('촬영 오류:', error);
@@ -1148,7 +2103,7 @@
                     ctx.drawImage(img, -img.width / 2, -img.height / 2);
                     
                     // 회전된 이미지 표시
-                    capturedImage.src = canvas.toDataURL('image/png');
+                    capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
                 };
                 img.src = originalImageData || capturedImage.src;
                 
@@ -1173,6 +2128,8 @@
             stepsIndicator.style.display = 'none';
             confidenceIndicator.style.display = 'none';
             previewContainer.style.display = 'none';
+            rawOcrResult.style.display = 'none';
+            aiResults.style.display = 'none';
             
             // 원본 이미지 데이터 초기화
             originalImageData = null;
@@ -1188,11 +2145,13 @@
         function getPreprocessingOptions() {
             return {
                 grayscale: document.getElementById('optGrayscale').checked,
+                adaptiveThreshold: document.getElementById('optAdaptiveThreshold').checked,
                 contrast: document.getElementById('optContrast').checked,
                 sharpen: document.getElementById('optSharpen').checked,
                 denoise: document.getElementById('optDenoise').checked,
                 threshold: document.getElementById('optThreshold').checked,
-                edgeEnhance: document.getElementById('optEdgeEnhance').checked
+                edgeEnhance: document.getElementById('optEdgeEnhance').checked,
+                deskew: document.getElementById('optDeskew').checked
             };
         }
         
@@ -1214,7 +2173,7 @@
                     showStatus('이미지 처리 완료!', 'success');
                     
                     // 미리보기 추가
-                    addPreview('처리됨', enhancedImage);
+                    addPreview('고급 처리', enhancedImage);
                 })
                 .catch(error => {
                     console.error('이미지 처리 오류:', error);
@@ -1266,293 +2225,201 @@
             previewContainer.style.display = 'flex';
         }
         
-        // 개선된 명함 이미지 전처리 함수
+        // OpenCV를 사용한 명함 이미지 전처리 함수
         async function enhanceBusinessCardImage(imageUrl, options = {}) {
             return new Promise((resolve, reject) => {
                 try {
+                    if (!isOpencvReady) {
+                        reject(new Error('OpenCV.js가 아직 로드되지 않았습니다.'));
+                        return;
+                    }
+                    
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     
                     img.onload = function() {
                         try {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
+                            // 1. 이미지를 Mat으로 로드
+                            const src = cv.imread(img);
                             
-                            // 캔버스 크기 설정
-                            canvas.width = img.width;
-                            canvas.height = img.height;
+                            // 2. 작업용 Mat 생성
+                            let dst = new cv.Mat();
+                            let gray = new cv.Mat();
+                            let blur = new cv.Mat();
+                            let edges = new cv.Mat();
+                            let processed = new cv.Mat();
                             
-                            // 원본 이미지 그리기
-                            ctx.drawImage(img, 0, 0);
-                            
-                            // 이미지 데이터 가져오기
-                            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            let data = imageData.data;
-                            
-                            // 1. 그레이스케일 변환
-                            if (options.grayscale) {
-                                for (let i = 0; i < data.length; i += 4) {
-const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                    data[i] = data[i + 1] = data[i + 2] = avg;
+                            try {
+                                // 3. 그레이스케일 변환 (필수 단계)
+                                if (options.grayscale) {
+                                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                                } else {
+                                    src.copyTo(gray);
                                 }
-                            }
-                            
-                            // 2. 대비 향상
-                            if (options.contrast) {
-                                const contrast = 1.5; // 대비 강화 계수
-                                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
                                 
-                                for (let i = 0; i < data.length; i += 4) {
-                                    data[i] = factor * (data[i] - 128) + 128;
-                                    data[i + 1] = factor * (data[i + 1] - 128) + 128;
-                                    data[i + 2] = factor * (data[i + 2] - 128) + 128;
+                                // 4. 노이즈 제거 (옵션)
+                                if (options.denoise) {
+                                    // 비로컬 평균 필터
+                                    cv.fastNlMeansDenoising(gray, blur, 10, 7, 21);
+                                } else {
+                                    gray.copyTo(blur);
                                 }
-                            }
-                            
-                            // 현재까지의 변경사항 적용
-                            ctx.putImageData(imageData, 0, 0);
-                            
-                            // 3. 선명도 향상
-                            if (options.sharpen) {
-                                // 컨볼루션 필터를 사용한 선명화
-                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                                data = imageData.data;
                                 
-                                const tempCanvas = document.createElement('canvas');
-                                const tempCtx = tempCanvas.getContext('2d');
-                                tempCanvas.width = canvas.width;
-                                tempCanvas.height = canvas.height;
-                                tempCtx.putImageData(imageData, 0, 0);
+                                // 5. 명암 대비 향상 (옵션)
+                                if (options.contrast) {
+                                    // CLAHE(Contrast Limited Adaptive Histogram Equalization) 적용
+                                    let clahe = new cv.CLAHE(4.0, new cv.Size(8, 8));
+                                    clahe.apply(blur, processed);
+                                    clahe.delete();
+                                } else {
+                                    blur.copyTo(processed);
+                                }
                                 
-                                // 선명화 커널
-                                const kernel = [
-                                    0, -1, 0,
-                                    -1, 5, -1,
-                                    0, -1, 0
-                                ];
+                                // 6. 선명도 향상 (옵션)
+                                if (options.sharpen) {
+                                    // 언샤프 마스크 처리
+                                    let blurred = new cv.Mat();
+                                    let kernel = cv.Mat.ones(3, 3, cv.CV_8U);
+                                    let temp = new cv.Mat();
+                                    
+                                    // 블러 처리된 이미지
+                                    cv.GaussianBlur(processed, blurred, new cv.Size(0, 0), 3);
+                                    
+                                    // 원본 - 블러 = 엣지
+                                    cv.subtract(processed, blurred, temp);
+                                    
+                                    // 원본 + 엣지 = 선명한 이미지
+                                    cv.add(processed, temp, processed);
+                                    
+                                    // 임시 Mat 정리
+                                    blurred.delete();
+                                    kernel.delete();
+                                    temp.delete();
+                                }
                                 
-                                // 컨볼루션 적용
-                                const newImageData = ctx.createImageData(canvas.width, canvas.height);
-                                const newData = newImageData.data;
+                                // 7. 적응형 이진화 (옵션)
+                                if (options.adaptiveThreshold) {
+                                    let binary = new cv.Mat();
+                                    cv.adaptiveThreshold(processed, binary, 255,
+                                        cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 11, 2);
+                                    
+                                    // 역상 변환 (텍스트를 검은색으로)
+                                    cv.bitwise_not(binary, binary);
+                                    binary.copyTo(processed);
+                                    binary.delete();
+                                }
                                 
-                                // 컨볼루션 계산 (가장자리 제외)
-                                for (let y = 1; y < canvas.height - 1; y++) {
-                                    for (let x = 1; x < canvas.width - 1; x++) {
-                                        const idx = (y * canvas.width + x) * 4;
+                                // 8. 일반 이진화 (옵션)
+                                if (options.threshold) {
+                                    let thresh = new cv.Mat();
+                                    cv.threshold(processed, thresh, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
+                                    thresh.copyTo(processed);
+                                    thresh.delete();
+                                }
+                                
+                                // 9. 엣지 강화 (옵션)
+                                if (options.edgeEnhance) {
+                                    let edges = new cv.Mat();
+                                    // Canny 엣지 검출
+                                    cv.Canny(processed, edges, 50, 150);
+                                    
+                                    // 엣지 두껍게
+                                    let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(2, 2));
+                                    cv.dilate(edges, edges, kernel);
+                                    
+                                    // 합성 (원본 + 엣지)
+                                    if (options.adaptiveThreshold || options.threshold) {
+                                        // 이진화된 이미지면 OR 연산
+                                        cv.bitwise_or(processed, edges, processed);
+                                    } else {
+                                        // 그레이스케일 이미지면 엣지를 그냥 추가
+                                        cv.add(processed, edges, processed);
+                                    }
+                                    
+                                    edges.delete();
+                                    kernel.delete();
+                                }
+                                
+                                // 10. 기울기 보정 (옵션)
+                                if (options.deskew) {
+                                    try {
+                                        // 엣지 검출
+                                        cv.Canny(processed, edges, 50, 150);
                                         
-                                        for (let c = 0; c < 3; c++) {
-                                            let val = 0;
+                                        // 허프 변환으로 선 검출
+                                        let lines = new cv.Mat();
+                                        cv.HoughLinesP(edges, lines, 1, Math.PI / 180, 50, 50, 10);
+                                        
+                                        if (lines.rows > 0) {
+                                            // 각도 계산
+                                            let angles = [];
                                             
-                                            // 커널 적용
-                                            for (let ky = -1; ky <= 1; ky++) {
-                                                for (let kx = -1; kx <= 1; kx++) {
-                                                    const kernelIdx = (ky + 1) * 3 + (kx + 1);
-                                                    const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
-                                                    
-                                                    val += data[pixelIdx + c] * kernel[kernelIdx];
-                                                }
-                                            }
-                                            
-                                            // 결과 값 설정 (범위 내로 제한)
-                                            newData[idx + c] = Math.min(255, Math.max(0, val));
-                                        }
-                                        
-                                        // 알파 채널 유지
-                                        newData[idx + 3] = data[idx + 3];
-                                    }
-                                }
-                                
-                                // 가장자리 복사 (경계 처리)
-                                for (let y = 0; y < canvas.height; y++) {
-                                    for (let x = 0; x < canvas.width; x++) {
-                                        if (x === 0 || x === canvas.width - 1 || y === 0 || y === canvas.height - 1) {
-                                            const idx = (y * canvas.width + x) * 4;
-                                            newData[idx] = data[idx];
-                                            newData[idx + 1] = data[idx + 1];
-                                            newData[idx + 2] = data[idx + 2];
-                                            newData[idx + 3] = data[idx + 3];
-                                        }
-                                    }
-                                }
-                                
-                                // 결과 적용
-                                ctx.putImageData(newImageData, 0, 0);
-                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                                data = imageData.data;
-                            }
-                            
-                            // 4. 노이즈 제거 (간단한 미디안 필터)
-                            if (options.denoise) {
-                                const tempCanvas = document.createElement('canvas');
-                                const tempCtx = tempCanvas.getContext('2d');
-                                tempCanvas.width = canvas.width;
-                                tempCanvas.height = canvas.height;
-                                tempCtx.putImageData(imageData, 0, 0);
-                                
-                                const newImageData = ctx.createImageData(canvas.width, canvas.height);
-                                const newData = newImageData.data;
-                                
-                                // 3x3 미디안 필터
-                                for (let y = 1; y < canvas.height - 1; y++) {
-                                    for (let x = 1; x < canvas.width - 1; x++) {
-                                        const idx = (y * canvas.width + x) * 4;
-                                        
-                                        for (let c = 0; c < 3; c++) {
-                                            const values = [];
-                                            
-                                            // 주변 픽셀 값 수집
-                                            for (let ky = -1; ky <= 1; ky++) {
-                                                for (let kx = -1; kx <= 1; kx++) {
-                                                    const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
-                                                    values.push(data[pixelIdx + c]);
-                                                }
-                                            }
-                                            
-                                            // 값 정렬 및 중간값 선택
-                                            values.sort((a, b) => a - b);
-                                            newData[idx + c] = values[4]; // 9개 중 중간값
-                                        }
-                                        
-                                        // 알파 채널 유지
-                                        newData[idx + 3] = data[idx + 3];
-                                    }
-                                }
-                                
-                                // 가장자리 복사
-                                for (let y = 0; y < canvas.height; y++) {
-                                    for (let x = 0; x < canvas.width; x++) {
-                                        if (x === 0 || x === canvas.width - 1 || y === 0 || y === canvas.height - 1) {
-                                            const idx = (y * canvas.width + x) * 4;
-                                            newData[idx] = data[idx];
-                                            newData[idx + 1] = data[idx + 1];
-                                            newData[idx + 2] = data[idx + 2];
-                                            newData[idx + 3] = data[idx + 3];
-                                        }
-                                    }
-                                }
-                                
-                                // 결과 적용
-                                ctx.putImageData(newImageData, 0, 0);
-                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                                data = imageData.data;
-                            }
-                            
-                            // 5. 이진화 (적응형 임계값 - OCR 인식 향상)
-                            if (options.threshold) {
-                                // 이진화 전 그레이스케일 확보
-                                for (let i = 0; i < data.length; i += 4) {
-                                    if (data[i] !== data[i + 1] || data[i] !== data[i + 2]) {
-                                        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                        data[i] = data[i + 1] = data[i + 2] = gray;
-                                    }
-                                }
-                                
-                                // 적응형 임계값 처리 (지역 평균 기반)
-                                const blockSize = 15; // 블록 크기
-                                const C = 5; // 상수값 (임계값 조정)
-                                
-                                // 원본 데이터 복사
-                                const origData = new Uint8ClampedArray(data);
-                                
-                                for (let y = 0; y < canvas.height; y++) {
-                                    for (let x = 0; x < canvas.width; x++) {
-                                        const idx = (y * canvas.width + x) * 4;
-                                        
-                                        // 블록 범위
-                                        const xStart = Math.max(0, x - Math.floor(blockSize / 2));
-                                        const yStart = Math.max(0, y - Math.floor(blockSize / 2));
-                                        const xEnd = Math.min(canvas.width - 1, x + Math.floor(blockSize / 2));
-                                        const yEnd = Math.min(canvas.height - 1, y + Math.floor(blockSize / 2));
-                                        
-                                        // 지역 평균 계산
-                                        let sum = 0;
-                                        let count = 0;
-                                        
-                                        for (let by = yStart; by <= yEnd; by++) {
-                                            for (let bx = xStart; bx <= xEnd; bx++) {
-                                                const bidx = (by * canvas.width + bx) * 4;
-                                                sum += origData[bidx];
-                                                count++;
-                                            }
-                                        }
-                                        
-                                        const threshold = sum / count - C;
-                                        
-                                        // 임계값 적용
-                                        const pixelValue = origData[idx] > threshold ? 255 : 0;
-                                        data[idx] = data[idx + 1] = data[idx + 2] = pixelValue;
-                                    }
-                                }
-                            }
-                            
-                            // 6. 윤곽선 강화
-                            if (options.edgeEnhance) {
-                                // 현재 상태 저장
-                                const origImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                                const origData = origImageData.data;
-                                
-                                // 엣지 검출 (소벨 필터)
-                                const sobelX = [
-                                    -1, 0, 1,
-                                    -2, 0, 2,
-                                    -1, 0, 1
-                                ];
-                                
-                                const sobelY = [
-                                    -1, -2, -1,
-                                    0, 0, 0,
-                                    1, 2, 1
-                                ];
-                                
-                                const edgeData = new Uint8ClampedArray(data.length);
-                                
-                                // 엣지 강도 계산
-                                for (let y = 1; y < canvas.height - 1; y++) {
-                                    for (let x = 1; x < canvas.width - 1; x++) {
-                                        const idx = (y * canvas.width + x) * 4;
-                                        
-                                        let gx = 0;
-                                        let gy = 0;
-                                        
-                                        // 소벨 필터 적용
-                                        for (let ky = -1; ky <= 1; ky++) {
-                                            for (let kx = -1; kx <= 1; kx++) {
-                                                const pixelIdx = ((y + ky) * canvas.width + (x + kx)) * 4;
-                                                const kernelIdx = (ky + 1) * 3 + (kx + 1);
+                                            for (let i = 0; i < lines.rows; i++) {
+                                                let line = lines.data32S.slice(i * 4, (i + 1) * 4);
+                                                let [x1, y1, x2, y2] = line;
                                                 
-                                                gx += origData[pixelIdx] * sobelX[kernelIdx];
-                                                gy += origData[pixelIdx] * sobelY[kernelIdx];
+                                                // 너무 짧은 선은 건너뛰기
+                                                let length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                                                if (length < 30) continue;
+                                                
+                                                // 각도 계산 (라디안 -> 도)
+                                                let angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                                                
+                                                // 수평선에 가까운 선만 사용 (-20° ~ 20° 또는 160° ~ 200°)
+                                                if ((Math.abs(angle) < 20 || Math.abs(angle - 180) < 20)) {
+                                                    angles.push(angle);
+                                                }
+                                            }
+                                            
+                                            // 평균 각도 계산
+                                            if (angles.length > 0) {
+                                                let sumAngle = angles.reduce((sum, a) => sum + a, 0);
+                                                let avgAngle = sumAngle / angles.length;
+                                                
+                                                // 각도 보정 (180도 이상이면 음수로 변환)
+                                                if (avgAngle > 90) avgAngle -= 180;
+                                                else if (avgAngle < -90) avgAngle += 180;
+                                                
+                                                // 회전 행렬 계산
+                                                let center = new cv.Point(processed.cols / 2, processed.rows / 2);
+                                                let rotMat = cv.getRotationMatrix2D(center, avgAngle, 1);
+                                                
+                                                // 이미지 회전
+                                                cv.warpAffine(processed, dst, rotMat, new cv.Size(processed.cols, processed.rows));
+                                                dst.copyTo(processed);
+                                                
+                                                rotMat.delete();
                                             }
                                         }
                                         
-                                        // 엣지 강도
-                                        const magnitude = Math.sqrt(gx * gx + gy * gy);
-                                        
-                                        // 엣지 데이터 저장
-                                        edgeData[idx] = edgeData[idx + 1] = edgeData[idx + 2] = Math.min(255, magnitude);
-                                        edgeData[idx + 3] = 255;
+                                        lines.delete();
+                                    } catch (e) {
+                                        console.error('기울기 보정 중 오류:', e);
+                                        // 오류 발생 시 기존 이미지 유지
                                     }
                                 }
                                 
-                                // 원본과 엣지 혼합
-                                for (let i = 0; i < data.length; i += 4) {
-                                    // 엣지가 있는 위치는 텍스트일 가능성이 높으므로 어둡게 처리
-                                    if (edgeData[i] > 50) {
-                                        data[i] = Math.max(0, data[i] - edgeData[i] * 0.5);
-                                        data[i + 1] = Math.max(0, data[i + 1] - edgeData[i] * 0.5);
-                                        data[i + 2] = Math.max(0, data[i + 2] - edgeData[i] * 0.5);
-                                    }
-                                }
+                                // 11. 결과 캔버스에 그리기
+                                cv.imshow(canvas, processed);
+                                
+                                // 12. 이미지 URL 생성
+                                const finalImageUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
+                                
+                                // 13. 메모리 정리 및 결과 반환
+                                resolve(finalImageUrl);
+                                
+                            } finally {
+                                // 14. 메모리 정리
+                                src.delete();
+                                dst.delete();
+                                gray.delete();
+                                blur.delete();
+                                edges.delete();
+                                processed.delete();
                             }
-                            
-                            // 최종 이미지 데이터 적용
-                            ctx.putImageData(imageData, 0, 0);
-                            
-                            // 결과 이미지 반환
-                            resolve(canvas.toDataURL('image/png'));
                             
                         } catch (error) {
-                            console.error('이미지 처리 중 오류:', error);
+                            console.error('OpenCV 처리 오류:', error);
                             // 오류 발생 시 원본 이미지 반환
                             resolve(imageUrl);
                         }
@@ -1572,183 +2439,194 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             });
         }
         
-        // 안전한 이미지 개선 함수
-        async function simpleEnhanceImage(imageUrl) {
+        // OCR을 위해 이미지 최적화 함수
+        async function optimizeForOCR(imageUrl) {
             return new Promise((resolve, reject) => {
                 try {
-                    // 원본 이미지 URL이 유효한지 확인
-                    if (!imageUrl || typeof imageUrl !== 'string' || !imageUrl.startsWith('data:image/')) {
-                        console.error('유효하지 않은 이미지 URL:', imageUrl?.substring(0, 30) + '...');
-                        reject(new Error('유효하지 않은 이미지입니다.'));
-                        return;
+                    if (!isOpencvReady) {
+                        // OpenCV가 없으면 기본 캔버스 처리 사용
+                        return enhanceWithCanvas(imageUrl)
+                            .then(enhanced => resolve(enhanced))
+                            .catch(err => {
+                                console.warn('캔버스 처리 실패, 원본 이미지 사용:', err);
+                                resolve(imageUrl);
+                            });
                     }
-
-                    const img = new Image();
                     
-                    // 이미지 로딩 성공 핸들러
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
                     img.onload = function() {
                         try {
-                            // 이미지 크기 검증
-                            if (img.width <= 0 || img.height <= 0) {
-                                console.error('유효하지 않은 이미지 크기:', img.width, img.height);
-                                resolve(imageUrl); // 원본 이미지를 그대로 반환
-                                return;
-                            }
-
-                            // 캔버스 생성 및 이미지 그리기
+                            // 1. 이미지를 Mat으로 로드
+                            const src = cv.imread(img);
+                            
+                            // 2. 그레이스케일 변환
+                            const gray = new cv.Mat();
+                            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                            
+                            // 3. 가우시안 블러로 노이즈 감소
+                            const blurred = new cv.Mat();
+                            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+                            
+                            // 4. 명암 대비 향상
+                            const enhanced = new cv.Mat();
+                            let clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
+                            clahe.apply(blurred, enhanced);
+                            
+                            // 5. 적응형 이진화 (흰색 배경에 검은 텍스트)
+                            const binary = new cv.Mat();
+                            cv.adaptiveThreshold(enhanced, binary, 255,
+                                cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
+                            
+                            // 6. 결과 캔버스에 그리기
+                            cv.imshow(canvas, binary);
+                            
+                            // 7. 이미지 URL 생성
+                            const finalImageUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
+                            
+                            // 8. 메모리 정리
+                            src.delete();
+                            gray.delete();
+                            blurred.delete();
+                            enhanced.delete();
+                            binary.delete();
+                            clahe.delete();
+                            
+                            // 9. 미리보기 추가
+                            addPreview('OCR 최적화', finalImageUrl);
+                            
+                            // 10. 결과 반환
+                            resolve(finalImageUrl);
+                            
+                        } catch (error) {
+                            console.error('OpenCV 처리 오류:', error);
+                            // 오류 발생 시 기본 캔버스 처리 시도
+                            enhanceWithCanvas(imageUrl)
+                                .then(enhanced => resolve(enhanced))
+                                .catch(err => {
+                                    console.warn('캔버스 처리도 실패, 원본 이미지 사용:', err);
+                                    resolve(imageUrl);
+                                });
+                        }
+                    };
+                    
+                    img.onerror = function(error) {
+                        console.error('이미지 로딩 오류:', error);
+                        reject(new Error('이미지 로딩에 실패했습니다.'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('이미지 최적화 초기화 오류:', error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // 기본 캔버스 API로 간단한 이미지 개선
+        async function enhanceWithCanvas(imageUrl) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        try {
                             const canvas = document.createElement('canvas');
                             canvas.width = img.width;
                             canvas.height = img.height;
                             const ctx = canvas.getContext('2d');
                             
                             // 원본 이미지 그리기
-                            ctx.drawImage(img, 0, 0, img.width, img.height);
+                            ctx.drawImage(img, 0, 0);
                             
                             // 이미지 데이터 가져오기
-                            let imageData;
-                            try {
-                                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            } catch (e) {
-                                console.error('이미지 데이터 가져오기 실패:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                                return;
-                            }
-                            
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                             const data = imageData.data;
                             
-                            // 간단한 이미지 처리
-                            try {
-                                for (let i = 0; i < data.length; i += 4) {
-                                    // 대비 향상 (간단한 방식)
-                                    const contrast = 1.2; // 대비 값 (1.0보다 크면 대비 증가)
-                                    const brightness = 5; // 밝기 값 (양수면 밝게, 음수면 어둡게)
-                                    
-                                    // R, G, B 채널에 대비와 밝기 적용
-                                    data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + brightness));
-                                    data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * contrast + 128 + brightness));
-                                    data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * contrast + 128 + brightness));
-                                    
-                                    // 언어에 따라 흑백 변환 (옵션)
-                                    if (!selectedLanguage.includes('chi_sim') && !selectedLanguage.includes('jpn')) {
-                                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                        data[i] = data[i + 1] = data[i + 2] = avg;
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('이미지 처리 중 오류:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                                return;
+                            // 그레이스케일 및 대비 향상
+                            for (let i = 0; i < data.length; i += 4) {
+                                // 그레이스케일 변환
+                                const gray = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11);
+                                
+                                // 대비 향상 (간단한 방식)
+                                const contrast = 1.5;
+                                const brightness = 10;
+                                const enhanced = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
+                                
+                                data[i] = data[i + 1] = data[i + 2] = enhanced;
                             }
                             
-                            // 수정된 이미지 데이터 적용
-                            try {
-                                ctx.putImageData(imageData, 0, 0);
-                                
-                                // 결과 이미지를 데이터 URL로 변환
-                                const resultUrl = canvas.toDataURL('image/png');
-                                
-                                // 결과 URL 검증
-                                if (!resultUrl || !resultUrl.startsWith('data:image/')) {
-                                    console.error('잘못된 결과 URL:', resultUrl?.substring(0, 30) + '...');
-                                    resolve(imageUrl); // 원본 이미지 반환
-                                    return;
-                                }
-                                
-                                // 미리보기에 추가
-                                addPreview('기본 개선', resultUrl);
-                                
-                                resolve(resultUrl);
-                            } catch (e) {
-                                console.error('이미지 데이터 반영 중 오류:', e);
-                                resolve(imageUrl); // 원본 이미지 반환
-                            }
+                            // 변경된 이미지 데이터 적용
+                            ctx.putImageData(imageData, 0, 0);
+                            
+                            // 결과 URL 생성
+                            const resultUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
+                            
+                            // 미리보기 추가
+                            addPreview('기본 개선', resultUrl);
+                            
+                            resolve(resultUrl);
                         } catch (e) {
-                            console.error('캔버스 처리 중 오류:', e);
-                            resolve(imageUrl); // 원본 이미지 반환
+                            console.error('캔버스 처리 오류:', e);
+                            resolve(imageUrl); // 오류 시 원본 반환
                         }
                     };
                     
-                    // 이미지 로딩 실패 핸들러
-                    img.onerror = function(error) {
-                        console.error('이미지 로딩 오류:', error);
-                        resolve(imageUrl); // 원본 이미지 반환
+                    img.onerror = function() {
+                        reject(new Error('이미지 로딩 실패'));
                     };
                     
-                    // 이미지 로딩 시작 (crossOrigin을 anonymous로 설정)
-                    img.crossOrigin = 'anonymous';
                     img.src = imageUrl;
                     
-                    // 타임아웃 설정 (5초 후 자동으로 원본 이미지 반환)
-                    setTimeout(() => {
-                        if (!img.complete) {
-                            console.warn('이미지 처리 타임아웃');
-                            resolve(imageUrl);
-                        }
-                    }, 5000);
-                    
                 } catch (error) {
-                    console.error('이미지 개선 전체 오류:', error);
-                    resolve(imageUrl); // 원본 이미지 반환
+                    console.error('캔버스 처리 초기화 오류:', error);
+                    reject(error);
                 }
             });
         }
         
-        // 이미지 개선 버튼 설정 함수
-        function setupSafeImageEnhancement() {
-            improveImageBtn.addEventListener('click', async () => {
-                try {
-                    improveImageBtn.disabled = true;
-                    improveImageBtn.textContent = '이미지 개선 중...';
-                    
-                    // 원본 이미지가 있는지 확인
-                    if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
-                        console.error('유효한 이미지가 없습니다.');
-                        improveImageBtn.textContent = '이미지 개선 (이미지 없음)';
-                        improveImageBtn.disabled = false;
-                        showStatus('유효한 이미지가 없습니다. 다시 촬영해주세요.', 'error');
-                        return;
-                    }
-                    
-                    // 원본 이미지 백업
-                    const originalSrc = capturedImage.src;
-                    
-                    showStatus('이미지 개선 중...', 'info');
-                    
-                    try {
-                        // 자동 이미지 개선 적용
-                        const enhancedImage = await simpleEnhanceImage(originalSrc);
-                        
-                        // 원본 이미지와 개선된 이미지가 다른지 확인
-                        if (enhancedImage !== originalSrc) {
-                            capturedImage.src = enhancedImage;
-                        }
-                        
-                        // 이미지 표시 확인
-                        capturedImage.style.display = 'block';
-                        
-                        improveImageBtn.textContent = '이미지 개선 완료';
-                        showStatus('이미지 개선 완료!', 'success');
-                        
-                        setTimeout(() => {
-                            improveImageBtn.textContent = '이미지 다시 개선';
-                            improveImageBtn.disabled = false;
-                        }, 1500);
-                    } catch (error) {
-                        console.error('이미지 개선 처리 오류:', error);
-                        capturedImage.src = originalSrc; // 원본 이미지로 복원
-                        capturedImage.style.display = 'block';
-                        improveImageBtn.textContent = '이미지 개선 (실패)';
-                        improveImageBtn.disabled = false;
-                        showStatus('이미지 개선 중 오류가 발생했습니다.', 'error');
-                    }
-                } catch (error) {
-                    console.error('이미지 개선 버튼 오류:', error);
-                    improveImageBtn.textContent = '이미지 개선';
-                    improveImageBtn.disabled = false;
-                    showStatus('이미지 개선 중 오류가 발생했습니다.', 'error');
+        // 이미지 개선 버튼 이벤트
+        improveImageBtn.addEventListener('click', async () => {
+            try {
+                improveImageBtn.disabled = true;
+                improveImageBtn.textContent = '이미지 개선 중...';
+                
+                // 원본 이미지가 있는지 확인
+                if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
+                    throw new Error('유효한 이미지가 없습니다.');
                 }
-            });
-        }
+                
+                // 원본 이미지 백업
+                const originalSrc = capturedImage.src;
+                
+                showStatus('OCR을 위한 이미지 최적화 중...', 'info');
+                
+                // OCR 최적화 이미지 처리
+                const enhancedImage = await optimizeForOCR(originalSrc);
+                
+                if (enhancedImage !== originalSrc) {
+                    capturedImage.src = enhancedImage;
+                    capturedImage.style.display = 'block';
+                }
+                
+                improveImageBtn.textContent = '이미지 개선 완료';
+                showStatus('OCR 최적화 완료!', 'success');
+                
+                setTimeout(() => {
+                    improveImageBtn.textContent = '다시 개선';
+                    improveImageBtn.disabled = false;
+                }, 1500);
+                
+            } catch (error) {
+                console.error('이미지 개선 오류:', error);
+                improveImageBtn.textContent = '이미지 개선';
+                improveImageBtn.disabled = false;
+                showStatus(`이미지 개선 오류: ${error.message}`, 'error');
+            }
+        });
         
         // 처리 단계 업데이트 함수
         function updateProcessingStep(step) {
@@ -1791,447 +2669,264 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             }
         }
         
-        // 안전한 OCR 처리 함수
-        async function safeOCRProcess(imageUrl, langCode) {
+        // Tesseract OCR 실행 함수 
+        async function performOCR(imageUrl, lang) {
             try {
-                // 이미지 전처리 (기본 전처리만 수행)
-                const preprocessedImage = await safePreprocessImage(imageUrl);
-                
-                // Tesseract Worker 생성 시도
-                const worker = Tesseract.createWorker({
-                    logger: progress => {
-                        if (progress.status === 'recognizing text') {
-                            const percentage = Math.round(progress.progress * 100);
-                            progressBarFill.style.width = `${percentage}%`;
-                        }
-                    }
-                });
-                
-                try {
-                    await worker.load();
-                    await worker.loadLanguage(langCode);
-                    await worker.initialize(langCode);
-                    
-                    // 기본 매개변수만 설정 (안정성 위주)
-                    await worker.setParameters({
-                        preserve_interword_spaces: '1',
-                        tessedit_pageseg_mode: '1'
-                    });
-                    
-                    // 이미지 인식 시도
-                    const result = await worker.recognize(preprocessedImage);
-                    
-                    // 작업 완료 후 워커 종료
-                    await worker.terminate();
-                    
-                    return result.data.text;
-                } catch (ocrError) {
-                    console.error('OCR 처리 중 오류:', ocrError);
-                    
-                    // 워커 종료 시도
-                    try {
-                        await worker.terminate();
-                    } catch (e) {
-                        console.warn('워커 종료 실패:', e);
-                    }
-                    
-                    throw new Error('텍스트 인식에 실패했습니다: ' + ocrError.message);
-                }
-            } catch (error) {
-                console.error('OCR 전체 처리 오류:', error);
-                throw error;
-            }
-        }
-        
-        // 안전한 이미지 전처리 함수
-        async function safePreprocessImage(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    // 이미지 URL 검증
-                    if (!imageUrl || typeof imageUrl !== 'string') {
-                        console.error('유효하지 않은 이미지 URL');
-                        reject(new Error('유효하지 않은 이미지입니다.'));
-                        return;
-                    }
-                    
-                    const img = new Image();
-                    
-                    img.onload = () => {
-                        try {
-                            // 이미지 크기 검증
-                            if (img.width <= 0 || img.height <= 0) {
-                                reject(new Error('유효하지 않은 이미지 크기'));
-                                return;
-                            }
-                            
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 이미지 크기 설정 (너무 큰 이미지는 OCR 처리 속도를 저하시킴)
-                            const MAX_WIDTH = 1280;
-                            let width = img.width;
-                            let height = img.height;
-                            
-                            if (width > MAX_WIDTH) {
-                                height = (MAX_WIDTH / width) * height;
-                                width = MAX_WIDTH;
-                            }
-                            
-                            canvas.width = width;
-                            canvas.height = height;
-                            
-                            // 이미지 그리기
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            // 간단한 전처리만 수행 (복잡한 처리는 오류 가능성이 높음)
-                            try {
-                                // 그레이스케일 변환 (OCR 정확도 향상에 도움)
-                                const imageData = ctx.getImageData(0, 0, width, height);
-                                const data = imageData.data;
-                                
-                                for (let i = 0; i < data.length; i += 4) {
-                                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                                    data[i] = data[i + 1] = data[i + 2] = avg;
-                                }
-                                
-                                ctx.putImageData(imageData, 0, 0);
-                            } catch (e) {
-                                console.warn('이미지 전처리 중 오류, 원본 이미지 사용:', e);
-                                // 전처리 오류 시 원본 이미지 계속 사용
-                            }
-                            
-                            // 전처리된 이미지 반환
-                            resolve(canvas.toDataURL('image/png'));
-                        } catch (error) {
-                            console.error('전처리 과정 중 오류:', error);
-                            // 오류 발생 시 원본 이미지 반환
-                            resolve(imageUrl);
-                        }
-                    };
-                    
-                    img.onerror = () => {
-                        console.error('이미지 로딩 실패');
-                        reject(new Error('이미지 로딩에 실패했습니다.'));
-                    };
-                    
-                    img.src = imageUrl;
-                } catch (error) {
-                    console.error('전처리 초기화 오류:', error);
-                    reject(error);
-                }
-            });
-        }
-        
-        // 간소화된 정보 추출 함수 (오류 감소)
-        function extractBasicInfo(text, keywords) {
-            try {
-                // 기본 정보 객체
-                const info = {
-                    name: '',
-                    position: '',
-                    company: '',
-                    department: '',
-                    phone: '',
-                    email: '',
-                    address: ''
-                };
-                
-                // 인식된 텍스트를 줄별로 분할
-                const lines = text.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line && line.length > 1);
-                
-                // 1. 이메일 추출 (가장 신뢰할 수 있는 패턴)
-                const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-                const emailMatches = text.match(emailRegex);
-                if (emailMatches && emailMatches.length > 0) {
-                    info.email = emailMatches[0];
-                }
-                
-                // 2. 전화번호 추출 (기본 패턴)
-                const phoneRegex = /(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?(\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4})/g;
-                const phoneMatches = text.match(phoneRegex);
-                if (phoneMatches && phoneMatches.length > 0) {
-                    // 가장 긴 전화번호 패턴 선택 (더 완전한 번호일 가능성이 높음)
-                    const longestMatch = phoneMatches.reduce((a, b) => 
-                        a.replace(/\D/g, '').length >= b.replace(/\D/g, '').length ? a : b
-                    );
-                    info.phone = longestMatch.replace(/\s+/g, '-');
-                }
-                
-                // 3. 가장 짧은 줄을 이름으로 가정 (일반적으로 이름은 짧은 편)
-                if (lines.length > 0) {
-                    const shortLines = lines.filter(line => line.length < 15);
-                    if (shortLines.length > 0) {
-                        // 가장 짧은 줄을 이름으로 설정
-                        info.name = shortLines.reduce((a, b) => a.length <= b.length ? a : b);
-                    } else {
-                        // 짧은 줄이 없으면 첫 번째 줄을 이름으로 설정
-                        info.name = lines[0];
-                    }
-                }
-                
-                // 4. 키워드 기반 회사명 탐색
-                for (const line of lines) {
-                    if (keywords.company.some(keyword => line.includes(keyword))) {
-                        info.company = line;
-                        break;
-                    }
-                }
-                
-                // 회사명이 없으면 첫 번째나 두 번째 줄 중 하나를 회사명으로 가정
-                if (!info.company && lines.length > 1) {
-                    info.company = lines[1]; // 두 번째 줄을 회사명으로 가정
-                }
-                
-                // 5. 키워드 기반 직함 탐색
-                for (const line of lines) {
-                    if (keywords.position.some(keyword => line.includes(keyword))) {
-                        info.position = line;
-                        break;
-                    }
-                }
-                
-                // 6. 가장 긴 줄을 주소로 가정
-                if (lines.length > 0) {
-                    const longLines = lines.filter(line => 
-                        line.length > 20 && !line.includes('@') && !/^\d+$/.test(line)
-                    );
-                    if (longLines.length > 0) {
-                        info.address = longLines.reduce((a, b) => a.length >= b.length ? a : b);
-                    }
-                }
-                
-                return info;
-            } catch (error) {
-                console.error('정보 추출 중 오류:', error);
-                // 오류 발생 시 빈 객체 반환
-                return {
-                    name: '',
-                    position: '',
-                    company: '',
-                    department: '',
-                    phone: '',
-                    email: '',
-                    address: ''
-                };
-            }
-        }
-        
-        // 분석 버튼에 연결할 전문적인 분석 함수
-        function setupProfessionalAnalysisButton() {
-            analyzeBtn.addEventListener('click', async () => {
                 // 진행 상태 표시
-                showStatus('명함 분석 준비 중...', 'info');
+                showStatus('OCR 인식 중...', 'info');
                 progressBar.style.display = 'block';
                 progressBarFill.style.width = '0%';
-                analyzeBtn.disabled = true;
                 
+                // Tesseract 워커가 없으면 초기화
+                if (!tesseractWorker) {
+                    await initTesseract();
+                }
+                
+                // 언어 변경이 필요한 경우
                 try {
-                    // 이미지 검증
-                    if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
-                        throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
-                    }
-                    
-                    // 언어 설정 가져오기
-                    const langConfig = languageMap[selectedLanguage];
-                    if (!langConfig) {
-                        throw new Error('지원되지 않는 언어입니다.');
-                    }
-                    
-                    // 처리 단계 업데이트
-                    updateProcessingStep('ocr');
-                    
-                    // 1. OCR 처리
-                    showStatus('텍스트 인식 중...', 'info');
-                    const ocrResult = await enhancedOCRProcess(capturedImage.src, langConfig.lang);
-                    
-                    // 인식 결과 검증
-                    if (!ocrResult.text || ocrResult.text.trim().length === 0) {
-                        throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
-                    }
-                    
-                    console.log('인식된 텍스트:', ocrResult.text);
-                    console.log('인식 신뢰도:', ocrResult.confidence);
-                    
-                    // 신뢰도 표시
-                    showConfidence(ocrResult.confidence);
-                    
-                    // OCR 결과 저장
-                    lastOcrResult = ocrResult;
-                    
-                    // 처리 단계 업데이트
-                    updateProcessingStep('extract');
-                    
-                    // 2. 명함 정보 추출
-                    showStatus('정보 분석 중...', 'info');
-                    const extractedInfo = enhancedBusinessCardExtraction(
-                        ocrResult.text, 
-                        langConfig.keywords,
-                        langConfig.lang
-                    );
-                    
-                    // 처리 단계 업데이트
-                    updateProcessingStep('review');
-                    
-                    // 3. 추출된 정보를 폼에 채우기
-                    document.getElementById('name').value = extractedInfo.name || '';
-                    document.getElementById('position').value = extractedInfo.position || '';
-                    document.getElementById('company').value = extractedInfo.company || '';
-                    document.getElementById('department').value = extractedInfo.department || '';
-                    document.getElementById('phone').value = extractedInfo.phone || extractedInfo.mobile || extractedInfo.tel || '';
-                    document.getElementById('email').value = extractedInfo.email || '';
-                    document.getElementById('address').value = extractedInfo.address || '';
-                    
-                    // 폼에 웹사이트나 팩스 정보가 있으면 메모 필드에 추가
-                    const additionalInfo = [];
-                    if (extractedInfo.website) additionalInfo.push(`웹사이트: ${extractedInfo.website}`);
-                    if (extractedInfo.fax) additionalInfo.push(`팩스: ${extractedInfo.fax}`);
-                    
-                    if (additionalInfo.length > 0) {
-                        document.getElementById('notes').value = additionalInfo.join('\n');
-                    }
-                    
-                    // 폼 표시
-                    cardForm.style.display = 'block';
-                    
-                    // 진행 상태 업데이트
-                    showStatus(`명함 분석 완료! (신뢰도: ${Math.round(ocrResult.confidence || 0)}%)`, 'success');
-                    progressBarFill.style.width = '100%';
-                    setTimeout(() => {
-                        progressBar.style.display = 'none';
-                        analyzeBtn.disabled = false;
-                    }, 1500);
-                    
+                    await tesseractWorker.loadLanguage(lang);
+                    await tesseractWorker.initialize(lang);
                 } catch (error) {
-                    console.error('명함 분석 오류:', error);
-                    
-                    // 오류 메시지 표시
-                    showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
-                    
-                    // 기본 분석 메소드로 대체 시도
-                    try {
-                        showStatus('대체 분석 방법으로 시도 중...', 'info');
-                        const langConfig = languageMap[selectedLanguage];
-                        
-                        // 간단한 OCR 처리 시도
-                        const simpleOcrResult = await safeOCRProcess(capturedImage.src, langConfig.lang);
-                        
-                        if (simpleOcrResult && simpleOcrResult.length > 0) {
-                            // 기본 정보 추출 시도
-                            const basicInfo = extractBasicInfo(simpleOcrResult, langConfig.keywords);
-                            
-                            // 폼에 정보 채우기
-                            document.getElementById('name').value = basicInfo.name || '';
-                            document.getElementById('position').value = basicInfo.position || '';
-                            document.getElementById('company').value = basicInfo.company || '';
-                            document.getElementById('department').value = basicInfo.department || '';
-                            document.getElementById('phone').value = basicInfo.phone || '';
-                            document.getElementById('email').value = basicInfo.email || '';
-                            document.getElementById('address').value = basicInfo.address || '';
-                            
-                            // 폼 표시
-                            cardForm.style.display = 'block';
-                            
-                            showStatus('기본 분석 완료 (일부 정보만 추출되었을 수 있습니다)', 'info');
-                        } else {
-                            throw new Error('대체 분석 방법도 실패했습니다.');
-                        }
-                    } catch (fallbackError) {
-                        console.error('대체 분석 오류:', fallbackError);
-                        showStatus('모든 분석 방법이 실패했습니다. 다시 촬영하거나 직접 입력해주세요.', 'error');
-                        
-                        // 빈 폼 표시
-                        cardForm.style.display = 'block';
-                    }
-                    
-                    setTimeout(() => {
-                        progressBar.style.display = 'none';
-                        analyzeBtn.disabled = false;
-                    }, 3000);
-                }
-            });
-        }
-        
-        // 개선된 OCR 처리 함수
-        async function enhancedOCRProcess(imageUrl, langCode) {
-            try {
-                // 진행률 표시
-                progressBar.style.display = 'block';
-                progressBarFill.style.width = '0%';
-                
-                // Tesseract Worker 초기화
-                const worker = Tesseract.createWorker({
-                    logger: progress => {
-                        if (progress.status === 'recognizing text') {
-                            const percentage = Math.round(progress.progress * 100);
-                            progressBarFill.style.width = `${percentage}%`;
-                        }
-                    }
-                });
-                
-                await worker.load();
-                await worker.loadLanguage(langCode);
-                await worker.initialize(langCode);
-                
-                // OCR 인식 품질 향상을 위한 매개변수 설정
-                await worker.setParameters({
-                    // 중요: 띄어쓰기 유지 (이름, 주소 등에서 중요)
-                    preserve_interword_spaces: '1',
-                    
-                    // 페이지 세분화 모드: 자동 (OCR 라이브러리가 페이지 레이아웃 자동 감지)
-                    tessedit_pageseg_mode: 'PSM_AUTO',
-                    
-                    // 명함에 적합한 OCR 엔진 모드 설정 (LSTM 신경망)
-                    tessedit_ocr_engine_mode: 'OEM_LSTM_ONLY',
-                    
-                    // 숫자 인식 개선
-                    tessedit_char_whitelist: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@.,-_/:() ',
-                    
-                    // 희귀 단어 처리 활성화 (이름이나 회사명에 도움)
-                    load_system_dawg: '1',
-                    
-                    // 철자 수정 해제 (전문 용어나 이름이 수정되는 것 방지)
-                    language_model_penalty_non_dict_word: '0.5',
-                    
-                    // 전체 페이지에 단일 텍스트 블록을 사용하는 대신, 텍스트 라인 개별 인식
-                    textord_tabfind_find_tables: '0'
-                });
-                
-                // 추가 언어별 매개변수 설정
-                if (langCode.includes('kor')) {
-                    await worker.setParameters({
-                        // 한글 인식 개선
-                        textord_force_make_prop_words: '0',
-                        textord_noise_rejrows: '1',
-                        textord_noise_rejcols: '1'
-                    });
+                    console.error('언어 변경 중 오류:', error);
+                    // 실패 시 워커 재생성 시도
+                    await tesseractWorker.terminate();
+                    tesseractWorker = await Tesseract.createWorker();
+                    await tesseractWorker.loadLanguage(lang);
+                    await tesseractWorker.initialize(lang);
                 }
                 
-                // 이미지 인식 실행
-                const result = await worker.recognize(imageUrl);
+                // OCR 실행
+                const result = await tesseractWorker.recognize(imageUrl, {
+                    tessedit_pageseg_mode: appSettings.psm || '4'
+                });
                 
-                // 워커 종료
-                await worker.terminate();
+                // 결과 신뢰도 계산
+                let confidence = 0;
+                if (result.confidence) {
+                    confidence = result.confidence;
+                } else if (result.data && result.data.confidence) {
+                    confidence = result.data.confidence;
+                }
                 
+                // 원시 OCR 결과 표시 (고급 모드 또는 설정에 따라)
+                if (isAdvancedMode || appSettings.showRawOcr) {
+                    rawOcrResult.textContent = result.data.text;
+                    rawOcrResult.style.display = 'block';
+                }
+                
+                // 결과 반환
                 return {
                     text: result.data.text,
-                    confidence: result.data.confidence,
+                    confidence: confidence,
                     words: result.data.words || [],
-                    blocks: result.data.blocks || [],
-                    lines: result.data.lines || [],
-                    paragraphs: result.data.paragraphs || []
+                    hocr: result.data.hocr || '',
+                    blocks: result.data.blocks || []
                 };
                 
             } catch (error) {
                 console.error('OCR 처리 오류:', error);
-                throw new Error('OCR 처리 중 오류가 발생했습니다: ' + error.message);
+                throw error;
+            } finally {
+                // 진행 상태 업데이트
+                progressBarFill.style.width = '100%';
             }
         }
         
-        // 향상된 명함 정보 추출 함수
-        function enhancedBusinessCardExtraction(text, keywords, langCode) {
+        // AI 기반 명함 정보 분석 함수
+        async function analyzeWithAI(text) {
+            if (!appSettings.useAI) return null;
+            
             try {
+                // AI 모델 확인
+                const model = await loadUSEModel();
+                if (!model) return null;
+                
+showStatus('AI 분석 진행 중...', 'info');
+                
+                // 카테고리 예제 정의
+                const categoryExamples = {
+                    "이름": "홍길동 John Smith 김철수 Zhang Wei Tanaka Yuki Roy Young",
+                    "회사": "주식회사 (주) 기업 그룹 연구소 학교 대학교 Corporation Company Ltd Inc Technology Co",
+                    "직책": "대표 사장 이사 부장 과장 대리 연구원 Manager Director CEO CTO CFO President Executive",
+                    "이메일": "example@example.com contact@company.com info@business.co.kr",
+                    "전화번호": "010-1234-5678 02-123-4567 +82-10-1234-5678 (02)123-4567",
+                    "웹사이트": "www.example.com https://company.co.kr http://business.net",
+                    "주소": "서울시 강남구 테헤란로 123 New York, NY 10001 경기도 성남시 분당구"
+                };
+                
+                // 결과 저장 객체
+                const aiResults = [];
+                
+                // 텍스트 줄 분석
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
+                
+                // 특별한 패턴 검색 (시간/날짜 패턴 및 특수 패턴)
+                const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
+                let timePatternFound = false;
+                let nameAfterTimePattern = null;
+                
+                for (let i = 0; i < lines.length - 1; i++) {
+                    if (timePattern.test(lines[i])) {
+                        timePatternFound = true;
+                        nameAfterTimePattern = lines[i + 1];
+                        // 이미 이 패턴은 "이름" 카테고리로 관련성이 매우 높음
+                        aiResults.push({
+                            text: nameAfterTimePattern,
+                            category: "이름",
+                            similarity: 0.95
+                        });
+                        break;
+                    }
+                }
+                
+                // A HOLTOR 같은 상단에 있는 회사명 패턴 인식
+                if (lines.length > 0 && /^[A-Z\s]+$/.test(lines[0])) {
+                    aiResults.push({
+                        text: lines[0],
+                        category: "회사",
+                        similarity: 0.9
+                    });
+                }
+                
+                // 각 줄에 대해 AI 분석 (시간 패턴에서 찾은 것은 제외)
+                const linesToAnalyze = timePatternFound 
+                    ? lines.filter(line => line !== nameAfterTimePattern)
+                    : lines;
+                
+                // 분석할 줄 제한 (성능 최적화)
+                const maxLinesToAnalyze = Math.min(10, linesToAnalyze.length);
+                
+                for (let i = 0; i < maxLinesToAnalyze; i++) {
+                    const line = linesToAnalyze[i];
+                    
+                    // 분석에 적합한 줄인지 확인
+                    if (line.length < 2 || line.length > 50) continue;
+                    if (aiResults.some(r => r.text === line)) continue; // 이미 분석한 줄은 건너뛰기
+                    
+                    try {
+                        // 각 텍스트 줄을 카테고리와 비교
+                        const result = await findMostSimilarCategory(line, categoryExamples);
+                        
+                        if (result && result.category && result.similarity > 0.35) {
+                            aiResults.push({
+                                text: line,
+                                category: result.category,
+                                similarity: result.similarity
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('줄 분석 오류:', line, e);
+                    }
+                }
+                
+                // 이메일과 URL 추출 (정규식 패턴 - 높은 정확도)
+                const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                const emailMatches = text.match(emailRegex);
+                
+                if (emailMatches && emailMatches.length > 0) {
+                    // 아직 결과에 없으면 추가
+                    if (!aiResults.some(r => r.text.includes(emailMatches[0]))) {
+                        aiResults.push({
+                            text: emailMatches[0],
+                            category: "이메일",
+                            similarity: 0.98
+                        });
+                    }
+                }
+                
+                const urlRegex = /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})/g;
+                const urlMatches = text.match(urlRegex);
+                
+                if (urlMatches && urlMatches.length > 0) {
+                    // 이메일이 아니고 아직 결과에 없는 URL만 추가
+                    const validUrls = urlMatches.filter(url => 
+                        !url.includes('@') && 
+                        !aiResults.some(r => r.text.includes(url))
+                    );
+                    
+                    if (validUrls.length > 0) {
+                        aiResults.push({
+                            text: validUrls[0],
+                            category: "웹사이트",
+                            similarity: 0.95
+                        });
+                    }
+                }
+                
+                // 전화번호 추출 (정규식 패턴)
+                const phoneRegex = /(?:(?:\+|00)?82|0)?[ -]?(?:(?:(?:1[0-9]|[2-6][1-3]|70)[ -]?[0-9]{3,4})|(?:50[1-9])[ -]?[0-9]{2,3})[ -]?[0-9]{4}$|(?:\+?1[-\s\.]?)?\(?([0-9]{3})\)?[-\s\.]?([0-9]{3})[-\s\.]?([0-9]{4})|(?:(?:\+?81)|0)[-\s]?(?:[1-9]0(?:[1-9]|0)|\d{2}|\d{1})[-\s]?\d{4}[-\s]?\d{4}|(?:\+?86)?[-\s]?(?:(?:1[3-9][0-9]))[-\s]?[0-9]{4}[-\s]?[0-9]{4}|(?:\d{3,4})[-\s]?(?:\d{7,8})/g;
+                const phoneMatches = text.match(phoneRegex);
+                
+                if (phoneMatches && phoneMatches.length > 0) {
+                    // 아직 결과에 없는 전화번호만 추가
+                    if (!aiResults.some(r => r.text.includes(phoneMatches[0]))) {
+                        aiResults.push({
+                            text: phoneMatches[0],
+                            category: "전화번호",
+                            similarity: 0.9
+                        });
+                    }
+                }
+                
+                // 카테고리별로 정렬하고 각 카테고리에서 가장 높은 신뢰도를 가진 것만 선택
+                const categorizedResults = {};
+                
+                for (const result of aiResults) {
+                    if (!categorizedResults[result.category] || 
+                        categorizedResults[result.category].similarity < result.similarity) {
+                        categorizedResults[result.category] = result;
+                    }
+                }
+                
+                // 결과를 배열로 변환
+                const finalResults = Object.values(categorizedResults);
+                
+                // 만약 고급 모드이면 UI에 결과 표시
+                if (isAdvancedMode) {
+                    displayAIResults(finalResults);
+                }
+                
+                return finalResults;
+            } catch (error) {
+                console.error('AI 분석 오류:', error);
+                return null;
+            }
+        }
+        
+        // AI 결과 표시 함수
+        function displayAIResults(results) {
+            if (!results || results.length === 0) {
+                aiResults.style.display = 'none';
+                return;
+            }
+            
+            // 결과 컨테이너 초기화
+            aiResultsList.innerHTML = '';
+            
+            // 결과 표시
+            for (const result of results) {
+                const confidence = Math.round(result.similarity * 100);
+                const item = document.createElement('div');
+                item.className = 'ai-item';
+                item.innerHTML = `
+                    <div class="ai-category">${result.category}:</div>
+                    <div class="ai-text">${result.text}</div>
+                    <div class="ai-confidence">${confidence}%</div>
+                `;
+                aiResultsList.appendChild(item);
+            }
+            
+            // 결과 컨테이너 표시
+            aiResults.style.display = 'block';
+        }
+        
+        // 고급 명함 정보 추출 함수 (AI 분석 결과 활용)
+        async function enhancedBusinessCardExtraction(ocrResult, keywords, langCode, aiAnalysisResults = null) {
+            try {
+                // OCR 결과 텍스트
+                const text = ocrResult.text;
+                const words = ocrResult.words || [];
+                
                 // 기본 정보 객체
                 const info = {
                     name: '',
@@ -2247,6 +2942,27 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                     address: ''
                 };
                 
+                // AI 분석 결과가 있으면 먼저 활용
+                if (aiAnalysisResults && aiAnalysisResults.length > 0) {
+                    for (const result of aiAnalysisResults) {
+                        if (result.category === "이름" && result.similarity > 0.4) {
+                            info.name = result.text;
+                        } else if (result.category === "회사" && result.similarity > 0.4) {
+                            info.company = result.text;
+                        } else if (result.category === "직책" && result.similarity > 0.4) {
+                            info.position = result.text;
+                        } else if (result.category === "전화번호" && result.similarity > 0.4) {
+                            info.phone = result.text;
+                        } else if (result.category === "이메일" && result.similarity > 0.4) {
+                            info.email = result.text;
+                        } else if (result.category === "웹사이트" && result.similarity > 0.4) {
+                            info.website = result.text;
+                        } else if (result.category === "주소" && result.similarity > 0.4) {
+                            info.address = result.text;
+                        }
+                    }
+                }
+                
                 // 인식된 텍스트를 줄별로 분할 및 정제
                 const rawLines = text.split('\n');
                 
@@ -2255,258 +2971,530 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                     .map(line => line.trim())
                     .filter(line => line && line.length > 1);
                 
-                // 줄 병합: 잘린 줄 연결 (추후 구현)
-                
-                // 1. 이메일 추출 (신뢰성 높은 패턴)
-                const emailMatches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
-                if (emailMatches && emailMatches.length > 0) {
-                    // 가장 긴 이메일 주소 선택 (더 완전한 정보일 가능성 높음)
-                    info.email = emailMatches.reduce((a, b) => a.length >= b.length ? a : b);
-                    
-                    // 추출된 이메일이 포함된 줄 찾기
-                    const emailLine = lines.find(line => line.includes(info.email));
-                    if (emailLine) {
-                        // 이메일 포함 라인 제거
-                        lines = lines.filter(line => line !== emailLine);
+                // 1. 이메일 추출 (정규식 패턴 - 가장 신뢰성 높음)
+                if (!info.email) {
+                    let emailMatches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+                    if (emailMatches && emailMatches.length > 0) {
+                        info.email = emailMatches[0];
                     }
                 }
                 
-                // 2. 웹사이트 URL 추출
-                const urlMatches = text.match(/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})+/g);
-                if (urlMatches && urlMatches.length > 0) {
-                    // 유효한 URL 필터링 (이메일 주소가 아닌 것)
-                    const validUrls = urlMatches.filter(url => !url.includes('@'));
-                    if (validUrls.length > 0) {
-                        info.website = validUrls[0];
-                        
-                        // 추출된 URL이 포함된 줄 찾기
-                        const urlLine = lines.find(line => line.includes(info.website));
-                        if (urlLine) {
-                            // URL 포함 라인 제거
-                            lines = lines.filter(line => line !== urlLine);
+                // 2. 웹사이트 URL 추출 (정규식 패턴)
+                if (!info.website) {
+                    let urlMatches = text.match(/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+(?:\.[a-zA-Z]{2,})(?:\/\S*)?/g);
+                    if (urlMatches && urlMatches.length > 0) {
+                        // 이메일이 아닌 URL만 필터링
+                        const validUrls = urlMatches.filter(url => !url.includes('@'));
+                        if (validUrls.length > 0) {
+                            info.website = validUrls[0];
                         }
                     }
                 }
                 
-                // 3. 전화번호 추출 (다양한 형식)
-                // 전화번호 유형별 패턴 정의
-                const phonePatterns = [
-                    // 모바일 패턴
-                    {
-                        regex: new RegExp(`(?:(?:휴대(?:폰|전화)|핸드폰|Mobile|모바일|携帯|手机)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
-                        type: 'mobile'
-                    },
-                    // 일반 전화 패턴
-                    {
-                        regex: new RegExp(`(?:(?:전화|사무실|Tel|TEL|电话|電話|T|P|Ph)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
-                        type: 'tel'
-                    },
-                    // 팩스 패턴
-                    {
-                        regex: new RegExp(`(?:(?:팩스|Fax|FAX|传真|F)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
-                        type: 'fax'
-                    },
-                    // 일반 숫자 패턴 (위에서 매치되지 않은 것)
-                    {
-                        regex: /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?/g,
-                        type: 'phone'
-                    }
-                ];
-                
-                // 매칭된 전화번호 저장
-                const matchedNumbers = new Set();
-                
-                // 각 패턴 유형에 따라 검색
-                for (const pattern of phonePatterns) {
-                    const matches = text.match(pattern.regex);
-                    if (matches && matches.length > 0) {
-                        for (const match of matches) {
-                            // 숫자만 추출
-                            const digitsOnly = match.replace(/\D/g, '');
-                            
-                            // 전화번호가 너무 짧거나 길면 건너뛰기
-                            if (digitsOnly.length < 7 || digitsOnly.length > 15) continue;
-                            
-                            // 이미 추출한 번호는 건너뛰기
-                            if (matchedNumbers.has(digitsOnly)) continue;
-                            
-                            // 전화번호 형식화
-                            let formattedNumber = match.trim();
-                            
-                            // 전화번호 유형 저장
-                            if (pattern.type === 'mobile' && !info.mobile) {
-                                info.mobile = formattedNumber;
-                            } else if (pattern.type === 'tel' && !info.tel) {
-                                info.tel = formattedNumber;
-                            } else if (pattern.type === 'fax' && !info.fax) {
-                                info.fax = formattedNumber;
-                            } else if (pattern.type === 'phone' && !info.phone) {
-                                info.phone = formattedNumber;
-                            }
-                            
-                            // 매칭된 번호 저장
-                            matchedNumbers.add(digitsOnly);
-                            
-                            // 추출된 전화번호가 포함된 줄 찾기 및 제거
-                            const phoneLine = lines.find(line => line.includes(match));
-                            if (phoneLine) {
-                                lines = lines.filter(line => line !== phoneLine);
-                            }
-                        }
-                    }
-                }
-                
-                // phone이 비어있고 mobile, tel이 있으면 대체
+                // 3. 전화번호 추출 (언어별 패턴)
                 if (!info.phone) {
-                    info.phone = info.mobile || info.tel || '';
+                    const phonePatterns = [
+                        // 모바일 패턴
+                        {
+                            regex: new RegExp(`(?:(?:휴대(?:폰|전화)|핸드폰|Mobile|모바일|携帯|手机)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
+                            type: 'mobile'
+                        },
+                        // 일반 전화 패턴
+                        {
+                            regex: new RegExp(`(?:(?:전화|사무실|Tel|TEL|电话|電話|T|P|Ph)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
+                            type: 'tel'
+                        },
+                        // 팩스 패턴
+                        {
+                            regex: new RegExp(`(?:(?:팩스|Fax|FAX|传真|F)[\\s:).-]*)?(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}`, 'gi'),
+                            type: 'fax'
+                        },
+                        // 일반 숫자 패턴
+                        {
+                            regex: /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}(?:[\s-]?\d{3,4})?/g,
+                            type: 'phone'
+                        }
+                    ];
+                    
+                    // 매칭된 전화번호 저장
+                    const matchedNumbers = new Set();
+                    
+                    // 각 패턴별로 검색
+                    for (const pattern of phonePatterns) {
+                        const matches = text.match(pattern.regex);
+                        if (matches && matches.length > 0) {
+                            for (const match of matches) {
+                                // 숫자만 추출해서 중복 체크 (다양한 포맷으로 동일 번호가 추출될 수 있음)
+                                const digitsOnly = match.replace(/\D/g, '');
+                                
+                                // 너무 짧거나 긴 번호는 건너뛰기
+                                if (digitsOnly.length < 7 || digitsOnly.length > 15) continue;
+                                
+                                // 이미 추출한 번호면 건너뛰기
+                                if (matchedNumbers.has(digitsOnly)) continue;
+                                
+                                // 전화번호 형식화
+                                let formattedNumber = match.trim();
+                                
+                                // 전화번호 유형 저장
+                                if (pattern.type === 'mobile' && !info.mobile) {
+                                    info.mobile = formattedNumber;
+                                } else if (pattern.type === 'tel' && !info.tel) {
+                                    info.tel = formattedNumber;
+                                } else if (pattern.type === 'fax' && !info.fax) {
+                                    info.fax = formattedNumber;
+                                } else if (pattern.type === 'phone' && !info.phone) {
+                                    info.phone = formattedNumber;
+                                }
+                                
+                                // 매칭된 번호 저장
+                                matchedNumbers.add(digitsOnly);
+                            }
+                        }
+                    }
+                    
+                    // 대표 전화번호 설정 (모바일 > 일반전화 > 팩스 순)
+                    if (!info.phone) {
+                        info.phone = info.mobile || info.tel || '';
+                    }
                 }
                 
-                // 4. 코드페이지 및 언어별 처리
-                let nameFirst = true;
-                if (langCode.includes('kor') || langCode.includes('jpn') || langCode.includes('chi_sim')) {
-                    nameFirst = true; // 동아시아 언어는 이름이 먼저 나옴
-                } else {
-                    nameFirst = false; // 서양 언어는 회사/직책이 먼저 나오는 경우가 많음
-                }
-                
-                // 5. 이름 추출
-                // 짧고 특수 문자가 없는 첫 번째/두 번째 줄을 이름으로 추정
-                const nameLines = lines.filter(line => 
-                    line.length < 25 && 
-                    line.length > 1 &&
-                    !line.includes('@') && 
-                    !line.includes('http') &&
-                    !/\d{4,}/.test(line) && // 긴 숫자가 없는 줄
-                    !/^[\d\s\-+.()]+$/.test(line) // 전화번호만 있는 줄이 아닌 것
-                );
-                
-                if (nameLines.length > 0) {
-                    // 위치 기반 이름 추출
-                    if (nameFirst && nameLines.length > 0) {
-                        // 동아시아 언어: 첫 번째 짧은 줄을 이름으로
-                        info.name = nameLines[0];
-                    } else if (nameLines.length > 1) {
-                        // 서양 언어: 두 번째 또는 세 번째 짧은 줄을 이름으로
-                        info.name = nameLines[1] || nameLines[0];
+                // 4. 이름 추출 (AI 결과가 없는 경우)
+                if (!info.name) {
+                    // 특별한 시간/날짜 형식 패턴 확인 (예: "-- lm 00 00 ==")
+                    const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
+                    let nameAfterTimePattern = null;
+                    
+                    // 시간 패턴 다음 줄을 이름으로 간주 (많은 명함이 이런 형식 사용)
+                    for (let i = 0; i < lines.length - 1; i++) {
+                        if (timePattern.test(lines[i]) && i + 1 < lines.length) {
+                            nameAfterTimePattern = lines[i + 1];
+                            break;
+                        }
+                    }
+                    
+                    if (nameAfterTimePattern) {
+                        info.name = nameAfterTimePattern;
                     } else {
-                        info.name = nameLines[0];
+                        // 일반적인 이름 추출
+                        // 짧고 특수 문자가 없는 첫 번째/두 번째 줄을 이름으로 추정
+                        const nameLines = lines.filter(line => 
+                            line.length < 25 && 
+                            line.length > 1 &&
+                            !line.includes('@') && 
+                            !line.includes('http') &&
+                            !/\d{4,}/.test(line) && // 긴 숫자가 없는 줄
+                            !/^[\d\s\-+.()]+$/.test(line) // 전화번호만 있는 줄이 아닌 것
+                        );
+                        
+                        if (nameLines.length > 0) {
+                            // 언어별 특성에 맞는 처리
+                            let nameFirst = true;
+                            if (langCode.includes('kor') || langCode.includes('jpn') || langCode.includes('chi_sim')) {
+                                nameFirst = true; // 동아시아 언어는 이름이 먼저 나옴
+                            } else {
+                                nameFirst = false; // 서양 언어는 회사/직책이 먼저 나오는 경우가 많음
+                            }
+                            
+                            // 위치 기반 이름 추출
+                            if (nameFirst && nameLines.length > 0) {
+                                // 동아시아 언어: 첫 번째 짧은 줄을 이름으로
+                                info.name = nameLines[0];
+                            } else if (nameLines.length > 1) {
+                                // 서양 언어: 두 번째 또는 세 번째 짧은 줄을 이름으로
+                                info.name = nameLines[1] || nameLines[0];
+                            } else {
+                                info.name = nameLines[0];
+                            }
+                        }
                     }
                     
                     // 이름 정제
-                    info.name = info.name.replace(/^\s*[.•*-]\s*/, ''); // 줄 앞의 기호 제거
-                    
-                    // 이름 줄 제거
-                    lines = lines.filter(line => line !== info.name);
-                }
-                
-                // 6. 회사명 추출
-                // 키워드 기반 회사명 탐색
-                let companyFound = false;
-                
-                // 키워드 기반 회사명 탐색
-                for (const line of lines) {
-                    if (keywords.company.some(keyword => line.includes(keyword))) {
-                        info.company = line;
-                        companyFound = true;
-                        // 회사명이 포함된 줄 제거
-                        lines = lines.filter(l => l !== line);
-                        break;
+                    if (info.name) {
+                        info.name = info.name.replace(/^\s*[.•*-]\s*/, ''); // 줄 앞의 기호 제거
                     }
                 }
                 
-                // 회사명을 찾지 못했다면 위치 기반 추정
-                if (!companyFound && lines.length > 1) {
-                    if (nameFirst && lines.length > 0) {
-                        // 동아시아 형식: 이름 다음 줄이 회사/직책일 가능성 높음
-                        const possibleCompany = lines[0];
-                        if (possibleCompany && !info.position) {
-                            info.company = possibleCompany;
-                            lines = lines.filter(l => l !== possibleCompany);
-                        }
+                // 5. 회사명 추출 (AI 결과가 없는 경우)
+                if (!info.company) {
+                    // 첫 줄이 대문자로만 된 경우 회사로 간주 (예: "A HOLTOR")
+                    if (lines.length > 0 && /^[A-Z\s]+$/.test(lines[0])) {
+                        info.company = lines[0];
                     } else {
-                        // 서양 형식: 첫 번째 줄이 회사일 가능성 높음
-                        const possibleCompany = lines[0];
-                        if (possibleCompany) {
-                            info.company = possibleCompany;
-                            lines = lines.filter(l => l !== possibleCompany);
+                        // 키워드 기반 회사명 탐색
+                        for (const line of lines) {
+                            if (keywords.company.some(keyword => line.includes(keyword))) {
+                                info.company = line;
+                                break;
+                            }
+                        }
+                        
+                        // 회사명이 없으면 위치 기반으로 추정
+                        if (!info.company && lines.length > 1) {
+                            const nameIndex = info.name ? lines.indexOf(info.name) : -1;
+                            
+                            if (nameIndex === 0 && lines.length > 1) {
+                                // 이름이 첫 줄이면 두 번째 줄이 회사일 가능성 높음
+                                info.company = lines[1];
+                            } else if (nameIndex === -1 && lines.length > 0) {
+                                // 이름을 찾지 못했으면 첫 줄이 회사일 가능성
+                                info.company = lines[0];
+                            }
                         }
                     }
                 }
                 
-                // 7. 직책 추출
-                // 키워드 기반 직책 탐색
-                let positionFound = false;
-                
-                for (const line of lines) {
-                    if (keywords.position.some(keyword => line.includes(keyword))) {
-                        info.position = line;
-                        positionFound = true;
-                        // 직책이 포함된 줄 제거
-                        lines = lines.filter(l => l !== line);
-                        break;
+                // 6. 직책 추출 (AI 결과가 없는 경우)
+                if (!info.position) {
+                    // 키워드 기반 직책 탐색
+                    for (const line of lines) {
+                        if (keywords.position.some(keyword => line.includes(keyword))) {
+                            info.position = line;
+                            break;
+                        }
+                    }
+                    
+                    // 직책이 없으면 위치 기반으로 추정
+                    if (!info.position && info.name && info.company) {
+                        const nameIndex = lines.indexOf(info.name);
+                        const companyIndex = lines.indexOf(info.company);
+                        
+                        if (nameIndex !== -1 && companyIndex !== -1) {
+                            // 이름과 회사 사이에 있는 줄을 직책으로 간주
+                            const indices = [nameIndex, companyIndex].sort((a, b) => a - b);
+                            if (indices[1] - indices[0] === 2) {
+                                const middleIndex = indices[0] + 1;
+                                info.position = lines[middleIndex];
+                            }
+                        }
                     }
                 }
                 
-                // 직책을 찾지 못했다면 위치 기반 추정
-                if (!positionFound && lines.length > 0) {
-                    // 이름, 회사 다음에 오는 짧은 줄이 직책일 가능성
-                    const shortLines = lines.filter(line => line.length < 20);
-                    if (shortLines.length > 0) {
-                        info.position = shortLines[0];
-                        lines = lines.filter(l => l !== shortLines[0]);
+                // 7. 부서 추출
+                if (!info.department) {
+                    // 키워드 기반 부서 탐색
+                    for (const line of lines) {
+                        if (keywords.department.some(keyword => line.includes(keyword))) {
+                            info.department = line;
+                            break;
+                        }
                     }
                 }
                 
-                // 8. 부서 추출
-                // 키워드 기반 부서 탐색
-                for (const line of lines) {
-                    if (keywords.department.some(keyword => line.includes(keyword))) {
-                        info.department = line;
-                        // 부서가 포함된 줄 제거
-                        lines = lines.filter(l => l !== line);
-                        break;
+                // 8. 주소 추출
+                if (!info.address) {
+                    // 가장 긴 줄을 주소로 간주 (전화번호, 이메일, URL 아닌 것들 중에서)
+                    const addressCandidates = lines.filter(line => 
+                        line.length > 20 && 
+                        !line.includes('@') && 
+                        !line.includes('www.') && 
+                        !line.includes('http') &&
+                        !/^[\d\s\-+.()]+$/.test(line) // 전화번호만 있는 줄이 아닌 것
+                    );
+                    
+                    if (addressCandidates.length > 0) {
+                        // 가장 긴 줄을 주소로 설정
+                        info.address = addressCandidates.reduce((a, b) => a.length >= b.length ? a : b);
                     }
                 }
                 
-                // 9. 주소 추출 (가장 긴 줄)
-                const longLines = lines.filter(line => 
-                    line.length > 20 && 
-                    !line.includes('@') && 
-                    !line.includes('www.') && 
-                    !line.includes('http')
-                );
-                
-                if (longLines.length > 0) {
-                    // 가장 긴 줄을 주소로 설정
-                    info.address = longLines.reduce((a, b) => a.length >= b.length ? a : b);
-                    // 주소 제거
-                    lines = lines.filter(l => l !== info.address);
-                }
-                
-                // 10. 정보 정제
-                // 이름에서 호칭어 제거
-                if (info.name) {
-                    info.name = info.name.replace(/\s*(씨|님|先生|小姐|Mr\.|Ms\.|Mrs\.|Dr\.|Prof\.)\s*$/, '');
-                }
-                
-                // 회사명 정제
-                if (info.company) {
-                    // 불필요한 기호 제거
-                    info.company = info.company.replace(/^[\s\-•*]+|[\s\-•*]+$/g, '');
-                }
-                
-                // 직책 정제
-                if (info.position) {
-                    // 불필요한 기호 제거
-                    info.position = info.position.replace(/^[\s\-•*]+|[\s\-•*]+$/g, '');
-}
+                // 9. 정보 정제
+                if (info.name) info.name = info.name.trim();
+                if (info.company) info.company = info.company.trim();
+                if (info.position) info.position = info.position.trim();
+                if (info.department) info.department = info.department.trim();
+                if (info.phone) info.phone = info.phone.trim();
+                if (info.email) info.email = info.email.trim();
+                if (info.website) info.website = info.website.trim();
+                if (info.address) info.address = info.address.trim();
                 
                 return info;
+                
             } catch (error) {
                 console.error('명함 정보 추출 오류:', error);
-                return extractBasicInfo(text, keywords);
+                
+                // 오류 발생 시 기본 정보 추출 시도
+                const basicInfo = {
+                    name: '',
+                    position: '',
+                    company: '',
+                    department: '',
+                    phone: '',
+                    email: '',
+                    website: '',
+                    address: ''
+                };
+                
+                try {
+                    // 이메일 추출 시도
+                    const emailMatches = ocrResult.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+                    if (emailMatches && emailMatches.length > 0) {
+                        basicInfo.email = emailMatches[0];
+                    }
+                    
+                    // 전화번호 추출 시도
+                    const phoneMatches = ocrResult.text.match(/(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g);
+                    if (phoneMatches && phoneMatches.length > 0) {
+                        basicInfo.phone = phoneMatches[0];
+                    }
+                    
+                    // 줄 분할
+                    const lines = ocrResult.text.split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line && line.length > 1);
+                    
+                    // 시간 패턴 검색 (-- lm 00 00 == 다음에 오는 줄이 이름일 가능성이 높음)
+                    const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
+                    let nameFound = false;
+                    
+                    for (let i = 0; i < lines.length - 1; i++) {
+                        if (timePattern.test(lines[i])) {
+                            basicInfo.name = lines[i + 1];
+                            nameFound = true;
+                            break;
+                        }
+                    }
+                    
+                    // 시간 패턴에서 이름을 찾지 못했으면 첫 번째 줄을 이름으로
+                    if (!nameFound && lines.length > 0) {
+                        // 첫 줄이 대문자로만 된 경우는 회사로 간주
+                        if (/^[A-Z\s]+$/.test(lines[0])) {
+                            basicInfo.company = lines[0];
+                            if (lines.length > 1) {
+                                basicInfo.name = lines[1];
+                            }
+                        } else {
+                            basicInfo.name = lines[0];
+                        }
+                    }
+                    
+                    // 회사명 추출 시도
+                    if (!basicInfo.company && lines.length > 1) {
+                        for (let i = 0; i < Math.min(3, lines.length); i++) {
+                            const line = lines[i];
+                            if (line !== basicInfo.name && 
+                                (line.includes('주식회사') || line.includes('(주)') || 
+                                 line.includes('Co.') || line.includes('Ltd') || 
+                                 line.includes('Inc') || line.includes('Corp'))) {
+                                basicInfo.company = line;
+                                break;
+                            }
+                        }
+                        
+                        // 키워드가 없으면 두 번째나 세 번째 줄을 회사로 추정
+                        if (!basicInfo.company && lines.length > 1) {
+                            const nameIndex = lines.indexOf(basicInfo.name);
+                            if (nameIndex === 0 && lines.length > 1) {
+                                basicInfo.company = lines[1];
+                            } else if (nameIndex === 1 && lines.length > 2) {
+                                basicInfo.company = lines[0] || lines[2];
+                            }
+                        }
+                    }
+                    
+                } catch (e) {
+                    console.error('기본 정보 추출 중 오류:', e);
+                }
+                
+                return basicInfo;
             }
         }
+        
+        // 분석 버튼 클릭 이벤트 (Tesseract OCR 처리)
+        analyzeBtn.addEventListener('click', async () => {
+            // 진행 상태 표시
+            showStatus('명함 분석 준비 중...', 'info');
+            progressBar.style.display = 'block';
+            progressBarFill.style.width = '0%';
+            analyzeBtn.disabled = true;
+            
+            try {
+                // 이미지 검증
+                if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
+                    throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
+                }
+                
+                // 언어 설정 가져오기
+                const langConfig = languageMap[selectedLanguage];
+                if (!langConfig) {
+                    throw new Error('지원되지 않는 언어입니다.');
+                }
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('ocr');
+                
+                // OCR 수행
+                const ocrResult = await performOCR(capturedImage.src, langConfig.lang);
+                
+                // 인식 결과 검증
+                if (!ocrResult.text || ocrResult.text.trim().length === 0) {
+                    throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
+                }
+                
+                // 신뢰도 표시
+                showConfidence(ocrResult.confidence);
+                
+                // OCR 결과 저장
+                lastOcrResult = ocrResult;
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('extract');
+                
+                // AI 분석 수행 (설정에 따라)
+                let aiResults = null;
+                if (appSettings.useAI) {
+                    try {
+                        aiResults = await analyzeWithAI(ocrResult.text);
+                    } catch (aiError) {
+                        console.error('AI 분석 오류:', aiError);
+                        // AI 분석 실패해도 계속 진행
+                    }
+                }
+                
+                // 명함 정보 추출
+                showStatus('명함 정보 분석 중...', 'info');
+                
+                const extractedInfo = await enhancedBusinessCardExtraction(
+                    ocrResult, 
+                    langConfig.keywords,
+                    langConfig.lang,
+                    aiResults
+                );
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('review');
+                
+                // 추출된 정보를 폼에 채우기
+                document.getElementById('name').value = extractedInfo.name || '';
+                document.getElementById('position').value = extractedInfo.position || '';
+                document.getElementById('company').value = extractedInfo.company || '';
+                document.getElementById('department').value = extractedInfo.department || '';
+                document.getElementById('phone').value = extractedInfo.phone || extractedInfo.mobile || extractedInfo.tel || '';
+                document.getElementById('email').value = extractedInfo.email || '';
+                document.getElementById('website').value = extractedInfo.website || '';
+                document.getElementById('address').value = extractedInfo.address || '';
+                
+                // 추가 정보가 있으면 메모 필드에 추가
+                const additionalInfo = [];
+                if (extractedInfo.fax) additionalInfo.push(`팩스: ${extractedInfo.fax}`);
+                if (extractedInfo.tel && extractedInfo.tel !== extractedInfo.phone) {
+                    additionalInfo.push(`전화: ${extractedInfo.tel}`);
+                }
+                if (extractedInfo.mobile && extractedInfo.mobile !== extractedInfo.phone) {
+                    additionalInfo.push(`모바일: ${extractedInfo.mobile}`);
+                }
+                
+                if (additionalInfo.length > 0) {
+                    document.getElementById('notes').value = additionalInfo.join('\n');
+                }
+                
+                // 폼 표시
+                cardForm.style.display = 'block';
+                
+                // 진행 상태 업데이트
+                let analysisType = appSettings.useAI ? "AI 기반" : "텍스트 기반";
+                showStatus(`명함 분석 완료! (${analysisType} 분석, 신뢰도: ${Math.round(ocrResult.confidence || 0)}%)`, 'success');
+                progressBarFill.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }, 1500);
+                
+            } catch (error) {
+                console.error('명함 분석 오류:', error);
+                
+                // 오류 메시지 표시
+                showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
+                
+                // 제한된 정보로라도 폼 표시
+                try {
+                    // 메타 정보 추출 시도 (이메일, 전화번호만)
+                    const metaInfo = {
+                        name: '',
+                        position: '',
+                        company: '',
+                        department: '',
+                        phone: '',
+                        email: '',
+                        website: '',
+                        address: ''
+                    };
+                    
+                    if (lastOcrResult && lastOcrResult.text) {
+                        // 이메일 추출
+                        const emailMatches = lastOcrResult.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+                        if (emailMatches && emailMatches.length > 0) {
+                            metaInfo.email = emailMatches[0];
+                        }
+                        
+                        // 전화번호 추출
+                        const phoneMatches = lastOcrResult.text.match(/(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g);
+                        if (phoneMatches && phoneMatches.length > 0) {
+                            metaInfo.phone = phoneMatches[0];
+                        }
+                        
+                        // 시간 패턴 관련 로직 (예시 명함에서 중요한 패턴)
+                        const lines = lastOcrResult.text.split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line && line.length > 1);
+                        
+                        const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
+                        
+                        for (let i = 0; i < lines.length - 1; i++) {
+                            if (timePattern.test(lines[i]) && i + 1 < lines.length) {
+                                metaInfo.name = lines[i + 1]; // 시간 패턴 다음 줄이 이름
+                                if (i + 2 < lines.length) {
+                                    // 그 다음 줄은 보통 직책
+                                    metaInfo.position = lines[i + 2];
+                                }
+                                if (i + 3 < lines.length) {
+                                    // 그 다음 줄은 보통 회사
+                                    metaInfo.company = lines[i + 3];
+                                }
+                                break;
+                            }
+                        }
+                        
+                        // 이름을 못 찾았다면 첫 번째 줄 확인
+                        if (!metaInfo.name && lines.length > 0) {
+                            // 첫 줄이 전체 대문자면 회사명으로 가정
+                            if (/^[A-Z\s]+$/.test(lines[0])) {
+                                metaInfo.company = lines[0];
+                                if (lines.length > 1) {
+                                    metaInfo.name = lines[1];
+                                }
+                            } else {
+                                metaInfo.name = lines[0];
+                            }
+                        }
+                    }
+                    
+                    // 폼에 기본 정보 채우기
+                    document.getElementById('name').value = metaInfo.name;
+                    document.getElementById('position').value = metaInfo.position;
+                    document.getElementById('company').value = metaInfo.company;
+                    document.getElementById('department').value = metaInfo.department;
+                    document.getElementById('phone').value = metaInfo.phone;
+                    document.getElementById('email').value = metaInfo.email;
+                    document.getElementById('website').value = metaInfo.website;
+                    document.getElementById('address').value = metaInfo.address;
+                    
+                    // 폼 표시
+                    cardForm.style.display = 'block';
+                    
+                } catch (fallbackError) {
+                    console.error('기본 정보 추출 실패:', fallbackError);
+                    // 빈 폼 표시
+                    cardForm.style.display = 'block';
+                }
+                
+                // 버튼 상태 복원
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }, 3000);
+            }
+        });
         
         // 명함 저장
         saveBtn.addEventListener('click', () => {
@@ -2519,10 +3507,17 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                     department: document.getElementById('department').value,
                     phone: document.getElementById('phone').value,
                     email: document.getElementById('email').value,
+                    website: document.getElementById('website').value,
                     address: document.getElementById('address').value,
                     notes: document.getElementById('notes').value,
                     registeredDate: new Date().toISOString()
                 };
+                
+                // 필수 필드 검증
+                if (!newCard.name.trim()) {
+                    showStatus('이름은 필수 입력 항목입니다.', 'error');
+                    return;
+                }
                 
                 // 명함 데이터 배열에 추가
                 businessCards.push(newCard);
@@ -2551,6 +3546,7 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             document.getElementById('department').value = '';
             document.getElementById('phone').value = '';
             document.getElementById('email').value = '';
+            document.getElementById('website').value = '';
             document.getElementById('address').value = '';
             document.getElementById('notes').value = '';
             
@@ -2567,6 +3563,8 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             stepsIndicator.style.display = 'none';
             preprocessingOptions.style.display = 'none';
             previewContainer.style.display = 'none';
+            rawOcrResult.style.display = 'none';
+            aiResults.style.display = 'none';
             
             analyzeBtn.disabled = false;
             improveImageBtn.disabled = false;
@@ -2606,6 +3604,7 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                 document.getElementById('editDepartment').value = card.department || '';
                 document.getElementById('editPhone').value = card.phone || '';
                 document.getElementById('editEmail').value = card.email || '';
+                document.getElementById('editWebsite').value = card.website || '';
                 document.getElementById('editAddress').value = card.address || '';
                 document.getElementById('editNotes').value = card.notes || '';
                 
@@ -2622,23 +3621,33 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
         window.addEventListener('click', (e) => {
             if (e.target === editModal) {
                 editModal.style.display = 'none';
+            } else if (e.target === importModal) {
+                importModal.style.display = 'none';
             }
         });
         
         // 명함 정보 업데이트
         updateBtn.addEventListener('click', () => {
             if (currentEditId) {
+                // 필수 필드 검증
+                const name = document.getElementById('editName').value.trim();
+                if (!name) {
+                    showStatus('이름은 필수 입력 항목입니다.', 'error');
+                    return;
+                }
+                
                 const index = businessCards.findIndex(card => card.id === currentEditId);
                 
                 if (index !== -1) {
                     businessCards[index] = {
                         ...businessCards[index],
-                        name: document.getElementById('editName').value,
+                        name: name,
                         position: document.getElementById('editPosition').value,
                         company: document.getElementById('editCompany').value,
                         department: document.getElementById('editDepartment').value,
                         phone: document.getElementById('editPhone').value,
                         email: document.getElementById('editEmail').value,
+                        website: document.getElementById('editWebsite').value,
                         address: document.getElementById('editAddress').value,
                         notes: document.getElementById('editNotes').value
                     };
@@ -2654,35 +3663,38 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
         
         // 오류 저항성 높은 앱 설정
         function setupErrorResistantApp() {
-            // 안전한 이미지 개선 설정
-            setupSafeImageEnhancement();
-            
-            // 고급 분석 버튼 설정
-            setupProfessionalAnalysisButton();
+            // 메모리 및 성능 최적화
+            setupPerformanceOptimization();
             
             // 오류 처리를 위한 전역 핸들러 추가
             window.addEventListener('error', function(event) {
                 console.error('전역 오류 발생:', event.error);
                 // 치명적 오류 발생 시 사용자에게 알림
-                if (event.error && event.error.message && event.error.message.includes('Tesseract')) {
-                    showStatus('OCR 엔진 오류가 발생했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
-                }
+                showStatus(`오류가 발생했습니다: ${event.error?.message || '알 수 없는 오류'}. 필요한 경우 페이지를 새로고침하세요.`, 'error');
             });
             
-            // 안정적인 Tesseract 로드 확인
-            try {
-                if (typeof Tesseract === 'undefined') {
-                    throw new Error('Tesseract.js가 로드되지 않았습니다.');
+            // 네트워크 상태 모니터링
+            window.addEventListener('online', function() {
+                showStatus('인터넷 연결이 복원되었습니다.', 'success');
+            });
+            
+            window.addEventListener('offline', function() {
+                showStatus('인터넷 연결이 끊겼습니다. 일부 기능이 제한될 수 있습니다.', 'error');
+            });
+            
+            // 언로드 핸들러
+            window.addEventListener('beforeunload', function() {
+                // 카메라 스트림 정리
+                if (video.srcObject) {
+                    const tracks = video.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
                 }
                 
-                console.log('Tesseract.js 로드 성공:', Tesseract.version);
-            } catch (error) {
-                console.error('Tesseract.js 로드 확인 오류:', error);
-                showStatus('OCR 엔진 로드에 실패했습니다. 페이지를 새로고침하고 다시 시도해주세요.', 'error');
-            }
-            
-            // 메모리 및 성능 최적화
-            setupPerformanceOptimization();
+                // Tesseract 워커 종료
+                if (tesseractWorker) {
+                    tesseractWorker.terminate();
+                }
+            });
         }
         
         // 성능 최적화 설정
@@ -2693,33 +3705,16 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                     // 페이지가 숨겨지면 카메라 중지
                     const tracks = video.srcObject.getTracks();
                     tracks.forEach(track => track.stop());
-                    video.srcObject = null;
                     
                     // 사용자에게 알림
                     showStatus('페이지가 백그라운드로 이동하여 카메라가 중지되었습니다. 다시 접근하려면 새로고침하세요.', 'info');
                     accessCameraBtn.style.display = 'block';
                     accessCameraBtn.textContent = '카메라 다시 접근';
+                    video.style.display = 'none';
                 }
             });
             
-            // 2. 대형 자원 해제
-            window.addEventListener('beforeunload', () => {
-                // 카메라 스트림 정리
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                    video.srcObject = null;
-                }
-                
-                // 캔버스 컨텍스트 해제
-                const context = canvas.getContext('2d');
-                if (context) context.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // 이미지 참조 제거
-                capturedImage.src = '';
-            });
-            
-            // 3. 디바운스 구현 (검색 필드)
+            // 2. 디바운스 구현 (검색 필드)
             let searchTimeout;
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
@@ -2727,79 +3722,90 @@ const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
                     renderCardList(e.target.value);
                 }, 300); // 300ms 지연
             });
-        }
-        
-        // 고급 언어 모델 기반 명함 정보 추출
-        function aiEnhancedBusinessCardExtraction(ocrText, language) {
-            // 이 함수는 향후 AI 모델 연동을 위한 자리 표시자입니다
-            // 현재는 simpleBusinessCardExtraction 함수의 결과를 반환합니다
-            return enhancedBusinessCardExtraction(ocrText, languageMap[language].keywords, language);
-        }
-        
-        // 명함 OCR 신뢰도 개선을 위한 휴리스틱
-        function improveOCRConfidence(text) {
-            if (!text) return text;
             
-            // 1. 이메일 주소 수정
-            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-            let improvedText = text.replace(emailRegex, match => {
-                // 이메일에서 흔한 OCR 오류 수정
-                return match
-                    .replace(/[oO0]/g, m => m === '0' ? 'o' : (m === 'O' ? 'o' : '0')) // 0, o, O 혼동
-                    .replace(/[iI1l|]/g, m => m === '1' || m === '|' ? 'i' : (m === 'I' ? 'i' : m)) // i, I, 1, | 혼동
-                    .replace(/[sS5]/g, m => m === '5' ? 's' : (m === 'S' ? 's' : m)) // s, S, 5 혼동
-                    .replace(/[zZ2]/g, m => m === '2' ? 'z' : (m === 'Z' ? 'z' : m)) // z, Z, 2 혼동
-                    .replace(/[gq9]/g, m => m === '9' ? 'g' : (m === 'q' ? 'g' : m)); // g, q, 9 혼동
+            // 3. 이미지 최적화
+            const quality = parseFloat(appSettings.imageQuality || 0.8);
+            const maxWidth = 1280; // 최대 이미지 너비 제한
+            
+            // 이미지 업로드 전 최적화 이벤트 추가
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    
+                    // 이미지 파일만 처리
+                    if (!file.type.startsWith('image/')) {
+                        showStatus('이미지 파일만 업로드할 수 있습니다.', 'error');
+                        fileInput.value = '';
+                        return;
+                    }
+                    
+                    // 파일 크기 확인 (5MB 초과 시 최적화)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showStatus('큰 이미지 파일입니다. 최적화를 진행합니다...', 'info');
+                        
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                // 이미지 크기 제한 및 품질 조정
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                // 너비 제한
+                                if (width > maxWidth) {
+                                    height = (maxWidth / width) * height;
+                                    width = maxWidth;
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                
+                                // 최적화된 이미지 표시
+                                capturedImage.src = canvas.toDataURL('image/jpeg', quality);
+                                capturedImage.style.display = 'block';
+                                
+                                // 원본 이미지 저장
+                                originalImageData = capturedImage.src;
+                                
+                                // UI 업데이트
+                                video.style.display = 'none';
+                                accessCameraBtn.style.display = 'none';
+                                captureBtn.style.display = 'none';
+                                retakeBtn.style.display = 'inline-block';
+                                analyzeBtn.style.display = 'inline-block';
+                                improveImageBtn.style.display = 'inline-block';
+                                rotateButtons.style.display = 'flex';
+                                
+                                // 고급 모드면 고급 옵션 버튼 표시
+                                if (isAdvancedMode) {
+                                    advancedBtn.style.display = 'inline-block';
+                                }
+                                
+                                // 회전 각도 초기화
+                                currentRotation = 0;
+                                
+                                // 처리 단계 표시
+                                stepsIndicator.style.display = 'flex';
+                                updateProcessingStep('preprocess');
+                                
+                                showStatus('이미지가 최적화되어 업로드되었습니다.', 'success');
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                        
+                        // 파일 입력 초기화 (중복 처리 방지)
+                        fileInput.value = '';
+                    }
+                    // 이미 적정 크기면 그대로 처리
+                }
             });
-            
-            // 2. 전화번호 수정
-            const phoneRegex = /(\+?\d{1,4}[\s-]?)?(\(?\d{2,4}\)?[\s-]?)?(\d{2,4}[\s-]?\d{2,4}[\s-]?\d{2,4})/g;
-            improvedText = improvedText.replace(phoneRegex, match => {
-                // 전화번호에서 흔한 OCR 오류 수정
-                return match
-                    .replace(/[oO]/g, '0') // o, O를 0으로
-                    .replace(/[iIlL|]/g, '1') // i, I, l, L, |를 1로
-                    .replace(/[zZ]/g, '2') // z, Z를 2로
-                    .replace(/[bB]/g, '8') // b, B를 8로
-                    .replace(/[gq]/g, '9'); // g, q를 9로
-            });
-            
-            return improvedText;
         }
-        
-        // 다국어 선택 시 자동 언어 감지
-        function detectLanguage(text) {
-            if (!text) return 'multi';
-            
-            // 간단한 언어 감지 로직
-            // 한글 감지
-            if (/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF]/.test(text)) {
-                return 'kor';
-            }
-            
-            // 일본어 감지
-            if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
-                return 'jpn';
-            }
-            
-            // 중국어 감지
-            if (/[\u4E00-\u9FFF\u3400-\u4DBF]/.test(text) && !/[\u3040-\u309F\u30A0-\u30FF]/.test(text)) {
-                return 'chi_sim';
-            }
-            
-            // 기본값은 영어
-            return 'eng';
-        }
-        
-        // OCR 결과에서 중요한 정보 마크업 준비 함수
-        function prepareOCRResultsMarkup(ocrResult, extractedInfo) {
-            // 이 함수는 사용자에게 OCR 결과를 시각적으로 표시하기 위한 준비를 합니다
-            // 미래 업데이트를 위한 자리 표시자 함수
-            return {
-                markedText: ocrResult.text,
-                highlightRanges: []
-            };
-        }
+    window.use = window.use || {};
     </script>
 </body>
 </html>
