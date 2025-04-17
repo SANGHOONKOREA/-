@@ -462,32 +462,64 @@
         });
         
         // 카메라 초기화
-        async function initCamera() {
-            try {
-                const constraints = {
-                    video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
-                };
-                
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                
-                return true;
-            } catch (error) {
-                console.error('카메라 접근 오류:', error);
-                alert('카메라에 접근할 수 없습니다. 카메라 권한을 허용해주세요.');
-                return false;
-            }
+// 이 코드를 initCamera 함수 부분에 대체하세요
+async function initCamera() {
+    // 카메라 접근 버튼 추가
+    const cameraBtn = document.createElement('button');
+    cameraBtn.textContent = '카메라 접근 허용';
+    cameraBtn.style.backgroundColor = '#4CAF50';
+    cameraBtn.style.marginBottom = '20px';
+    document.querySelector('.camera-container').insertBefore(cameraBtn, video);
+    
+    cameraBtn.addEventListener('click', async () => {
+        try {
+            // 더 명시적인 카메라 접근 요청
+            const constraints = {
+                audio: false,
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            
+            console.log('카메라 접근 요청 중...');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('카메라 접근 성공!', stream);
+            
+            video.srcObject = stream;
+            video.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+            cameraBtn.style.display = 'none';
+            
+            // 성공 메시지 표시
+            alert('카메라 접근이 허용되었습니다!');
+            
+            return true;
+        } catch (error) {
+            console.error('카메라 접근 오류:', error);
+            alert(`카메라 접근 오류: ${error.name} - ${error.message}`);
+            return false;
         }
-        
-        // 페이지 로드 시 카메라 초기화 및 저장된 명함 불러오기
-        document.addEventListener('DOMContentLoaded', () => {
-            initCamera();
-            loadBusinessCards();
-        });
+    });
+    
+    // 초기 상태에서는 비디오와 촬영 버튼 숨기기
+    video.style.display = 'none';
+    captureBtn.style.display = 'none';
+    
+    return false;
+}
+
+// 페이지 로드 시 MediaDevices API 지원 확인
+document.addEventListener('DOMContentLoaded', () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert('이 브라우저는 카메라 접근을 지원하지 않습니다. 최신 Chrome, Safari 또는 Firefox를 사용해주세요.');
+        return;
+    }
+    
+    initCamera();
+    loadBusinessCards();
+});
         
         // 명함 데이터 로컬 스토리지에서 불러오기
         function loadBusinessCards() {
