@@ -655,6 +655,292 @@
             color: #6c757d;
             font-size: 12px;
         }
+        
+        /* 명함 인식 가이드 스타일 */
+        .card-detection-guide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .guide-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 85%;
+            height: 55%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(40, 167, 69, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+        }
+        
+        .guide-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .corner-tl {
+            top: -5px;
+            left: -5px;
+            border-top: 3px solid rgba(40, 167, 69, 1);
+            border-left: 3px solid rgba(40, 167, 69, 1);
+            border-top-left-radius: 4px;
+        }
+        
+        .corner-tr {
+            top: -5px;
+            right: -5px;
+            border-top: 3px solid rgba(40, 167, 69, 1);
+            border-right: 3px solid rgba(40, 167, 69, 1);
+            border-top-right-radius: 4px;
+        }
+        
+        .corner-bl {
+            bottom: -5px;
+            left: -5px;
+            border-bottom: 3px solid rgba(40, 167, 69, 1);
+            border-left: 3px solid rgba(40, 167, 69, 1);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .corner-br {
+            bottom: -5px;
+            right: -5px;
+            border-bottom: 3px solid rgba(40, 167, 69, 1);
+            border-right: 3px solid rgba(40, 167, 69, 1);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .guide-text {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .auto-capture-btn {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+            pointer-events: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 101;
+        }
+        
+        /* 카메라 컨트롤 영역 스타일 업데이트 */
+        .camera-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 50;
+        }
+        
+        /* 실시간 품질 분석 지표 스타일 */
+        .quality-indicators {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            padding: 5px 10px;
+            color: white;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .indicator-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+        
+        .indicator-label {
+            flex: 1;
+        }
+        
+        .indicator-bar {
+            flex: 2;
+            height: 6px;
+            background-color: #444;
+            border-radius: 3px;
+            margin: 5px 10px 0 10px;
+        }
+        
+        .indicator-fill {
+            height: 100%;
+            background-color: #007bff;
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .indicator-value {
+            width: 30px;
+            text-align: right;
+        }
+        
+        /* 플래시 효과 스타일 */
+        .flash-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: white;
+            opacity: 0;
+            z-index: 999;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* 비네팅 효과 (명함 강조) */
+        .vignette-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 40%,
+                rgba(0, 0, 0, 0.3) 100%
+            );
+        }
+        
+        /* 조명 상태 아이콘 */
+        .lighting-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        /* 품질 상세 정보 팝업 */
+        .quality-details {
+            position: absolute;
+            bottom: 70px;
+            left: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            padding: 10px;
+            color: white;
+            font-size: 13px;
+            z-index: 100;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .quality-details.active {
+            max-height: 300px;
+        }
+        
+        .details-toggle {
+            position: absolute;
+            right: 10px;
+            bottom: 30px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 101;
+            cursor: pointer;
+        }
+        
+        /* 카메라 안내 텍스트 강화 */
+        .camera-guide {
+            text-align: center;
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.7));
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .camera-guide h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        
+        .camera-guide ul {
+            text-align: left;
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        
+        .camera-guide ul li {
+            margin-bottom: 5px;
+        }
+        
+        /* 툴팁 스타일 */
+        .tooltip {
+            position: absolute;
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .tooltip:after {
+            content: '';
+            position: absolute;
+            border-style: solid;
+            border-width: 5px;
+        }
+        
+        .tooltip.top:after {
+            border-color: #333 transparent transparent transparent;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+        }
     </style>
 </head>
 <body>
@@ -707,6 +993,46 @@
                 <div class="rotate-buttons" style="display: none;" id="rotateButtons">
                     <button id="rotateLeftBtn">← 90° 회전</button>
                     <button id="rotateRightBtn">90° 회전 →</button>
+                </div>
+                
+                <!-- 명함 인식 가이드 구성요소 -->
+                <div id="cardScanningGuide" class="card-detection-guide" style="display: none;">
+                    <div class="guide-frame">
+                        <div class="guide-corner corner-tl"></div>
+                        <div class="guide-corner corner-tr"></div>
+                        <div class="guide-corner corner-bl"></div>
+                        <div class="guide-corner corner-br"></div>
+                    </div>
+                    <div id="cardDetectionGuide" class="guide-text">명함을 가이드 영역 안에 맞춰주세요</div>
+                    <button id="autoCaptureBtn" class="auto-capture-btn">최적 상태 감지됨 - 촬영하기</button>
+                    
+                    <div class="quality-indicators" id="qualityIndicators">
+                        <div class="indicator-item">
+                            <div class="indicator-label">밝기</div>
+                            <div class="indicator-bar"><div class="indicator-fill" id="brightnessIndicator"></div></div>
+                            <div class="indicator-value" id="brightnessValue">0%</div>
+                        </div>
+                        <div class="indicator-item">
+                            <div class="indicator-label">선명도</div>
+                            <div class="indicator-bar"><div class="indicator-fill" id="sharpnessIndicator"></div></div>
+                            <div class="indicator-value" id="sharpnessValue">0%</div>
+                        </div>
+                        <div class="indicator-item">
+                            <div class="indicator-label">정렬</div>
+                            <div class="indicator-bar"><div class="indicator-fill" id="alignmentIndicator"></div></div>
+                            <div class="indicator-value" id="alignmentValue">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div id="qualityDetails" class="quality-details">
+                        <h4 style="margin-top: 0;">품질 세부 정보</h4>
+                        <div id="qualityDetailsList"></div>
+                    </div>
+                    
+                    <button id="detailsToggle" class="details-toggle">i</button>
+                    <div id="lightingIndicator" class="lighting-indicator">💡</div>
+                    <div id="flashEffect" class="flash-effect"></div>
+                    <div class="vignette-effect"></div>
                 </div>
             </div>
             
@@ -1012,8 +1338,58 @@ textord_tablefind_recognize_tables=0</textarea>
         </div>
     </div>
     
-    <script>
-        // DOM 요소
+
+<script>
+    // 호환성 도우미 함수들 - 스크립트 최상단에 추가
+    function boxPoints(rotatedRect) {
+        try {
+            // 최신 OpenCV.js 버전에서 boxPoints 함수 사용 시도
+            return cv.boxPoints(rotatedRect);
+        } catch (e) {
+            console.log('boxPoints 함수 대체 사용');
+            // 수동으로 회전된 사각형의 점들 계산
+            const center = rotatedRect.center;
+            const size = rotatedRect.size;
+            const angle = rotatedRect.angle * Math.PI / 180.0; // 라디안 변환
+            
+            const b = Math.cos(angle) * 0.5;
+            const a = Math.sin(angle) * 0.5;
+            
+            // Float32Array 생성 (OpenCV 방식과 유사하게)
+            const points_data = new Float32Array(8);
+            
+            // 네 꼭지점 계산 및 배열에 저장
+            points_data[0] = center.x - a * size.height - b * size.width; 
+            points_data[1] = center.y + b * size.height - a * size.width;
+            
+            points_data[2] = center.x + a * size.height - b * size.width; 
+            points_data[3] = center.y - b * size.height - a * size.width;
+            
+            points_data[4] = center.x + a * size.height + b * size.width; 
+            points_data[5] = center.y - b * size.height + a * size.width;
+            
+            points_data[6] = center.x - a * size.height + b * size.width; 
+            points_data[7] = center.y + b * size.height + a * size.width;
+            
+            return {
+                data32F: points_data
+            };
+        }
+    }
+
+    // 노이즈 제거 안전 함수
+    function safeNlMeansDenoising(src, dst, h = 10, templateWindowSize = 7, searchWindowSize = 21) {
+        try {
+            // 최신 버전 사용 시도
+            cv.fastNlMeansDenoising(src, dst, h, templateWindowSize, searchWindowSize);
+        } catch (e) {
+            console.log('fastNlMeansDenoising 함수 대체 사용');
+            // 대체 기능: 가우시안 블러 적용
+            cv.GaussianBlur(src, dst, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+        }
+    }
+
+    // DOM 요소
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const capturedImage = document.getElementById('capturedImage');
@@ -1072,6 +1448,43 @@ textord_tablefind_recognize_tables=0</textarea>
         const aiResults = document.getElementById('aiResults');
         const aiResultsList = document.getElementById('aiResultsList');
         
+// 처리 단계 업데이트 함수
+function updateProcessingStep(step) {
+    processingStep = step;
+    
+    // 모든 단계 스타일 초기화
+    const stepElements = document.querySelectorAll('.step');
+    if (stepElements.length === 0) return; // 요소가 없으면 중단
+    
+    stepElements.forEach(el => {
+        el.classList.remove('active', 'completed', 'current');
+    });
+    
+    // 현재 단계까지 활성화
+    const steps = ['capture', 'preprocess', 'ocr', 'extract', 'review'];
+    const currentIndex = steps.indexOf(step);
+    
+    if (currentIndex >= 0) {
+        for (let i = 0; i < steps.length; i++) {
+            const el = document.querySelector(`.step[data-step="${steps[i]}"]`);
+            if (el) { // 요소가 존재하는지 확인
+                if (i < currentIndex) {
+                    el.classList.add('completed');
+                } else if (i === currentIndex) {
+                    el.classList.add('current');
+                }
+            }
+        }
+    }
+}
+
+
+        // 변수 추가
+        let isCardDetectionActive = false;
+        let cardDetectionTimer = null;
+        let lastDetectionResult = null;
+        let realTimeBoundaryDetection = true;
+        
         // 언어 선택
         let selectedLanguage = 'kor';
         
@@ -1128,103 +1541,101 @@ textord_tablefind_recognize_tables=0</textarea>
         window.onOpenCvReady = onOpenCvReady;
         
         // 모델 로딩 함수
-// 모델 로딩 함수
-// 모델 로딩 함수
-async function loadUSEModel() {
-    if (useModel) return useModel;
-    if (isModelLoading) return null;
-    
-    isModelLoading = true;
-    try {
-        aiModelStatus.innerHTML = '<div class="spinner"></div> AI 분석 모델 로딩 중...';
-        
-        // TensorFlow.js와 모델을 직접 동적으로 로드
-        try {
-            // 모델을 동적으로 가져오기
-            useModel = await tf.loadGraphModel('https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1', { fromTFHub: true });
+        async function loadUSEModel() {
+            if (useModel) return useModel;
+            if (isModelLoading) return null;
             
-            isAiModelReady = true;
-            aiModelStatus.textContent = "AI 모델 준비 완료";
-            aiModelStatus.style.color = "#155724";
-            
-            checkAllModulesReady();
-            return useModel;
-        } catch (loadError) {
-            console.error('모델 로드 오류:', loadError);
-            throw loadError;
+            isModelLoading = true;
+            try {
+                aiModelStatus.innerHTML = '<div class="spinner"></div> AI 분석 모델 로딩 중...';
+                
+                // TensorFlow.js와 모델을 직접 동적으로 로드
+                try {
+                    // 모델을 동적으로 가져오기
+                    useModel = await tf.loadGraphModel('https://tfhub.dev/tensorflow/tfjs-model/universal-sentence-encoder-lite/1/default/1', { fromTFHub: true });
+                    
+                    isAiModelReady = true;
+                    aiModelStatus.textContent = "AI 모델 준비 완료";
+                    aiModelStatus.style.color = "#155724";
+                    
+                    checkAllModulesReady();
+                    return useModel;
+                } catch (loadError) {
+                    console.error('모델 로드 오류:', loadError);
+                    throw loadError;
+                }
+            } catch (error) {
+                console.error('AI 모델 로딩 오류:', error);
+                aiModelStatus.textContent = "AI 모델 로드 실패 - 일반 분석을 사용합니다";
+                aiModelStatus.style.color = "#721c24";
+                
+                // AI 기능 비활성화
+                appSettings.useAI = false;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+                
+                return null;
+            } finally {
+                isModelLoading = false;
+            }
         }
-    } catch (error) {
-        console.error('AI 모델 로딩 오류:', error);
-        aiModelStatus.textContent = "AI 모델 로드 실패 - 일반 분석을 사용합니다";
-        aiModelStatus.style.color = "#721c24";
-        
-        // AI 기능 비활성화
-        appSettings.useAI = false;
-        localStorage.setItem('appSettings', JSON.stringify(appSettings));
-        
-        return null;
-    } finally {
-        isModelLoading = false;
-    }
-}
         
         // 텍스트 유사도 비교 함수
-async function findMostSimilarCategory(text, categories) {
-    try {
-        const model = await loadUSEModel();
-        if (!model) return null;
-        
-        // AI 모델 없이 간단한 규칙 기반 분석으로 대체
-        // 각 카테고리 키워드에 대한 일치 점수 계산
-        const scores = {};
-        const lowerText = text.toLowerCase();
-        
-        Object.keys(categories).forEach(category => {
-            const examples = categories[category].toLowerCase().split(' ');
-            let score = 0;
-            
-            // 단어 일치 검색
-            examples.forEach(example => {
-                if (lowerText.includes(example)) {
-                    score += example.length; // 긴 단어에 더 높은 점수
-                }
-            });
-            
-            // 특정 패턴 검사 (이메일, 전화번호 등)
-            if (category === "이메일" && /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g.test(text)) {
-                score += 100;
-            } else if (category === "전화번호" && /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g.test(text)) {
-                score += 100;
-            } else if (category === "웹사이트" && /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g.test(text)) {
-                score += 100;
+        async function findMostSimilarCategory(text, categories) {
+            try {
+                const model = await loadUSEModel();
+                if (!model) return null;
+                
+                // AI 모델 없이 간단한 규칙 기반 분석으로 대체
+                // 각 카테고리 키워드에 대한 일치 점수 계산
+                const scores = {};
+                const lowerText = text.toLowerCase();
+                
+                Object.keys(categories).forEach(category => {
+                    const examples = categories[category].toLowerCase().split(' ');
+                    let score = 0;
+                    
+                    // 단어 일치 검색
+                    examples.forEach(example => {
+                        if (lowerText.includes(example)) {
+                            score += example.length; // 긴 단어에 더 높은 점수
+                        }
+                    });
+                    
+                    // 특정 패턴 검사 (이메일, 전화번호 등)
+                    if (category === "이메일" && /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g.test(text)) {
+                        score += 100;
+                    } else if (category === "전화번호" && /(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g.test(text)) {
+                        score += 100;
+                    } else if (category === "웹사이트" && /(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g.test(text)) {
+                        score += 100;
+                    }
+                    
+                    scores[category] = score;
+                });
+                
+                // 최고 점수 카테고리 찾기
+                let bestCategory = null;
+                let highestScore = 0;
+                
+                Object.keys(scores).forEach(category => {
+                    if (scores[category] > highestScore) {
+                        highestScore = scores[category];
+                        bestCategory = category;
+                    }
+                });
+                
+                // 유사도 점수 정규화 (0-1 범위로)
+                const normalizedScore = highestScore > 0 ? Math.min(highestScore / 100, 1) : 0;
+                
+                return { 
+                    category: bestCategory, 
+                    similarity: normalizedScore 
+                };
+            } catch (error) {
+                console.error('유사도 분석 오류:', error);
+                return null;
             }
-            
-            scores[category] = score;
-        });
-        
-        // 최고 점수 카테고리 찾기
-        let bestCategory = null;
-        let highestScore = 0;
-        
-        Object.keys(scores).forEach(category => {
-            if (scores[category] > highestScore) {
-                highestScore = scores[category];
-                bestCategory = category;
-            }
-        });
-        
-        // 유사도 점수 정규화 (0-1 범위로)
-        const normalizedScore = highestScore > 0 ? Math.min(highestScore / 100, 1) : 0;
-        
-        return { 
-            category: bestCategory, 
-            similarity: normalizedScore 
-        };
-    } catch (error) {
-        console.error('유사도 분석 오류:', error);
-        return null;
-    }
-}
+        }
         
         // 코사인 유사도 계산
         function cosineSimilarity(a, b) {
@@ -1287,7 +1698,7 @@ async function findMostSimilarCategory(text, categories) {
                 
                 isTesseractReady = true;
                 tesseractStatus.textContent = "Tesseract 엔진 준비 완료";
-                tesseractStatus.style.color = "#155724";
+tesseractStatus.style.color = "#155724";
                 checkAllModulesReady();
                 
             } catch (error) {
@@ -1454,6 +1865,12 @@ async function findMostSimilarCategory(text, categories) {
                     autoPreprocess.checked = appSettings.autoPreprocess !== false;
                     useAI.checked = appSettings.useAI !== false;
                     psm.value = appSettings.psm || '4';
+                    
+                    // 실시간 명함 감지 설정
+                    realTimeBoundaryDetection = appSettings.realTimeBoundaryDetection !== false;
+                    
+                    // 명함 감지 토글 설정 추가
+                    setTimeout(addCardDetectionToggle, 500);
                 }
             } catch (error) {
                 console.error('설정 로드 오류:', error);
@@ -1492,7 +1909,8 @@ async function findMostSimilarCategory(text, categories) {
                     showRawOcr: false,
                     autoPreprocess: true,
                     useAI: true,
-                    psm: "4"
+                    psm: "4",
+                    realTimeBoundaryDetection: true
                 };
                 
                 // 설정 폼 초기화
@@ -1502,6 +1920,12 @@ async function findMostSimilarCategory(text, categories) {
                 autoPreprocess.checked = appSettings.autoPreprocess;
                 useAI.checked = appSettings.useAI;
                 psm.value = appSettings.psm;
+                
+                // 실시간 감지 설정
+                if (document.getElementById('cardDetectionToggle')) {
+                    document.getElementById('cardDetectionToggle').checked = true;
+                }
+                realTimeBoundaryDetection = true;
                 
                 // 설정 저장 및 Tesseract 재초기화
                 localStorage.setItem('appSettings', JSON.stringify(appSettings));
@@ -1625,7 +2049,7 @@ async function findMostSimilarCategory(text, categories) {
             }
         });
         
-        // 카메라 접근 버튼 클릭 이벤트
+        // 카메라 접근 버튼 이벤트 핸들러 수정
         accessCameraBtn.addEventListener('click', async () => {
             try {
                 // 카메라 스트림 가져오기 전에 이전 스트림 정리
@@ -1634,35 +2058,85 @@ async function findMostSimilarCategory(text, categories) {
                     tracks.forEach(track => track.stop());
                 }
                 
-                // 카메라 접근 요청
+                // 카메라 접근 요청 (고해상도 옵션 추가)
                 const constraints = {
                     audio: false,
                     video: {
                         facingMode: { ideal: 'environment' },
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1920 },  // 고해상도로 변경
+                        height: { ideal: 1080 }, // 고해상도로 변경
+                        frameRate: { ideal: 30 },
+                        focusMode: { ideal: 'continuous' }, // 연속 자동 초점
+                        exposureMode: { ideal: 'continuous' }, // 연속 자동 노출
+                        whiteBalanceMode: { ideal: 'continuous' } // 연속 자동 화이트밸런스
                     }
                 };
                 
-                console.log('카메라 접근 요청 중...');
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log('카메라 접근 성공!', stream);
+                console.log('고급 카메라 접근 요청 중...');
                 
-                video.srcObject = stream;
-                video.style.display = 'block';
-                captureBtn.style.display = 'inline-block';
-                accessCameraBtn.style.display = 'none';
-                
-                showStatus('카메라 접근 성공! 명함을 촬영해주세요.', 'success');
-                
-                // 처리 단계 업데이트
-                updateProcessingStep('capture');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log('고급 카메라 접근 성공!', stream);
+                    setupCameraStream(stream);
+                } catch (advancedError) {
+                    console.warn('고급 카메라 기능 접근 실패, 기본 모드로 시도합니다.', advancedError);
+                    
+                    // 기본 옵션으로 다시 시도
+                    const basicConstraints = {
+                        audio: false,
+                        video: {
+                            facingMode: { ideal: 'environment' }
+                        }
+                    };
+                    
+                    const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+                    console.log('기본 카메라 접근 성공', basicStream);
+                    setupCameraStream(basicStream);
+                }
                 
             } catch (error) {
                 console.error('카메라 접근 오류:', error);
                 showStatus(`카메라 접근 오류: ${error.name} - ${error.message}. 파일 업로드를 사용해보세요.`, 'error');
             }
         });
+        
+        // 카메라 스트림 설정 함수
+        function setupCameraStream(stream) {
+            // 비디오에 스트림 연결
+            video.srcObject = stream;
+            video.style.display = 'block';
+            
+            // 명함 스캔 가이드 표시
+            document.getElementById('cardScanningGuide').style.display = 'block';
+            
+            // 버튼 표시 상태 업데이트
+            captureBtn.style.display = 'inline-block';
+            accessCameraBtn.style.display = 'none';
+            
+            // 품질 지표 표시
+            document.getElementById('qualityIndicators').style.display = 'block';
+            
+            showStatus('카메라 접근 성공! 명함을 가이드 영역에 맞춰주세요.', 'success');
+            
+            // 실시간 명함 감지 시작 (비디오가 로드된 후)
+            video.onloadedmetadata = () => {
+                // 캔버스 크기 설정
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                // 실시간 명함 감지 시작 (설정에 따라)
+                if (realTimeBoundaryDetection) {
+                    startRealTimeCardDetection();
+                }
+                
+
+// 처리 단계 업데이트 함수
+
+
+                // 처리 단계 업데이트
+                updateProcessingStep('capture');
+            };
+        }
         
         // 파일 업로드 버튼 클릭 이벤트
         uploadBtn.addEventListener('click', () => {
@@ -1692,6 +2166,9 @@ async function findMostSimilarCategory(text, categories) {
                     improveImageBtn.style.display = 'inline-block';
                     rotateButtons.style.display = 'flex';
                     
+                    // 명함 감지 가이드 숨기기
+                    document.getElementById('cardScanningGuide').style.display = 'none';
+                    
                     // 고급 모드면 고급 옵션 버튼 표시
                     if (isAdvancedMode) {
                         advancedBtn.style.display = 'inline-block';
@@ -1705,6 +2182,18 @@ async function findMostSimilarCategory(text, categories) {
                     updateProcessingStep('preprocess');
                     
                     showStatus('이미지가 업로드되었습니다. 분석을 시작하려면 "명함 분석" 버튼을 클릭하세요.', 'success');
+                    
+                    // 업로드된 이미지에서 명함 경계 감지 시도
+                    detectBusinessCardBoundaries(event.target.result)
+                        .then(result => {
+                            if (result.success) {
+                                lastDetectionResult = result;
+                                showStatus('명함이 감지되었습니다. 분석 진행 시 경계를 기반으로 처리됩니다.', 'success');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('업로드 이미지 명함 감지 오류:', error);
+                        });
                 };
                 
                 reader.onerror = (error) => {
@@ -1736,109 +2225,6 @@ async function findMostSimilarCategory(text, categories) {
                 }, 3000);
             }
         }
-        
-        // 페이지 로드 시 설정 및 저장된 명함 불러오기
-        document.addEventListener('DOMContentLoaded', () => {
-            // 설정 로드
-            loadSettings();
-            
-            // 카메라 접근 버튼 초기 표시
-            accessCameraBtn.style.display = 'block';
-            video.style.display = 'none';
-            captureBtn.style.display = 'none';
-            
-            // 저장된 명함 불러오기
-            loadBusinessCards();
-            
-            // MediaDevices API 지원 확인
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showStatus('이 브라우저는 카메라 접근을 지원하지 않습니다. 파일 업로드를 사용해주세요.', 'error');
-                accessCameraBtn.disabled = true;
-                accessCameraBtn.textContent = '카메라 지원되지 않음';
-            }
-            
-            // OpenCV 상태 체크
-            if (typeof cv !== 'undefined') {
-                onOpenCvReady();
-            } else {
-                opencvStatus.innerHTML = '<div class="spinner"></div> OpenCV.js 로딩 중... 잠시 기다려주세요.';
-            }
-            
-            // Tesseract 초기화
-            initTesseract();
-            
-            // AI 모델 사전 로딩 (설정에 따라)
-            if (appSettings.useAI) {
-                setTimeout(() => {
-                    loadUSEModel().catch(err => console.warn('AI 모델 사전 로딩 실패:', err));
-                }, 3000); // 3초 후 모델 로딩 시작
-            }
-            
-            // 고급 옵션 토글 버튼 설정
-            advancedBtn.addEventListener('click', () => {
-                preprocessingOptions.style.display = preprocessingOptions.style.display === 'none' ? 'block' : 'none';
-                advancedBtn.textContent = preprocessingOptions.style.display === 'none' ? '고급 옵션' : '옵션 닫기';
-            });
-            
-            // 전처리 적용 버튼 설정
-            applyPreprocessingBtn.addEventListener('click', () => {
-                applyPreprocessing();
-            });
-            
-            // 전처리 초기화 버튼 설정
-            resetPreprocessingBtn.addEventListener('click', () => {
-                resetPreprocessing();
-            });
-            
-            // 이미지 회전 버튼 설정
-            rotateLeftBtn.addEventListener('click', () => {
-                rotateImage(-90);
-            });
-            
-            rotateRightBtn.addEventListener('click', () => {
-                rotateImage(90);
-            });
-            
-            // 설정 저장 버튼
-            saveSettingsBtn.addEventListener('click', () => {
-                saveSettings();
-            });
-            
-            // 설정 초기화 버튼
-            resetSettingsBtn.addEventListener('click', () => {
-                resetSettings();
-            });
-            
-            // 데이터 내보내기 버튼
-            exportDataBtn.addEventListener('click', () => {
-                exportData();
-            });
-            
-            // 데이터 가져오기 버튼
-            importDataBtn.addEventListener('click', () => {
-                openImportModal();
-            });
-            
-            // 데이터 확인 가져오기 버튼
-            confirmImportBtn.addEventListener('click', () => {
-                importDataFromJson();
-            });
-            
-            // 가져오기 모달 닫기
-            importClose.forEach(el => {
-                el.addEventListener('click', () => {
-                    importModal.style.display = 'none';
-                });
-            });
-            
-            // 데이터 초기화 버튼
-            clearDataBtn.addEventListener('click', () => {
-                clearAllData();
-            });
-            
-            // 오류 저항성 높은 앱 설정
-            setupErrorResistantApp();
-        });
         
         // 명함 데이터 로컬 스토리지에서 불러오기
         function loadBusinessCards() {
@@ -2015,131 +2401,1021 @@ async function findMostSimilarCategory(text, categories) {
             renderCardList(e.target.value);
         });
         
-        // 명함 촬영
-        captureBtn.addEventListener('click', () => {
-            try {
-                // 캔버스 설정
-                canvas.width = video.videoWidth || 640;
-                canvas.height = video.videoHeight || 480;
-                
-                // 비디오 프레임 캡처
-                const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // 캡처된 이미지 표시
-                capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
-                capturedImage.style.display = 'block';
-                
-                // 원본 이미지 저장
-                originalImageData = capturedImage.src;
-                
-                // 버튼 상태 변경
-                captureBtn.style.display = 'none';
-                retakeBtn.style.display = 'inline-block';
-                analyzeBtn.style.display = 'inline-block';
-                improveImageBtn.style.display = 'inline-block';
-                video.style.display = 'none';
-                rotateButtons.style.display = 'flex';
-                
-                // 고급 모드면 고급 옵션 버튼 표시
-                if (isAdvancedMode) {
-                    advancedBtn.style.display = 'inline-block';
-                }
-                
-                // 회전 각도 초기화
-                currentRotation = 0;
-                
-                showStatus('명함 촬영 완료! 이미지를 개선하거나 바로 분석할 수 있습니다.', 'success');
-                
-                // 처리 단계 표시
-                stepsIndicator.style.display = 'flex';
-                updateProcessingStep('preprocess');
-                
-                // 미리보기 초기화
-                previewContainer.innerHTML = '';
-                previewContainer.style.display = 'none';
-                
-                // 자동 이미지 개선 적용 (설정에 따라)
-                if (appSettings.autoPreprocess) {
-                    setTimeout(() => {
-                        if (improveImageBtn.disabled === false) {
-                            improveImageBtn.click();
-                        }
-                    }, 300);
-                }
-                
-            } catch (error) {
-                console.error('촬영 오류:', error);
-                showStatus('촬영 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-            }
-        });
-        
-        // 이미지 회전 함수
-        function rotateImage(degrees) {
-            try {
-                // 현재 회전 각도 업데이트
-                currentRotation = (currentRotation + degrees) % 360;
-                if (currentRotation < 0) currentRotation += 360;
-                
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // 회전에 따라 캔버스 크기 조정
-                    if (currentRotation === 90 || currentRotation === 270) {
-                        canvas.width = img.height;
-                        canvas.height = img.width;
-                    } else {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
+        // 명함 외곽 인식 및 품질 판단 함수
+        async function detectBusinessCardBoundaries(imageUrl) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!isOpencvReady) {
+                        resolve({
+                            success: false,
+                            message: "OpenCV가 준비되지 않았습니다. 기본 모드로 진행합니다.",
+                            qualityIssues: []
+                        });
+                        return;
                     }
                     
-                    // 캔버스 중앙으로 이동하고 회전
-                    ctx.translate(canvas.width / 2, canvas.height / 2);
-                    ctx.rotate(currentRotation * Math.PI / 180);
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
                     
-                    // 이미지 그리기 (중앙 기준으로)
-                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    img.onload = function() {
+                        try {
+                            // 1. 이미지를 Mat으로 로드
+                            const src = cv.imread(img);
+                            const width = src.cols;
+                            const height = src.rows;
+                            
+                            // 중간 결과물 저장용 캔버스 생성
+                            const debugCanvas = document.createElement('canvas');
+                            debugCanvas.width = width;
+                            debugCanvas.height = height;
+                            
+                            // 품질 이슈 목록
+                            const qualityIssues = [];
+                            
+                            // 2. 그레이스케일 변환
+                            const gray = new cv.Mat();
+                            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                            
+                            // 3. 밝기 및 대비 분석
+                            const mean = cv.mean(gray);
+                            const brightness = mean[0]; // 평균 밝기
+                            
+                            let brightnessProblem = false;
+                            if (brightness < 50) {
+                                brightnessProblem = true;
+                                qualityIssues.push({
+                                    type: "brightness_low",
+                                    message: "이미지가 너무 어둡습니다. 밝은 곳에서 촬영해주세요.",
+                                    severity: "high"
+                                });
+                            } else if (brightness > 200) {
+                                brightnessProblem = true;
+                                qualityIssues.push({
+                                    type: "brightness_high",
+                                    message: "이미지가 너무 밝습니다. 노출을 줄이고 다시 촬영해주세요.",
+                                    severity: "high"
+                                });
+                            }
+                            
+                            // 대비 분석 (표준편차 계산)
+                            let stdDev = new cv.Mat();
+                            let mean_stdDev = new cv.Mat();
+                            cv.meanStdDev(gray, mean_stdDev, stdDev);
+                            const contrast = stdDev.data64F[0];
+                            
+                            if (contrast < 30) {
+                                qualityIssues.push({
+                                    type: "contrast_low",
+                                    message: "이미지 대비가 낮습니다. 명함과 배경의 색상 차이가 큰 환경에서 촬영해주세요.",
+                                    severity: "medium"
+                                });
+                            }
+                            
+                            // 4. 가우시안 블러 적용 (노이즈 제거)
+                            const blurred = new cv.Mat();
+                            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+                            
+                            // 5. 캐니 엣지 검출
+                            const edges = new cv.Mat();
+                            cv.Canny(blurred, edges, 75, 200);
+                            
+                            // 엣지 디버그용 이미지
+                            const edgeCanvas = document.createElement('canvas');
+                            cv.imshow(edgeCanvas, edges);
+                            
+                            // 6. 엣지 강화 (팽창)
+                            const dilated = new cv.Mat();
+                            const M = cv.Mat.ones(3, 3, cv.CV_8U);
+                            cv.dilate(edges, dilated, M);
+                            
+                            // 7. 컨투어 찾기
+                            const contours = new cv.MatVector();
+                            const hierarchy = new cv.Mat();
+                            cv.findContours(dilated, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                            
+                            // 8. 가장 큰 컨투어 찾기 (명함 후보)
+                            let maxArea = 0;
+                            let maxContourIndex = -1;
+                            
+                            for (let i = 0; i < contours.size(); ++i) {
+                                const contour = contours.get(i);
+                                const area = cv.contourArea(contour);
+                                
+                                // 너무 작은 컨투어는 무시 (노이즈 제거)
+                                if (area > 1000) {
+                                    if (area > maxArea) {
+                                        maxArea = area;
+                                        maxContourIndex = i;
+                                    }
+                                }
+                            }
+                            
+                            // 9. 분석 결과 준비
+                            let result = {
+                                success: false,
+                                message: "명함을 감지할 수 없습니다. 명함이 프레임 내에 완전히 보이도록 다시 촬영해주세요.",
+                                qualityIssues: qualityIssues,
+                                debugImage: edgeCanvas.toDataURL('image/png', 0.7)
+                            };
+                            
+                            // 전체 이미지 크기 대비 컨투어 크기 비율
+                            const totalImageArea = width * height;
+                            
+                            // 10. 명함 컨투어가 발견된 경우
+                            if (maxContourIndex >= 0) {
+                                const cardContour = contours.get(maxContourIndex);
+                                
+// 최소 사각형 얻기
+const rotatedRect = cv.minAreaRect(cardContour);
+let cornerPointsData;
+try {
+    cornerPointsData = cv.boxPoints(rotatedRect);
+} catch (e) {
+    // 대체 함수 사용
+    cornerPointsData = boxPoints(rotatedRect);
+}
+
+// 회전된 사각형의 네 꼭지점 좌표
+const cardCorners = [];
+for (let i = 0; i < 4; i++) {
+    cardCorners.push({
+        x: cornerPointsData.data32F[i*2],
+        y: cornerPointsData.data32F[i*2+1]
+    });
+}
+                                
+                                // 명함 크기 계산
+                                const boxWidth = rotatedRect.size.width;
+                                const boxHeight = rotatedRect.size.height;
+                                const cardArea = boxWidth * boxHeight;
+                                const cardRatio = cardArea / totalImageArea;
+                                
+                                // 명함 비율 확인 (명함은 보통 가로세로 비율이 1.5~1.8 정도)
+                                const widthHeightRatio = Math.max(boxWidth, boxHeight) / Math.min(boxWidth, boxHeight);
+                                
+                                // 결과 캔버스에 명함 외곽선 그리기
+                                const visualizedResult = new cv.Mat.zeros(height, width, cv.CV_8UC4);
+                                
+                                // 원본 이미지 복사
+                                src.copyTo(visualizedResult);
+                                
+                                // 컨투어 그리기
+                                const contourColor = new cv.Scalar(0, 255, 0, 255); // 녹색
+                                const thickness = 3;
+                                const fourPoints = new cv.Mat(4, 1, cv.CV_32SC2);
+                                
+// 박스 포인트를 정수형으로 변환
+for (let i = 0; i < 4; i++) {
+    fourPoints.data32S[i*2] = Math.round(cornerPointsData.data32F[i*2]);
+    fourPoints.data32S[i*2+1] = Math.round(cornerPointsData.data32F[i*2+1]);
+}
+                                
+                                // 사각형 그리기
+                                for (let i = 0; i < 4; i++) {
+                                    cv.line(
+                                        visualizedResult,
+                                        new cv.Point(fourPoints.data32S[i*2], fourPoints.data32S[i*2+1]),
+                                        new cv.Point(fourPoints.data32S[((i+1)%4)*2], fourPoints.data32S[((i+1)%4)*2+1]),
+                                        contourColor,
+                                        thickness
+                                    );
+                                }
+                                
+                                // 꼭지점에 원 그리기
+                                for (let i = 0; i < 4; i++) {
+                                    cv.circle(
+                                        visualizedResult,
+                                        new cv.Point(fourPoints.data32S[i*2], fourPoints.data32S[i*2+1]),
+                                        7,
+                                        new cv.Scalar(255, 0, 0, 255), // 빨간색
+                                        -1 // 채우기
+                                    );
+                                }
+                                
+                                // 품질 이슈 추가
+                                
+                                // 1. 명함 비율 확인
+                                if (widthHeightRatio < 1.3 || widthHeightRatio > 1.9) {
+                                    qualityIssues.push({
+                                        type: "card_ratio_abnormal",
+                                        message: "명함의 형태가 일반적이지 않습니다. 명함이 카메라와 평행하게 놓여있는지 확인해주세요.",
+                                        severity: "medium"
+                                    });
+                                }
+                                
+                                // 2. 명함 크기 확인 (화면 대비)
+                                if (cardRatio < 0.2) {
+                                    qualityIssues.push({
+                                        type: "card_too_small",
+                                        message: "명함이 너무 작게 보입니다. 카메라를 명함에 더 가까이 대주세요.",
+                                        severity: "high"
+                                    });
+                                } else if (cardRatio > 0.9) {
+                                    qualityIssues.push({
+                                        type: "card_too_large",
+                                        message: "명함이 너무 크게 보입니다. 전체 명함이 화면에 들어오도록 조정해주세요.",
+                                        severity: "high"
+                                    });
+                                }
+                                
+                                // 3. 명함 위치 확인 (중앙에 있는지)
+                                const centerX = width / 2;
+                                const centerY = height / 2;
+                                
+                                // 명함 중앙점 계산
+                                let cardCenterX = 0;
+                                let cardCenterY = 0;
+                                
+                                for (let i = 0; i < 4; i++) {
+                                    cardCenterX += fourPoints.data32S[i*2];
+                                    cardCenterY += fourPoints.data32S[i*2+1];
+                                }
+                                cardCenterX /= 4;
+                                cardCenterY /= 4;
+                                
+                                // 중앙점 편차 계산
+                                const distFromCenter = Math.sqrt(
+                                    Math.pow(cardCenterX - centerX, 2) + 
+                                    Math.pow(cardCenterY - centerY, 2)
+                                );
+                                
+                                // 중앙에서 20% 이상 벗어나면 경고
+                                if (distFromCenter > width * 0.2) {
+                                    qualityIssues.push({
+                                        type: "card_not_centered",
+                                        message: "명함이 중앙에 위치하지 않았습니다. 명함을 화면 중앙에 맞춰주세요.",
+                                        severity: "medium"
+                                    });
+                                }
+                                
+                                // 4. 모서리가 화면 바깥으로 나갔는지 확인
+                                let cornersOutside = false;
+                                for (let i = 0; i < 4; i++) {
+                                    const x = fourPoints.data32S[i*2];
+                                    const y = fourPoints.data32S[i*2+1];
+                                    
+                                    if (x <= 5 || x >= width-5 || y <= 5 || y >= height-5) {
+                                        cornersOutside = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (cornersOutside) {
+                                    qualityIssues.push({
+                                        type: "card_outside_frame",
+                                        message: "명함의 일부가 화면 밖으로 나갔습니다. 전체 명함이 화면에 들어오도록 조정해주세요.",
+                                        severity: "high"
+                                    });
+                                }
+                                
+                                // 5. 초점 흐림 확인 (라플라시안 필터를 사용한 변량 측정)
+                                const laplacian = new cv.Mat();
+                                cv.Laplacian(gray, laplacian, cv.CV_64F);
+                                let laplacianMean = new cv.Mat();
+                                let laplacianStdDev = new cv.Mat();
+                                cv.meanStdDev(laplacian, laplacianMean, laplacianStdDev);
+                                const variance = laplacianStdDev.data64F[0] * laplacianStdDev.data64F[0];
+                                
+                                if (variance < 100) {
+                                    qualityIssues.push({
+                                        type: "image_blurry",
+                                        message: "이미지가 흐릿합니다. 카메라 초점을 명함에 맞추고 흔들림 없이 촬영해주세요.",
+                                        severity: "high"
+                                    });
+                                }
+                                
+                                // 비주얼 결과 출력
+                                cv.imshow(debugCanvas, visualizedResult);
+                                
+                                // 결과 반환
+                                result = {
+                                    success: true,
+                                    message: qualityIssues.length > 0 
+                                        ? "명함이 감지되었지만 몇 가지 품질 문제가 있습니다." 
+                                        : "명함이 정상적으로 감지되었습니다.",
+                                    corners: cardCorners,
+                                    angle: rotatedRect.angle,
+                                    width: boxWidth,
+                                    height: boxHeight,
+                                    area: cardArea,
+                                    ratio: widthHeightRatio,
+                                    qualityIssues: qualityIssues,
+                                    visualizedImage: debugCanvas.toDataURL('image/png', 0.8),
+                                    debugImage: edgeCanvas.toDataURL('image/png', 0.7)
+                                };
+                                
+                                // 메모리 해제
+                                fourPoints.delete();
+                                laplacian.delete();
+                                laplacianMean.delete();
+                                laplacianStdDev.delete();
+                            } else {
+                                // 명함이 발견되지 않은 경우
+                                qualityIssues.push({
+                                    type: "no_card_detected",
+                                    message: "명함을 감지할 수 없습니다. 밝은 배경에 명함을 놓고 다시 시도해주세요.",
+                                    severity: "critical"
+                                });
+                            }
+                            
+                            // 메모리 해제
+                            src.delete();
+                            gray.delete();
+                            blurred.delete();
+                            edges.delete();
+                            dilated.delete();
+                            contours.delete();
+                            hierarchy.delete();
+                            stdDev.delete();
+                            mean_stdDev.delete();
+                            M.delete();
+                            
+                            resolve(result);
+                            
+                        } catch (error) {
+                            console.error('명함 외곽선 감지 중 오류:', error);
+                            reject(error);
+                        }
+                    };
                     
-                    // 회전된 이미지 표시
-                    capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
-                };
-                img.src = originalImageData || capturedImage.src;
+                    img.onerror = function(error) {
+                        reject(new Error('이미지 로딩에 실패했습니다.'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('명함 감지 초기화 오류:', error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // 실시간 명함 감지 시작 함수
+        function startRealTimeCardDetection() {
+            if (isCardDetectionActive) return;
+            
+            isCardDetectionActive = true;
+            
+            // 명함 감지 가이드 표시
+            const cardGuide = document.getElementById('cardScanningGuide');
+            cardGuide.style.display = 'block';
+            
+            // 감지 타이머 설정 (200ms 간격)
+            cardDetectionTimer = setInterval(async () => {
+                if (!video.srcObject || video.paused || video.ended) {
+                    // 비디오가 재생 중이 아니면 감지 중지
+                    stopRealTimeCardDetection();
+                    return;
+                }
                 
-            } catch (error) {
-                console.error('이미지 회전 오류:', error);
-                showStatus('이미지 회전 중 오류가 발생했습니다.', 'error');
+                try {
+                    // 현재 프레임을 캔버스에 그리기
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // 캔버스 이미지 데이터를 URL로 변환
+                    const imageData = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    // 명함 외곽선 감지
+                    const result = await detectBusinessCardBoundaries(imageData);
+                    lastDetectionResult = result;
+                    
+                    // 품질 지표 업데이트
+                    updateQualityIndicators(result);
+                    
+                    // 감지 결과에 따라 안내 메시지 및 가이드 업데이트
+                    updateDetectionGuide(result);
+                    
+                } catch (error) {
+                    console.error('실시간 명함 감지 오류:', error);
+                }
+            }, 200); // 200ms 간격으로 감지 (성능과 정확도의 균형)
+        }
+        
+        // 실시간 명함 감지 중지 함수
+function stopRealTimeCardDetection() {
+            if (!isCardDetectionActive) return;
+            
+            // 타이머 중지
+            if (cardDetectionTimer) {
+                clearInterval(cardDetectionTimer);
+                cardDetectionTimer = null;
+            }
+            
+            isCardDetectionActive = false;
+            
+            // 명함 가이드 숨기기
+            const cardGuide = document.getElementById('cardScanningGuide');
+            cardGuide.style.display = 'none';
+        }
+        
+        // 품질 지표 업데이트 함수
+        function updateQualityIndicators(result) {
+            if (!result) return;
+            
+            const brightnessIndicator = document.getElementById('brightnessIndicator');
+            const sharpnessIndicator = document.getElementById('sharpnessIndicator');
+            const alignmentIndicator = document.getElementById('alignmentIndicator');
+            
+            const brightnessValue = document.getElementById('brightnessValue');
+            const sharpnessValue = document.getElementById('sharpnessValue');
+            const alignmentValue = document.getElementById('alignmentValue');
+            
+            // 품질 상세 정보 업데이트
+            const qualityDetailsList = document.getElementById('qualityDetailsList');
+            
+            if (result.success) {
+                // 품질 지표 계산
+                let brightnessScore = 100;
+                let sharpnessScore = 100;
+                let alignmentScore = 100;
+                
+                // 품질 이슈에 따른 점수 조정
+                result.qualityIssues.forEach(issue => {
+                    if (issue.type.includes('brightness')) {
+                        brightnessScore -= (issue.severity === 'critical' ? 80 : 
+                                          issue.severity === 'high' ? 50 : 
+                                          issue.severity === 'medium' ? 30 : 10);
+                    } else if (issue.type.includes('blurry')) {
+                        sharpnessScore -= (issue.severity === 'critical' ? 80 : 
+                                         issue.severity === 'high' ? 50 : 
+                                         issue.severity === 'medium' ? 30 : 10);
+                    } else if (issue.type.includes('card_not_centered') || 
+                             issue.type.includes('card_outside_frame') ||
+                             issue.type.includes('card_ratio')) {
+                        alignmentScore -= (issue.severity === 'critical' ? 80 : 
+                                        issue.severity === 'high' ? 50 : 
+                                        issue.severity === 'medium' ? 30 : 10);
+                    }
+                });
+                
+                // 점수 범위 조정 (0-100)
+                brightnessScore = Math.max(0, Math.min(100, brightnessScore));
+                sharpnessScore = Math.max(0, Math.min(100, sharpnessScore));
+                alignmentScore = Math.max(0, Math.min(100, alignmentScore));
+                
+                // 지표 표시 업데이트
+                brightnessIndicator.style.width = `${brightnessScore}%`;
+                sharpnessIndicator.style.width = `${sharpnessScore}%`;
+                alignmentIndicator.style.width = `${alignmentScore}%`;
+                
+                brightnessValue.textContent = `${brightnessScore}%`;
+                sharpnessValue.textContent = `${sharpnessScore}%`;
+                alignmentValue.textContent = `${alignmentScore}%`;
+                
+                // 색상 업데이트
+                brightnessIndicator.style.backgroundColor = getColorForScore(brightnessScore);
+                sharpnessIndicator.style.backgroundColor = getColorForScore(sharpnessScore);
+                alignmentIndicator.style.backgroundColor = getColorForScore(alignmentScore);
+                
+                // 품질 상세 정보 업데이트
+                qualityDetailsList.innerHTML = '';
+                if (result.qualityIssues.length > 0) {
+                    result.qualityIssues.forEach(issue => {
+                        const issueItem = document.createElement('div');
+                        issueItem.style.marginBottom = '5px';
+                        
+                        // 심각도에 따른 색상
+                        const severityColor = 
+                            issue.severity === 'critical' ? '#dc3545' :
+                            issue.severity === 'high' ? '#ffc107' : 
+                            issue.severity === 'medium' ? '#fd7e14' : '#28a745';
+                        
+                        issueItem.innerHTML = `
+                            <span style="display: inline-block; width: 12px; height: 12px; background-color: ${severityColor}; border-radius: 50%; margin-right: 5px;"></span>
+                            ${issue.message}
+                        `;
+                        qualityDetailsList.appendChild(issueItem);
+                    });
+                } else {
+                    qualityDetailsList.innerHTML = '<div style="color: #28a745;">명함 품질이 우수합니다. 촬영해주세요!</div>';
+                }
+                
+                // 조명 상태 아이콘 업데이트
+                updateLightingIndicator(brightnessScore);
+                
+            } else {
+                // 감지 실패 시 모든 지표 낮게 설정
+                brightnessIndicator.style.width = '30%';
+                sharpnessIndicator.style.width = '30%';
+                alignmentIndicator.style.width = '30%';
+                
+                brightnessValue.textContent = '30%';
+                sharpnessValue.textContent = '30%';
+                alignmentValue.textContent = '30%';
+                
+                brightnessIndicator.style.backgroundColor = '#dc3545';
+                sharpnessIndicator.style.backgroundColor = '#dc3545';
+                alignmentIndicator.style.backgroundColor = '#dc3545';
+                
+                // 품질 상세 정보 업데이트
+                qualityDetailsList.innerHTML = '<div style="color: #dc3545;">명함이 감지되지 않았습니다. 명함을 가이드 영역에 맞춰주세요.</div>';
+                
+                // 이슈가 있다면 추가
+                if (result.qualityIssues && result.qualityIssues.length > 0) {
+                    result.qualityIssues.forEach(issue => {
+                        const issueItem = document.createElement('div');
+                        issueItem.style.marginBottom = '5px';
+                        issueItem.innerHTML = `
+                            <span style="display: inline-block; width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%; margin-right: 5px;"></span>
+                            ${issue.message}
+                        `;
+                        qualityDetailsList.appendChild(issueItem);
+                    });
+                }
+                
+                // 조명 상태 아이콘 업데이트
+                updateLightingIndicator(30);
             }
         }
         
-        // 다시 촬영
-        retakeBtn.addEventListener('click', () => {
-            capturedImage.style.display = 'none';
-            captureBtn.style.display = 'inline-block';
-            retakeBtn.style.display = 'none';
-            analyzeBtn.style.display = 'none';
-            advancedBtn.style.display = 'none';
-            improveImageBtn.style.display = 'none';
-            video.style.display = 'block';
-            statusMessage.style.display = 'none';
-            preprocessingOptions.style.display = 'none';
-            rotateButtons.style.display = 'none';
-            stepsIndicator.style.display = 'none';
-            confidenceIndicator.style.display = 'none';
-            previewContainer.style.display = 'none';
-            rawOcrResult.style.display = 'none';
-            aiResults.style.display = 'none';
+        // 점수에 따른 색상 반환 함수
+        function getColorForScore(score) {
+            if (score >= 80) return '#28a745'; // 녹색 (좋음)
+            if (score >= 60) return '#fd7e14'; // 주황색 (보통)
+            if (score >= 40) return '#ffc107'; // 노란색 (주의)
+            return '#dc3545'; // 빨간색 (나쁨)
+        }
+        
+        // 조명 상태 아이콘 업데이트 함수
+        function updateLightingIndicator(brightnessScore) {
+            const lightingIndicator = document.getElementById('lightingIndicator');
             
-            // 원본 이미지 데이터 초기화
-            originalImageData = null;
+            if (brightnessScore >= 80) {
+                lightingIndicator.textContent = '💡'; // 적정 밝기
+                lightingIndicator.style.backgroundColor = 'rgba(40, 167, 69, 0.7)';
+            } else if (brightnessScore >= 50) {
+                lightingIndicator.textContent = '🔆'; // 조금 어두움
+                lightingIndicator.style.backgroundColor = 'rgba(255, 193, 7, 0.7)';
+            } else if (brightnessScore >= 20) {
+                lightingIndicator.textContent = '🔅'; // 매우 어두움
+                lightingIndicator.style.backgroundColor = 'rgba(220, 53, 69, 0.7)';
+            } else {
+                lightingIndicator.textContent = '🕯️'; // 극도로 어두움
+                lightingIndicator.style.backgroundColor = 'rgba(220, 53, 69, 0.7)';
+            }
+        }
+        
+        // 감지 결과에 따른 가이드 업데이트 함수
+        function updateDetectionGuide(result) {
+            const guideText = document.getElementById('cardDetectionGuide');
+            const autoCapture = document.getElementById('autoCaptureBtn');
             
-            // 회전 각도 초기화
-            currentRotation = 0;
+            if (!result) {
+                guideText.textContent = "명함을 가이드 영역에 맞춰주세요";
+                guideText.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                autoCapture.style.display = 'none';
+                return;
+            }
             
-            // 처리 단계 초기화
-            updateProcessingStep('capture');
-        });
+            if (result.success) {
+                // 명함이 감지됨
+                if (result.qualityIssues.length > 0) {
+                    // 품질 이슈가 있는 경우
+                    // 가장 심각한 문제 찾기
+                    const criticalIssues = result.qualityIssues.filter(issue => issue.severity === 'critical');
+                    const highIssues = result.qualityIssues.filter(issue => issue.severity === 'high');
+                    const mediumIssues = result.qualityIssues.filter(issue => issue.severity === 'medium');
+                    
+                    let mainIssue = criticalIssues[0] || highIssues[0] || mediumIssues[0];
+                    
+                    if (mainIssue) {
+                        guideText.textContent = mainIssue.message;
+                        guideText.style.backgroundColor = 
+                            mainIssue.severity === 'critical' ? 'rgba(220, 53, 69, 0.8)' : 
+                            mainIssue.severity === 'high' ? 'rgba(255, 193, 7, 0.8)' : 
+                            'rgba(40, 167, 69, 0.8)';
+                        
+                        // 심각한 이슈가 있으면 자동 캡처 버튼 숨김
+                        if (mainIssue.severity === 'critical' || mainIssue.severity === 'high') {
+                            autoCapture.style.display = 'none';
+                        } else {
+                            autoCapture.style.display = 'block';
+                        }
+                    } else {
+                        // 경미한 이슈만 있는 경우
+                        guideText.textContent = "명함이 감지되었습니다. 촬영 버튼을 눌러주세요.";
+                        guideText.style.backgroundColor = 'rgba(40, 167, 69, 0.8)';
+                        autoCapture.style.display = 'block';
+                    }
+                } else {
+                    // 품질 문제가 없는 경우
+                    guideText.textContent = "완벽합니다! 촬영 버튼을 눌러주세요.";
+                    guideText.style.backgroundColor = 'rgba(40, 167, 69, 0.8)';
+                    autoCapture.style.display = 'block';
+                }
+            } else {
+                // 명함이 감지되지 않음
+                guideText.textContent = result.message || "명함을 감지할 수 없습니다. 조명을 확인하고 다시 시도해주세요.";
+                guideText.style.backgroundColor = 'rgba(220, 53, 69, 0.8)';
+                autoCapture.style.display = 'none';
+            }
+        }
+        
+        // 명함 카드 감지 함수 토글 - 설정 페이지에 추가
+        function addCardDetectionToggle() {
+            // 설정 폼에 토글 추가
+            const settingsForm = document.querySelector('#settingsContent .card-form');
+            
+            // 이미 존재하는지 확인
+            if (document.getElementById('cardDetectionToggle')) return;
+            
+            const detectionToggleDiv = document.createElement('div');
+            detectionToggleDiv.className = 'form-group';
+            detectionToggleDiv.innerHTML = `
+                <label>
+                    <input type="checkbox" id="cardDetectionToggle" ${realTimeBoundaryDetection ? 'checked' : ''}>
+                    실시간 명함 감지 사용 (고급 인식 기능)
+                </label>
+                <p style="font-size: 12px; color: #6c757d;">명함을 실시간으로 감지하고 최적의 촬영 상태를 안내합니다.</p>
+            `;
+            
+            // 첫 번째 설정 항목 앞에 삽입
+            settingsForm.insertBefore(detectionToggleDiv, settingsForm.firstChild);
+            
+            // 토글 이벤트 설정
+            document.getElementById('cardDetectionToggle').addEventListener('change', function() {
+                realTimeBoundaryDetection = this.checked;
+                // 로컬 스토리지에 설정 저장
+                appSettings.realTimeBoundaryDetection = realTimeBoundaryDetection;
+                localStorage.setItem('appSettings', JSON.stringify(appSettings));
+            });
+        }
+        
+        // 명함 이미지 퍼스펙티브 변환 함수
+        async function perspectiveTransformCard(imageUrl, corners) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!isOpencvReady) {
+                        resolve(imageUrl); // OpenCV가 없으면 원본 반환
+                        return;
+                    }
+                    
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        try {
+                            // 이미지를 Mat으로 로드
+                            const src = cv.imread(img);
+                            
+// 소스 포인트 (감지된 명함 모서리)
+// corners 배열이 유효한지 확인
+if (!corners || corners.length !== 4) {
+    resolve(imageUrl); // 유효하지 않은 경우 원본 반환
+    return;
+}
+
+try {
+    const srcPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        corners[0].x, corners[0].y,
+        corners[1].x, corners[1].y,
+        corners[2].x, corners[2].y,
+        corners[3].x, corners[3].y
+    ]);
+
+    // 나머지 코드...
+} catch (e) {
+    console.error('투시 변환 매트릭스 생성 오류:', e);
+    resolve(imageUrl); // 오류 시 원본 반환
+}
+                            
+                            // 명함 표준 크기 (명함 비율 유지)
+                            // 일반적인 명함 크기는 90mm x 55mm (가로 x 세로)
+                            const standardWidth = 900;
+                            const standardHeight = 550;
+                            
+                            // 대상 포인트 (변환 후 직사각형)
+                            const dstPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                                0, 0,
+                                standardWidth, 0,
+                                standardWidth, standardHeight,
+                                0, standardHeight
+                            ]);
+                            
+                            // 투시 변환 행렬 계산
+                            const M = cv.getPerspectiveTransform(srcPoints, dstPoints);
+                            
+                            // 결과 이미지 생성
+                            const dst = new cv.Mat();
+                            cv.warpPerspective(src, dst, M, new cv.Size(standardWidth, standardHeight));
+                            
+                            // 결과 이미지를 캔버스에 그리기
+                            const canvas = document.createElement('canvas');
+                            canvas.width = standardWidth;
+                            canvas.height = standardHeight;
+                            cv.imshow(canvas, dst);
+                            
+                            // 변환된 이미지 URL 생성
+                            const transformedImage = canvas.toDataURL('image/jpeg', 0.9);
+                            
+                            // 메모리 해제
+                            src.delete();
+                            dst.delete();
+                            srcPoints.delete();
+                            dstPoints.delete();
+                            M.delete();
+                            
+                            // 결과 반환
+                            resolve(transformedImage);
+                            
+                        } catch (error) {
+                            console.error('투시 변환 오류:', error);
+                            resolve(imageUrl); // 오류 시 원본 반환
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        reject(new Error('이미지 로딩에 실패했습니다.'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('투시 변환 초기화 오류:', error);
+                    resolve(imageUrl); // 오류 시 원본 반환
+                }
+            });
+        }
+        
+        // 향상된 이미지 전처리 함수 (은행 OCR 품질)
+        async function enhanceBusinessCardImageBankLevel(imageUrl, options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    if (!isOpencvReady) {
+                        // OpenCV가 없으면 기본 캔버스 처리 시도
+                        return enhanceWithCanvas(imageUrl)
+                            .then(enhanced => resolve(enhanced))
+                            .catch(err => {
+                                console.warn('캔버스 처리 실패, 원본 이미지 사용:', err);
+                                resolve(imageUrl);
+                            });
+                    }
+                    
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        try {
+                            // 1. 이미지를 Mat으로 로드
+                            const src = cv.imread(img);
+                            
+                            // 2. 명함 외곽선 감지
+                            detectBusinessCardBoundaries(imageUrl)
+                                .then(async detectionResult => {
+                                    try {
+                                        let enhanced;
+                                        
+                                        if (detectionResult.success && detectionResult.corners) {
+                                            // 명함이 감지되면 투시 변환 적용
+                                            enhanced = await perspectiveTransformCard(imageUrl, detectionResult.corners);
+                                            
+                                            // 변환된 이미지를 다시 로드하여 추가 처리
+                                            const transformedImg = new Image();
+                                            transformedImg.onload = function() {
+                                                try {
+                                                    // 변환된 이미지 처리
+                                                    const transformedSrc = cv.imread(transformedImg);
+                                                    
+                                                    // 추가 처리 (그레이스케일, 필터 등)
+                                                    applyOcrOptimization(transformedSrc, options)
+                                                        .then(optimizedImage => {
+                                                            // 미리보기 추가
+                                                            addPreview('은행 수준 처리', optimizedImage);
+                                                            resolve(optimizedImage);
+                                                        })
+                                                        .catch(error => {
+                                                            console.error('이미지 최적화 오류:', error);
+                                                            resolve(enhanced); // 오류 시 투시 변환 이미지만 반환
+                                                        })
+                                                        .finally(() => {
+                                                            // 메모리 해제
+                                                            transformedSrc.delete();
+                                                        });
+                                                } catch (error) {
+                                                    console.error('변환 이미지 처리 오류:', error);
+                                                    resolve(enhanced);
+                                                }
+                                            };
+                                            
+                                            transformedImg.onerror = function() {
+                                                console.error('변환 이미지 로드 오류');
+                                                resolve(enhanced);
+                                            };
+                                            
+                                            transformedImg.src = enhanced;
+                                            
+                                        } else {
+                                            // 명함 감지 실패 시 기본 처리 적용
+                                            applyOcrOptimization(src, options)
+                                                .then(optimizedImage => {
+                                                    // 미리보기 추가
+                                                    addPreview('표준 OCR 최적화', optimizedImage);
+                                                    resolve(optimizedImage);
+                                                })
+                                                .catch(error => {
+                                                    console.error('이미지 최적화 오류:', error);
+                                                    resolve(imageUrl);
+                                                });
+                                        }
+                                    } catch (error) {
+                                        console.error('감지 후처리 오류:', error);
+                                        
+                                        // 오류 발생 시 기본 처리 시도
+                                        applyOcrOptimization(src, options)
+                                            .then(optimizedImage => resolve(optimizedImage))
+                                            .catch(() => resolve(imageUrl))
+                                            .finally(() => {
+                                                // 메모리 해제
+                                                src.delete();
+                                            });
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('명함 감지 오류:', error);
+                                    
+                                    // 감지 오류 시 기본 처리 적용
+                                    applyOcrOptimization(src, options)
+                                        .then(optimizedImage => resolve(optimizedImage))
+                                        .catch(() => resolve(imageUrl))
+                                        .finally(() => {
+                                            // 메모리 해제
+                                            src.delete();
+                                        });
+                                });
+                        } catch (error) {
+                            console.error('이미지 처리 초기화 오류:', error);
+                            resolve(imageUrl); // 오류 시 원본 반환
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        reject(new Error('이미지 로딩에 실패했습니다.'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('이미지 처리 초기화 오류:', error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // OCR 최적화 이미지 처리 함수
+        async function applyOcrOptimization(src, options = {}) {
+            return new Promise((resolve, reject) => {
+                try {
+                    // 메모리 관리를 위한 Mat 객체 배열
+                    const mats = [];
+                    
+                    // 작업용 Mat 생성
+                    const gray = new cv.Mat();
+                    mats.push(gray);
+                    
+                    // 1. 그레이스케일 변환
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+                    
+                    // 2. 이미지 정규화 (명함 이미지의 밝기 및 대비 향상)
+                    const normalized = new cv.Mat();
+                    mats.push(normalized);
+                    cv.normalize(gray, normalized, 0, 255, cv.NORM_MINMAX);
+                    
+                    // 3. 잡음 제거
+                    const denoised = new cv.Mat();
+                    mats.push(denoised);
+                    cv.fastNlMeansDenoising(normalized, denoised, 10, 7, 21);
+                    
+                    // 4. 언샤프 마스킹 (선명도 향상)
+                    const blurred = new cv.Mat();
+                    mats.push(blurred);
+                    cv.GaussianBlur(denoised, blurred, new cv.Size(0, 0), 3);
+                    
+                    const sharpened = new cv.Mat();
+                    mats.push(sharpened);
+                    const alpha = 1.5;
+                    const beta = 1.0 - alpha;
+                    cv.addWeighted(denoised, alpha, blurred, beta, 0, sharpened);
+                    
+                    // 5. CLAHE (Contrast Limited Adaptive Histogram Equalization)
+                    const enhanced = new cv.Mat();
+                    mats.push(enhanced);
+                    
+                    const clahe = new cv.CLAHE(2.0, new cv.Size(8, 8));
+                    clahe.apply(sharpened, enhanced);
+                    
+                    // 6. Otsu 또는 적응형 이진화 (옵션에 따라)
+                    let processedImage;
+                    
+                    if (options.binarize) {
+                        const binary = new cv.Mat();
+                        mats.push(binary);
+                        
+                        if (options.adaptiveThreshold) {
+                            // 적응형 이진화
+                            cv.adaptiveThreshold(
+                                enhanced,
+                                binary,
+                                255,
+                                cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                cv.THRESH_BINARY,
+                                11,
+                                2
+                            );
+                        } else {
+                            // Otsu 이진화
+                            cv.threshold(enhanced, binary, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU);
+                        }
+                        processedImage = binary;
+                    } else {
+                        processedImage = enhanced;
+                    }
+                    
+                    // 7. 결과 캔버스에 그리기
+                    const canvas = document.createElement('canvas');
+                    canvas.width = processedImage.cols;
+                    canvas.height = processedImage.rows;
+                    cv.imshow(canvas, processedImage);
+                    
+                    // 8. 이미지 URL 생성
+                    const finalImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    // 9. 메모리 해제
+                    mats.forEach(mat => mat.delete());
+                    
+                    // 10. 결과 반환
+                    resolve(finalImageUrl);
+                    
+                } catch (error) {
+                    console.error('OCR 최적화 처리 오류:', error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // 기본 캔버스 API로 간단한 이미지 개선
+        async function enhanceWithCanvas(imageUrl) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            
+                            // 원본 이미지 그리기
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // 이미지 데이터 가져오기
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+                            
+                            // 그레이스케일 및 대비 향상
+                            for (let i = 0; i < data.length; i += 4) {
+                                // 그레이스케일 변환
+                                const gray = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11);
+                                
+                                // 대비 향상 (간단한 방식)
+                                const contrast = 1.5;
+                                const brightness = 10;
+                                const enhanced = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
+                                
+                                data[i] = data[i + 1] = data[i + 2] = enhanced;
+                            }
+                            
+                            // 변경된 이미지 데이터 적용
+                            ctx.putImageData(imageData, 0, 0);
+                            
+                            // 결과 URL 생성
+                            const resultUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
+                            
+                            // 미리보기 추가
+                            addPreview('기본 개선', resultUrl);
+                            
+                            resolve(resultUrl);
+                        } catch (e) {
+                            console.error('캔버스 처리 오류:', e);
+                            resolve(imageUrl); // 오류 시 원본 반환
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        reject(new Error('이미지 로딩 실패'));
+                    };
+                    
+                    img.src = imageUrl;
+                    
+                } catch (error) {
+                    console.error('캔버스 처리 초기화 오류:', error);
+                    reject(error);
+                }
+            });
+        }
         
         // 전처리 옵션 가져오기
         function getPreprocessingOptions() {
@@ -2181,50 +3457,6 @@ async function findMostSimilarCategory(text, categories) {
                 });
         }
         
-        // 이미지 전처리 초기화
-        function resetPreprocessing() {
-            if (originalImageData) {
-                capturedImage.src = originalImageData;
-                showStatus('원본 이미지로 복원되었습니다.', 'success');
-            }
-        }
-        
-        // 미리보기 추가 함수
-        function addPreview(label, imageUrl) {
-            // 미리보기 컨테이너가 비어있으면 원본 이미지 추가
-            if (previewContainer.children.length === 0 && originalImageData) {
-                const originalPreview = document.createElement('div');
-                originalPreview.className = 'preview-item';
-                originalPreview.innerHTML = `
-                    <img src="${originalImageData}" alt="원본 이미지">
-                    <p>원본</p>
-                `;
-                previewContainer.appendChild(originalPreview);
-                
-                // 원본 이미지 클릭 이벤트
-                originalPreview.addEventListener('click', () => {
-                    capturedImage.src = originalImageData;
-                });
-            }
-            
-            // 새 미리보기 추가
-            const previewItem = document.createElement('div');
-            previewItem.className = 'preview-item';
-            previewItem.innerHTML = `
-                <img src="${imageUrl}" alt="${label} 이미지">
-                <p>${label}</p>
-            `;
-            
-            // 미리보기 클릭 이벤트
-            previewItem.addEventListener('click', () => {
-                capturedImage.src = imageUrl;
-            });
-            
-            // 컨테이너에 추가
-            previewContainer.appendChild(previewItem);
-            previewContainer.style.display = 'flex';
-        }
-        
         // OpenCV를 사용한 명함 이미지 전처리 함수
         async function enhanceBusinessCardImage(imageUrl, options = {}) {
             return new Promise((resolve, reject) => {
@@ -2260,7 +3492,8 @@ async function findMostSimilarCategory(text, categories) {
                                 // 4. 노이즈 제거 (옵션)
                                 if (options.denoise) {
                                     // 비로컬 평균 필터
-                                    cv.fastNlMeansDenoising(gray, blur, 10, 7, 21);
+// 비로컬 평균 필터
+safeNlMeansDenoising(gray, blur, 10, 7, 21);
                                 } else {
                                     gray.copyTo(blur);
                                 }
@@ -2439,154 +3672,199 @@ async function findMostSimilarCategory(text, categories) {
             });
         }
         
-        // OCR을 위해 이미지 최적화 함수
-        async function optimizeForOCR(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    if (!isOpencvReady) {
-                        // OpenCV가 없으면 기본 캔버스 처리 사용
-                        return enhanceWithCanvas(imageUrl)
-                            .then(enhanced => resolve(enhanced))
-                            .catch(err => {
-                                console.warn('캔버스 처리 실패, 원본 이미지 사용:', err);
-                                resolve(imageUrl);
-                            });
-                    }
-                    
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    img.onload = function() {
-                        try {
-                            // 1. 이미지를 Mat으로 로드
-                            const src = cv.imread(img);
-                            
-                            // 2. 그레이스케일 변환
-                            const gray = new cv.Mat();
-                            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                            
-                            // 3. 가우시안 블러로 노이즈 감소
-                            const blurred = new cv.Mat();
-                            cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-                            
-                            // 4. 명암 대비 향상
-                            const enhanced = new cv.Mat();
-                            let clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
-                            clahe.apply(blurred, enhanced);
-                            
-                            // 5. 적응형 이진화 (흰색 배경에 검은 텍스트)
-                            const binary = new cv.Mat();
-                            cv.adaptiveThreshold(enhanced, binary, 255,
-                                cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 11, 2);
-                            
-                            // 6. 결과 캔버스에 그리기
-                            cv.imshow(canvas, binary);
-                            
-                            // 7. 이미지 URL 생성
-                            const finalImageUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
-                            
-                            // 8. 메모리 정리
-                            src.delete();
-                            gray.delete();
-                            blurred.delete();
-                            enhanced.delete();
-                            binary.delete();
-                            clahe.delete();
-                            
-                            // 9. 미리보기 추가
-                            addPreview('OCR 최적화', finalImageUrl);
-                            
-                            // 10. 결과 반환
-                            resolve(finalImageUrl);
-                            
-                        } catch (error) {
-                            console.error('OpenCV 처리 오류:', error);
-                            // 오류 발생 시 기본 캔버스 처리 시도
-                            enhanceWithCanvas(imageUrl)
-                                .then(enhanced => resolve(enhanced))
-                                .catch(err => {
-                                    console.warn('캔버스 처리도 실패, 원본 이미지 사용:', err);
-                                    resolve(imageUrl);
-                                });
-                        }
-                    };
-                    
-                    img.onerror = function(error) {
-                        console.error('이미지 로딩 오류:', error);
-                        reject(new Error('이미지 로딩에 실패했습니다.'));
-                    };
-                    
-                    img.src = imageUrl;
-                    
-                } catch (error) {
-                    console.error('이미지 최적화 초기화 오류:', error);
-                    reject(error);
-                }
-            });
+        // 이미지 전처리 초기화
+        function resetPreprocessing() {
+            if (originalImageData) {
+                capturedImage.src = originalImageData;
+                showStatus('원본 이미지로 복원되었습니다.', 'success');
+            }
         }
         
-        // 기본 캔버스 API로 간단한 이미지 개선
-        async function enhanceWithCanvas(imageUrl) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    
-                    img.onload = function() {
-                        try {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            
-                            // 원본 이미지 그리기
-                            ctx.drawImage(img, 0, 0);
-                            
-                            // 이미지 데이터 가져오기
-                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            const data = imageData.data;
-                            
-                            // 그레이스케일 및 대비 향상
-                            for (let i = 0; i < data.length; i += 4) {
-                                // 그레이스케일 변환
-                                const gray = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11);
-                                
-                                // 대비 향상 (간단한 방식)
-                                const contrast = 1.5;
-                                const brightness = 10;
-                                const enhanced = Math.min(255, Math.max(0, (gray - 128) * contrast + 128 + brightness));
-                                
-                                data[i] = data[i + 1] = data[i + 2] = enhanced;
-                            }
-                            
-                            // 변경된 이미지 데이터 적용
-                            ctx.putImageData(imageData, 0, 0);
-                            
-                            // 결과 URL 생성
-                            const resultUrl = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
-                            
-                            // 미리보기 추가
-                            addPreview('기본 개선', resultUrl);
-                            
-                            resolve(resultUrl);
-                        } catch (e) {
-                            console.error('캔버스 처리 오류:', e);
-                            resolve(imageUrl); // 오류 시 원본 반환
-                        }
-                    };
-                    
-                    img.onerror = function() {
-                        reject(new Error('이미지 로딩 실패'));
-                    };
-                    
-                    img.src = imageUrl;
-                    
-                } catch (error) {
-                    console.error('캔버스 처리 초기화 오류:', error);
-                    reject(error);
-                }
+        // 미리보기 추가 함수
+        function addPreview(label, imageUrl) {
+            // 미리보기 컨테이너가 비어있으면 원본 이미지 추가
+            if (previewContainer.children.length === 0 && originalImageData) {
+                const originalPreview = document.createElement('div');
+                originalPreview.className = 'preview-item';
+                originalPreview.innerHTML = `
+                    <img src="${originalImageData}" alt="원본 이미지">
+                    <p>원본</p>
+                `;
+                previewContainer.appendChild(originalPreview);
+                
+                // 원본 이미지 클릭 이벤트
+                originalPreview.addEventListener('click', () => {
+                    capturedImage.src = originalImageData;
+                });
+            }
+            
+            // 새 미리보기 추가
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            previewItem.innerHTML = `
+                <img src="${imageUrl}" alt="${label} 이미지">
+                <p>${label}</p>
+            `;
+            
+            // 미리보기 클릭 이벤트
+            previewItem.addEventListener('click', () => {
+                capturedImage.src = imageUrl;
             });
+            
+            // 컨테이너에 추가
+            previewContainer.appendChild(previewItem);
+            previewContainer.style.display = 'flex';
         }
+        
+        // 명함 촬영 기능 수정 (플래시 효과 추가)
+        captureBtn.addEventListener('click', async () => {
+            try {
+                // 플래시 효과 표시
+                const flashEffect = document.getElementById('flashEffect');
+                flashEffect.style.opacity = '1';
+                
+                setTimeout(() => {
+                    flashEffect.style.opacity = '0';
+                }, 200);
+                
+                // 캔버스 설정
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                
+                // 비디오 프레임 캡처
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // 명함 감지 데이터가 있는 경우 활용
+                if (lastDetectionResult && lastDetectionResult.success && lastDetectionResult.corners) {
+                    // 감지된 명함 기반으로 고품질 처리
+                    try {
+                        // 투시 변환 적용
+                        const transformedImage = await perspectiveTransformCard(
+                            canvas.toDataURL('image/png', 1.0), // 원본 품질로 변환
+                            lastDetectionResult.corners
+                        );
+                        
+                        // 변환된 이미지 표시
+                        capturedImage.src = transformedImage;
+                        capturedImage.style.display = 'block';
+                        
+                        // 원본 이미지 저장
+                        originalImageData = transformedImage;
+                        
+                        // 미리보기 추가
+                        addPreview('자동 교정', transformedImage);
+                        
+                    } catch (transformError) {
+                        console.error('명함 변환 오류:', transformError);
+                        
+                        // 변환 오류 시 기본 캡처 사용
+                        capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.95));
+                        capturedImage.style.display = 'block';
+                        
+                        // 원본 이미지 저장
+                        originalImageData = capturedImage.src;
+                    }
+                } else {
+                    // 기본 캡처
+                    capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.95));
+                    capturedImage.style.display = 'block';
+                    
+                    // 원본 이미지 저장
+                    originalImageData = capturedImage.src;
+                }
+                
+                // 버튼 상태 변경
+                captureBtn.style.display = 'none';
+                retakeBtn.style.display = 'inline-block';
+                analyzeBtn.style.display = 'inline-block';
+                improveImageBtn.style.display = 'inline-block';
+                video.style.display = 'none';
+                rotateButtons.style.display = 'flex';
+                
+                // 고급 모드면 고급 옵션 버튼 표시
+                if (isAdvancedMode) {
+                    advancedBtn.style.display = 'inline-block';
+                }
+                
+                // 실시간 명함 감지 중지
+                stopRealTimeCardDetection();
+                
+                // 회전 각도 초기화
+                currentRotation = 0;
+                
+                showStatus('명함 촬영 완료! 이미지를 개선하거나 바로 분석할 수 있습니다.', 'success');
+                
+                // 처리 단계 표시
+                stepsIndicator.style.display = 'flex';
+                updateProcessingStep('preprocess');
+                
+                // 미리보기 초기화
+                previewContainer.innerHTML = '';
+                previewContainer.style.display = 'none';
+                
+                // 자동 이미지 개선 적용 (설정에 따라)
+                if (appSettings.autoPreprocess) {
+                    setTimeout(() => {
+                        if (improveImageBtn.disabled === false) {
+                            improveImageBtn.click();
+                        }
+                    }, 300);
+                }
+                
+            } catch (error) {
+                console.error('촬영 오류:', error);
+                showStatus('촬영 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+            }
+        });
+        
+        // 이미지 회전 함수
+        function rotateImage(degrees) {
+            try {
+                // 현재 회전 각도 업데이트
+                currentRotation = (currentRotation + degrees) % 360;
+                if (currentRotation < 0) currentRotation += 360;
+                
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 회전에 따라 캔버스 크기 조정
+                    if (currentRotation === 90 || currentRotation === 270) {
+                        canvas.width = img.height;
+                        canvas.height = img.width;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    
+                    // 캔버스 중앙으로 이동하고 회전
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate(currentRotation * Math.PI / 180);
+                    
+                    // 이미지 그리기 (중앙 기준으로)
+                    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    
+                    // 회전된 이미지 표시
+                    capturedImage.src = canvas.toDataURL('image/png', parseFloat(appSettings.imageQuality || 0.8));
+                };
+                img.src = originalImageData || capturedImage.src;
+                
+            } catch (error) {
+                console.error('이미지 회전 오류:', error);
+                showStatus('이미지 회전 중 오류가 발생했습니다.', 'error');
+            }
+        }
+        
+        // 이미지 회전 버튼 클릭 이벤트
+        rotateLeftBtn.addEventListener('click', () => {
+            rotateImage(-90);
+        });
+        
+        rotateRightBtn.addEventListener('click', () => {
+            rotateImage(90);
+        });
         
         // 이미지 개선 버튼 이벤트
         improveImageBtn.addEventListener('click', async () => {
@@ -2602,10 +3880,16 @@ async function findMostSimilarCategory(text, categories) {
                 // 원본 이미지 백업
                 const originalSrc = capturedImage.src;
                 
-                showStatus('OCR을 위한 이미지 최적화 중...', 'info');
+                showStatus('은행급 OCR을 위한 이미지 최적화 중...', 'info');
                 
-                // OCR 최적화 이미지 처리
-                const enhancedImage = await optimizeForOCR(originalSrc);
+                // 은행급 OCR 최적화 이미지 처리
+                const enhancedImage = await enhanceBusinessCardImageBankLevel(originalSrc, {
+                    binarize: false,          // 기본값으로 이진화 비활성화 (텍스트 인식 정확도 향상)
+                    adaptiveThreshold: false, // 기본값으로 적응형 이진화 비활성화
+                    clahe: true,              // 대비 제한 적응형 히스토그램 평활화 활성화
+                    sharpen: true,            // 선명도 향상 활성화
+                    denoise: true             // 노이즈 제거 활성화
+                });
                 
                 if (enhancedImage !== originalSrc) {
                     capturedImage.src = enhancedImage;
@@ -2613,7 +3897,7 @@ async function findMostSimilarCategory(text, categories) {
                 }
                 
                 improveImageBtn.textContent = '이미지 개선 완료';
-                showStatus('OCR 최적화 완료!', 'success');
+                showStatus('은행급 OCR 최적화 완료!', 'success');
                 
                 setTimeout(() => {
                     improveImageBtn.textContent = '다시 개선';
@@ -2628,48 +3912,37 @@ async function findMostSimilarCategory(text, categories) {
             }
         });
         
-        // 처리 단계 업데이트 함수
-        function updateProcessingStep(step) {
-            processingStep = step;
-            
-            // 모든 단계 스타일 초기화
-            document.querySelectorAll('.step').forEach(el => {
-                el.classList.remove('active', 'completed', 'current');
-            });
-            
-            // 현재 단계까지 활성화
-            const steps = ['capture', 'preprocess', 'ocr', 'extract', 'review'];
-            const currentIndex = steps.indexOf(step);
-            
-            if (currentIndex >= 0) {
-                for (let i = 0; i < steps.length; i++) {
-                    const el = document.querySelector(`.step[data-step="${steps[i]}"]`);
-                    if (i < currentIndex) {
-                        el.classList.add('completed');
-                    } else if (i === currentIndex) {
-                        el.classList.add('current');
-                    }
-                }
-            }
-        }
+        // 고급 옵션 버튼 이벤트
+        advancedBtn.addEventListener('click', () => {
+            preprocessingOptions.style.display = preprocessingOptions.style.display === 'none' ? 'block' : 'none';
+            advancedBtn.textContent = preprocessingOptions.style.display === 'none' ? '고급 옵션' : '옵션 닫기';
+        });
         
-        // 신뢰도 표시 함수
-        function showConfidence(confidence) {
-            confidenceIndicator.style.display = 'flex';
-            confidenceFill.style.width = `${confidence}%`;
-            confidenceText.textContent = `${Math.round(confidence)}%`;
-            
-            // 신뢰도에 따른 색상 변경
-            if (confidence >= 80) {
-                confidenceFill.style.backgroundColor = '#28a745'; // 높음 (녹색)
-            } else if (confidence >= 60) {
-                confidenceFill.style.backgroundColor = '#ffc107'; // 중간 (노란색)
-            } else {
-                confidenceFill.style.backgroundColor = '#dc3545'; // 낮음 (빨간색)
-            }
-        }
+        // 전처리 적용 버튼 이벤트
+        applyPreprocessingBtn.addEventListener('click', () => {
+            applyPreprocessing();
+        });
         
-        // Tesseract OCR 실행 함수 
+        // 전처리 초기화 버튼 이벤트
+        resetPreprocessingBtn.addEventListener('click', () => {
+            resetPreprocessing();
+        });
+        
+        // 품질 상세 정보 토글 이벤트 핸들러
+        document.getElementById('detailsToggle').addEventListener('click', () => {
+            const qualityDetails = document.getElementById('qualityDetails');
+            qualityDetails.classList.toggle('active');
+            
+            const detailsToggle = document.getElementById('detailsToggle');
+            detailsToggle.textContent = qualityDetails.classList.contains('active') ? 'x' : 'i';
+        });
+        
+        // 자동 캡처 버튼 이벤트 핸들러
+        document.getElementById('autoCaptureBtn').addEventListener('click', () => {
+            captureBtn.click();
+        });
+        
+        // OCR 실행 함수 수정 (고급 전처리 적용)
         async function performOCR(imageUrl, lang) {
             try {
                 // 진행 상태 표시
@@ -2695,9 +3968,21 @@ async function findMostSimilarCategory(text, categories) {
                     await tesseractWorker.initialize(lang);
                 }
                 
-                // OCR 실행
+                // 고급 OCR 설정
+                const psm = appSettings.psm || '4';
+                const oem = '1'; // LSTM only
+                
+                // 최고 품질 설정으로 OCR 실행
                 const result = await tesseractWorker.recognize(imageUrl, {
-                    tessedit_pageseg_mode: appSettings.psm || '4'
+                    tessedit_pageseg_mode: psm,
+                    tessedit_ocr_engine_mode: oem,
+                    tessjs_create_hocr: true,   // HOCR 출력 활성화
+                    tessjs_create_tsv: true,    // TSV 출력 활성화
+                    tessjs_create_box: true,    // Box 출력 활성화
+                    tessedit_do_invert: false,  // 반전 비활성화 (이미 최적화된 이미지 가정)
+                    preserve_interword_spaces: '1',
+                    textord_tabfind_force_vertical_text: '0',
+                    textord_tablefind_recognize_tables: '0'
                 });
                 
                 // 결과 신뢰도 계산
@@ -2713,6 +3998,9 @@ async function findMostSimilarCategory(text, categories) {
                     rawOcrResult.textContent = result.data.text;
                     rawOcrResult.style.display = 'block';
                 }
+                
+                // 신뢰도 표시
+                showConfidence(confidence);
                 
                 // 결과 반환
                 return {
@@ -2732,6 +4020,218 @@ async function findMostSimilarCategory(text, categories) {
             }
         }
         
+        // 신뢰도 표시 함수
+        function showConfidence(confidence) {
+            confidenceIndicator.style.display = 'flex';
+            confidenceFill.style.width = `${confidence}%`;
+            confidenceText.textContent = `${Math.round(confidence)}%`;
+            
+            // 신뢰도에 따른 색상 변경
+            if (confidence >= 80) {
+                confidenceFill.style.backgroundColor = '#28a745'; // 높음 (녹색)
+            } else if (confidence >= 60) {
+                confidenceFill.style.backgroundColor = '#ffc107'; // 중간 (노란색)
+            } else {
+                confidenceFill.style.backgroundColor = '#dc3545'; // 낮음 (빨간색)
+            }
+        }
+        
+        // 분석 버튼 클릭 이벤트 (Tesseract OCR 처리)
+        analyzeBtn.addEventListener('click', async () => {
+            // 진행 상태 표시
+            showStatus('명함 분석 준비 중...', 'info');
+            progressBar.style.display = 'block';
+            progressBarFill.style.width = '0%';
+            analyzeBtn.disabled = true;
+            
+            try {
+                // 이미지 검증
+                if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
+                    throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
+                }
+                
+                // 언어 설정 가져오기
+                const langConfig = languageMap[selectedLanguage];
+                if (!langConfig) {
+                    throw new Error('지원되지 않는 언어입니다.');
+                }
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('ocr');
+                
+                // OCR 수행
+                const ocrResult = await performOCR(capturedImage.src, langConfig.lang);
+                
+                // 인식 결과 검증
+                if (!ocrResult.text || ocrResult.text.trim().length === 0) {
+                    throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
+                }
+                
+                // 신뢰도 표시
+                showConfidence(ocrResult.confidence);
+                
+                // OCR 결과 저장
+                lastOcrResult = ocrResult;
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('extract');
+                
+                // AI 분석 수행 (설정에 따라)
+                let aiResults = null;
+                if (appSettings.useAI) {
+                    try {
+                        aiResults = await analyzeWithAI(ocrResult.text);
+                    } catch (aiError) {
+                        console.error('AI 분석 오류:', aiError);
+                        // AI 분석 실패해도 계속 진행
+                    }
+                }
+                
+                // 명함 정보 추출
+                showStatus('명함 정보 분석 중...', 'info');
+                
+                const extractedInfo = await enhancedBusinessCardExtraction(
+                    ocrResult, 
+                    langConfig.keywords,
+                    langConfig.lang,
+                    aiResults
+                );
+                
+                // 처리 단계 업데이트
+                updateProcessingStep('review');
+                
+                // 추출된 정보를 폼에 채우기
+                document.getElementById('name').value = extractedInfo.name || '';
+                document.getElementById('position').value = extractedInfo.position || '';
+                document.getElementById('company').value = extractedInfo.company || '';
+                document.getElementById('department').value = extractedInfo.department || '';
+document.getElementById('phone').value = extractedInfo.phone || extractedInfo.mobile || extractedInfo.tel || '';
+                document.getElementById('email').value = extractedInfo.email || '';
+                document.getElementById('website').value = extractedInfo.website || '';
+                document.getElementById('address').value = extractedInfo.address || '';
+                
+                // 추가 정보가 있으면 메모 필드에 추가
+                const additionalInfo = [];
+                if (extractedInfo.fax) additionalInfo.push(`팩스: ${extractedInfo.fax}`);
+                if (extractedInfo.tel && extractedInfo.tel !== extractedInfo.phone) {
+                    additionalInfo.push(`전화: ${extractedInfo.tel}`);
+                }
+                if (extractedInfo.mobile && extractedInfo.mobile !== extractedInfo.phone) {
+                    additionalInfo.push(`모바일: ${extractedInfo.mobile}`);
+                }
+                
+                if (additionalInfo.length > 0) {
+                    document.getElementById('notes').value = additionalInfo.join('\n');
+                }
+                
+                // 폼 표시
+                cardForm.style.display = 'block';
+                
+                // 진행 상태 업데이트
+                let analysisType = appSettings.useAI ? "AI 기반" : "텍스트 기반";
+                showStatus(`명함 분석 완료! (${analysisType} 분석, 신뢰도: ${Math.round(ocrResult.confidence || 0)}%)`, 'success');
+                progressBarFill.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }, 1500);
+                
+            } catch (error) {
+                console.error('명함 분석 오류:', error);
+                
+                // 오류 메시지 표시
+                showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
+                
+                // 제한된 정보로라도 폼 표시
+                try {
+                    // 메타 정보 추출 시도 (이메일, 전화번호만)
+                    const metaInfo = {
+                        name: '',
+                        position: '',
+                        company: '',
+                        department: '',
+                        phone: '',
+                        email: '',
+                        website: '',
+                        address: ''
+                    };
+                    
+                    if (lastOcrResult && lastOcrResult.text) {
+                        // 이메일 추출
+                        const emailMatches = lastOcrResult.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
+                        if (emailMatches && emailMatches.length > 0) {
+                            metaInfo.email = emailMatches[0];
+                        }
+                        
+                        // 전화번호 추출
+                        const phoneMatches = lastOcrResult.text.match(/(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g);
+                        if (phoneMatches && phoneMatches.length > 0) {
+                            metaInfo.phone = phoneMatches[0];
+                        }
+                        
+                        // 시간 패턴 관련 로직 (예시 명함에서 중요한 패턴)
+                        const lines = lastOcrResult.text.split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line && line.length > 1);
+                        
+                        const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
+                        
+                        for (let i = 0; i < lines.length - 1; i++) {
+                            if (timePattern.test(lines[i]) && i + 1 < lines.length) {
+                                metaInfo.name = lines[i + 1]; // 시간 패턴 다음 줄이 이름
+                                if (i + 2 < lines.length) {
+                                    // 그 다음 줄은 보통 직책
+                                    metaInfo.position = lines[i + 2];
+                                }
+                                if (i + 3 < lines.length) {
+                                    // 그 다음 줄은 보통 회사
+                                    metaInfo.company = lines[i + 3];
+                                }
+                                break;
+                            }
+                        }
+                        
+                        // 이름을 못 찾았다면 첫 번째 줄 확인
+                        if (!metaInfo.name && lines.length > 0) {
+                            // 첫 줄이 전체 대문자면 회사명으로 가정
+                            if (/^[A-Z\s]+$/.test(lines[0])) {
+                                metaInfo.company = lines[0];
+                                if (lines.length > 1) {
+                                    metaInfo.name = lines[1];
+                                }
+                            } else {
+                                metaInfo.name = lines[0];
+                            }
+                        }
+                    }
+                    
+                    // 폼에 기본 정보 채우기
+                    document.getElementById('name').value = metaInfo.name;
+                    document.getElementById('position').value = metaInfo.position;
+                    document.getElementById('company').value = metaInfo.company;
+                    document.getElementById('department').value = metaInfo.department;
+                    document.getElementById('phone').value = metaInfo.phone;
+                    document.getElementById('email').value = metaInfo.email;
+                    document.getElementById('website').value = metaInfo.website;
+                    document.getElementById('address').value = metaInfo.address;
+                    
+                    // 폼 표시
+                    cardForm.style.display = 'block';
+                    
+                } catch (fallbackError) {
+                    console.error('기본 정보 추출 실패:', fallbackError);
+                    // 빈 폼 표시
+                    cardForm.style.display = 'block';
+                }
+                
+                // 버튼 상태 복원
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }, 3000);
+            }
+        });
+        
         // AI 기반 명함 정보 분석 함수
         async function analyzeWithAI(text) {
             if (!appSettings.useAI) return null;
@@ -2741,7 +4241,7 @@ async function findMostSimilarCategory(text, categories) {
                 const model = await loadUSEModel();
                 if (!model) return null;
                 
-showStatus('AI 분석 진행 중...', 'info');
+                showStatus('AI 분석 진행 중...', 'info');
                 
                 // 카테고리 예제 정의
                 const categoryExamples = {
@@ -3300,202 +4800,6 @@ showStatus('AI 분석 진행 중...', 'info');
             }
         }
         
-        // 분석 버튼 클릭 이벤트 (Tesseract OCR 처리)
-        analyzeBtn.addEventListener('click', async () => {
-            // 진행 상태 표시
-            showStatus('명함 분석 준비 중...', 'info');
-            progressBar.style.display = 'block';
-            progressBarFill.style.width = '0%';
-            analyzeBtn.disabled = true;
-            
-            try {
-                // 이미지 검증
-                if (!capturedImage.src || !capturedImage.complete || capturedImage.naturalWidth === 0) {
-                    throw new Error('유효한 이미지가 없습니다. 다시 촬영해주세요.');
-                }
-                
-                // 언어 설정 가져오기
-                const langConfig = languageMap[selectedLanguage];
-                if (!langConfig) {
-                    throw new Error('지원되지 않는 언어입니다.');
-                }
-                
-                // 처리 단계 업데이트
-                updateProcessingStep('ocr');
-                
-                // OCR 수행
-                const ocrResult = await performOCR(capturedImage.src, langConfig.lang);
-                
-                // 인식 결과 검증
-                if (!ocrResult.text || ocrResult.text.trim().length === 0) {
-                    throw new Error('텍스트를 인식할 수 없습니다. 더 선명한 이미지로 다시 시도해주세요.');
-                }
-                
-                // 신뢰도 표시
-                showConfidence(ocrResult.confidence);
-                
-                // OCR 결과 저장
-                lastOcrResult = ocrResult;
-                
-                // 처리 단계 업데이트
-                updateProcessingStep('extract');
-                
-                // AI 분석 수행 (설정에 따라)
-                let aiResults = null;
-                if (appSettings.useAI) {
-                    try {
-                        aiResults = await analyzeWithAI(ocrResult.text);
-                    } catch (aiError) {
-                        console.error('AI 분석 오류:', aiError);
-                        // AI 분석 실패해도 계속 진행
-                    }
-                }
-                
-                // 명함 정보 추출
-                showStatus('명함 정보 분석 중...', 'info');
-                
-                const extractedInfo = await enhancedBusinessCardExtraction(
-                    ocrResult, 
-                    langConfig.keywords,
-                    langConfig.lang,
-                    aiResults
-                );
-                
-                // 처리 단계 업데이트
-                updateProcessingStep('review');
-                
-                // 추출된 정보를 폼에 채우기
-                document.getElementById('name').value = extractedInfo.name || '';
-                document.getElementById('position').value = extractedInfo.position || '';
-                document.getElementById('company').value = extractedInfo.company || '';
-                document.getElementById('department').value = extractedInfo.department || '';
-                document.getElementById('phone').value = extractedInfo.phone || extractedInfo.mobile || extractedInfo.tel || '';
-                document.getElementById('email').value = extractedInfo.email || '';
-                document.getElementById('website').value = extractedInfo.website || '';
-                document.getElementById('address').value = extractedInfo.address || '';
-                
-                // 추가 정보가 있으면 메모 필드에 추가
-                const additionalInfo = [];
-                if (extractedInfo.fax) additionalInfo.push(`팩스: ${extractedInfo.fax}`);
-                if (extractedInfo.tel && extractedInfo.tel !== extractedInfo.phone) {
-                    additionalInfo.push(`전화: ${extractedInfo.tel}`);
-                }
-                if (extractedInfo.mobile && extractedInfo.mobile !== extractedInfo.phone) {
-                    additionalInfo.push(`모바일: ${extractedInfo.mobile}`);
-                }
-                
-                if (additionalInfo.length > 0) {
-                    document.getElementById('notes').value = additionalInfo.join('\n');
-                }
-                
-                // 폼 표시
-                cardForm.style.display = 'block';
-                
-                // 진행 상태 업데이트
-                let analysisType = appSettings.useAI ? "AI 기반" : "텍스트 기반";
-                showStatus(`명함 분석 완료! (${analysisType} 분석, 신뢰도: ${Math.round(ocrResult.confidence || 0)}%)`, 'success');
-                progressBarFill.style.width = '100%';
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                    analyzeBtn.disabled = false;
-                }, 1500);
-                
-            } catch (error) {
-                console.error('명함 분석 오류:', error);
-                
-                // 오류 메시지 표시
-                showStatus(`오류: ${error.message || '명함 분석 중 문제가 발생했습니다.'}`, 'error');
-                
-                // 제한된 정보로라도 폼 표시
-                try {
-                    // 메타 정보 추출 시도 (이메일, 전화번호만)
-                    const metaInfo = {
-                        name: '',
-                        position: '',
-                        company: '',
-                        department: '',
-                        phone: '',
-                        email: '',
-                        website: '',
-                        address: ''
-                    };
-                    
-                    if (lastOcrResult && lastOcrResult.text) {
-                        // 이메일 추출
-                        const emailMatches = lastOcrResult.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g);
-                        if (emailMatches && emailMatches.length > 0) {
-                            metaInfo.email = emailMatches[0];
-                        }
-                        
-                        // 전화번호 추출
-                        const phoneMatches = lastOcrResult.text.match(/(?:\+?\d{1,4}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g);
-                        if (phoneMatches && phoneMatches.length > 0) {
-                            metaInfo.phone = phoneMatches[0];
-                        }
-                        
-                        // 시간 패턴 관련 로직 (예시 명함에서 중요한 패턴)
-                        const lines = lastOcrResult.text.split('\n')
-                            .map(line => line.trim())
-                            .filter(line => line && line.length > 1);
-                        
-                        const timePattern = /[-=]{2}\s*[Ilm][mMnN]\s*\d{2}\s*\d{2}\s*[-=]{2}/;
-                        
-                        for (let i = 0; i < lines.length - 1; i++) {
-                            if (timePattern.test(lines[i]) && i + 1 < lines.length) {
-                                metaInfo.name = lines[i + 1]; // 시간 패턴 다음 줄이 이름
-                                if (i + 2 < lines.length) {
-                                    // 그 다음 줄은 보통 직책
-                                    metaInfo.position = lines[i + 2];
-                                }
-                                if (i + 3 < lines.length) {
-                                    // 그 다음 줄은 보통 회사
-                                    metaInfo.company = lines[i + 3];
-                                }
-                                break;
-                            }
-                        }
-                        
-                        // 이름을 못 찾았다면 첫 번째 줄 확인
-                        if (!metaInfo.name && lines.length > 0) {
-                            // 첫 줄이 전체 대문자면 회사명으로 가정
-                            if (/^[A-Z\s]+$/.test(lines[0])) {
-                                metaInfo.company = lines[0];
-                                if (lines.length > 1) {
-                                    metaInfo.name = lines[1];
-                                }
-                            } else {
-                                metaInfo.name = lines[0];
-                            }
-                        }
-                    }
-                    
-                    // 폼에 기본 정보 채우기
-                    document.getElementById('name').value = metaInfo.name;
-                    document.getElementById('position').value = metaInfo.position;
-                    document.getElementById('company').value = metaInfo.company;
-                    document.getElementById('department').value = metaInfo.department;
-                    document.getElementById('phone').value = metaInfo.phone;
-                    document.getElementById('email').value = metaInfo.email;
-                    document.getElementById('website').value = metaInfo.website;
-                    document.getElementById('address').value = metaInfo.address;
-                    
-                    // 폼 표시
-                    cardForm.style.display = 'block';
-                    
-                } catch (fallbackError) {
-                    console.error('기본 정보 추출 실패:', fallbackError);
-                    // 빈 폼 표시
-                    cardForm.style.display = 'block';
-                }
-                
-                // 버튼 상태 복원
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                    analyzeBtn.disabled = false;
-                }, 3000);
-            }
-        });
-        
         // 명함 저장
         saveBtn.addEventListener('click', () => {
             try {
@@ -3566,6 +4870,14 @@ showStatus('AI 분석 진행 중...', 'info');
             rawOcrResult.style.display = 'none';
             aiResults.style.display = 'none';
             
+            // 명함 인식 가이드 다시 표시
+            document.getElementById('cardScanningGuide').style.display = 'block';
+            
+            // 실시간 명함 감지 재시작
+            if (realTimeBoundaryDetection) {
+                startRealTimeCardDetection();
+            }
+            
             analyzeBtn.disabled = false;
             improveImageBtn.disabled = false;
             improveImageBtn.textContent = '이미지 개선';
@@ -3611,20 +4923,6 @@ showStatus('AI 분석 진행 중...', 'info');
                 editModal.style.display = 'block';
             }
         }
-        
-        // 모달 닫기
-        closeModal.addEventListener('click', () => {
-            editModal.style.display = 'none';
-        });
-        
-        // 모달 외부 클릭 시 닫기
-        window.addEventListener('click', (e) => {
-            if (e.target === editModal) {
-                editModal.style.display = 'none';
-            } else if (e.target === importModal) {
-                importModal.style.display = 'none';
-            }
-        });
         
         // 명함 정보 업데이트
         updateBtn.addEventListener('click', () => {
@@ -3805,7 +5103,106 @@ showStatus('AI 분석 진행 중...', 'info');
                 }
             });
         }
-    window.use = window.use || {};
+        
+        // 환영 가이드 표시 함수
+        function showWelcomeGuide() {
+            // 첫 방문인지 확인
+            const hasVisitedBefore = localStorage.getItem('hasVisitedBefore');
+            
+            if (!hasVisitedBefore) {
+                // 가이드 컨테이너 생성
+                const guideContainer = document.createElement('div');
+                guideContainer.className = 'camera-guide';
+                guideContainer.innerHTML = `
+                    <h3>고급 명함 인식 시스템 사용 가이드</h3>
+                    <p>은행 수준의 OCR 기술로 더 정확한 명함 인식이 가능합니다.</p>
+                    <ul>
+                        <li>밝은 환경에서 명함을 화면 중앙에 위치시키세요.</li>
+                        <li>화면에 표시된 가이드 프레임에 명함을 맞춰주세요.</li>
+                        <li>흔들림 없이 촬영하고, 품질 지표가 녹색일 때 촬영하세요.</li>
+                        <li>최적 상태가 감지되면 자동 촬영 버튼이 나타납니다.</li>
+                    </ul>
+                    <button id="closeGuideBtn" style="background-color: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; margin-top: 10px;">확인</button>
+                `;
+                
+                // 카메라 컨텐츠 상단에 추가
+                const cameraContent = document.getElementById('cameraContent');
+                cameraContent.insertBefore(guideContainer, cameraContent.firstChild);
+                
+                // 가이드 닫기 버튼 이벤트
+                document.getElementById('closeGuideBtn').addEventListener('click', () => {
+                    guideContainer.style.display = 'none';
+                    localStorage.setItem('hasVisitedBefore', 'true');
+                });
+            }
+        }
+        
+        // 페이지 로드 시 설정 및 저장된 명함 불러오기
+        document.addEventListener('DOMContentLoaded', () => {
+            // 설정 로드
+            loadSettings();
+            
+            // 카메라 접근 버튼 초기 표시
+            accessCameraBtn.style.display = 'block';
+            video.style.display = 'none';
+            captureBtn.style.display = 'none';
+            
+            // 저장된 명함 불러오기
+            loadBusinessCards();
+            
+            // MediaDevices API 지원 확인
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showStatus('이 브라우저는 카메라 접근을 지원하지 않습니다. 파일 업로드를 사용해주세요.', 'error');
+                accessCameraBtn.disabled = true;
+                accessCameraBtn.textContent = '카메라 지원되지 않음';
+            }
+            
+            // OpenCV 상태 체크
+            if (typeof cv !== 'undefined') {
+                onOpenCvReady();
+            } else {
+                opencvStatus.innerHTML = '<div class="spinner"></div> OpenCV.js 로딩 중... 잠시 기다려주세요.';
+            }
+            
+            // Tesseract 초기화
+            initTesseract();
+            
+            // AI 모델 사전 로딩 (설정에 따라)
+            if (appSettings.useAI) {
+                setTimeout(() => {
+                    loadUSEModel().catch(err => console.warn('AI 모델 사전 로딩 실패:', err));
+                }, 3000); // 3초 후 모델 로딩 시작
+            }
+            
+            // 품질 상세 정보 토글 이벤트 설정
+            document.getElementById('detailsToggle').addEventListener('click', () => {
+                const qualityDetails = document.getElementById('qualityDetails');
+                qualityDetails.classList.toggle('active');
+            });
+            
+            // 명함 감지 토글 추가
+            addCardDetectionToggle();
+            
+            // 환영 가이드 표시
+            showWelcomeGuide();
+            
+            // 오류 저항성 설정
+            setupErrorResistantApp();
+        });
+        
+        // 모달 닫기
+        closeModal.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+        
+        // 모달 외부 클릭 시 닫기
+        window.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                editModal.style.display = 'none';
+            } else if (e.target === importModal) {
+                importModal.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
