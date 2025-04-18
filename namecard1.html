@@ -667,17 +667,22 @@
             z-index: 100;
         }
         
-        .guide-frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 85%;
-            height: 55%;
-            transform: translate(-50%, -50%);
-            border: 2px solid rgba(40, 167, 69, 0.8);
-            border-radius: 8px;
-            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
-        }
+// 명함 인식 가이드 CSS 수정
+// CSS 코드에 추가 또는 수정:
+.guide-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 85%; /* 기본값은 가로 명함 기준 */
+    height: 50%; /* 높이 줄임 */
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(40, 167, 69, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.3);
+    /* 가로 명함 비율 적용 (약 1.7:1) */
+    aspect-ratio: 1.7 / 1;
+    transition: all 0.3s ease; /* 부드러운 전환 효과 */
+}
         
         .guide-corner {
             position: absolute;
@@ -2049,57 +2054,148 @@ tesseractStatus.style.color = "#155724";
             }
         });
         
-        // 카메라 접근 버튼 이벤트 핸들러 수정
-        accessCameraBtn.addEventListener('click', async () => {
-            try {
-                // 카메라 스트림 가져오기 전에 이전 스트림 정리
-                if (video.srcObject) {
-                    const tracks = video.srcObject.getTracks();
-                    tracks.forEach(track => track.stop());
-                }
-                
-                // 카메라 접근 요청 (고해상도 옵션 추가)
-                const constraints = {
-                    audio: false,
-                    video: {
-                        facingMode: { ideal: 'environment' },
-                        width: { ideal: 1920 },  // 고해상도로 변경
-                        height: { ideal: 1080 }, // 고해상도로 변경
-                        frameRate: { ideal: 30 },
-                        focusMode: { ideal: 'continuous' }, // 연속 자동 초점
-                        exposureMode: { ideal: 'continuous' }, // 연속 자동 노출
-                        whiteBalanceMode: { ideal: 'continuous' } // 연속 자동 화이트밸런스
-                    }
-                };
-                
-                console.log('고급 카메라 접근 요청 중...');
-                
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                    console.log('고급 카메라 접근 성공!', stream);
-                    setupCameraStream(stream);
-                } catch (advancedError) {
-                    console.warn('고급 카메라 기능 접근 실패, 기본 모드로 시도합니다.', advancedError);
-                    
-                    // 기본 옵션으로 다시 시도
-                    const basicConstraints = {
-                        audio: false,
-                        video: {
-                            facingMode: { ideal: 'environment' }
-                        }
-                    };
-                    
-                    const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
-                    console.log('기본 카메라 접근 성공', basicStream);
-                    setupCameraStream(basicStream);
-                }
-                
-            } catch (error) {
-                console.error('카메라 접근 오류:', error);
-                showStatus(`카메라 접근 오류: ${error.name} - ${error.message}. 파일 업로드를 사용해보세요.`, 'error');
-            }
-        });
+// 카메라 접근 버튼 이벤트 핸들러 최적화
+accessCameraBtn.addEventListener('click', async () => {
+    try {
+        // 카메라 스트림 가져오기 전에 이전 스트림 정리
+        if (video.srcObject) {
+            const tracks = video.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+        }
         
+        // 카메라 접근 요청 (가로 명함에 최적화된 설정)
+        const constraints = {
+            audio: false,
+            video: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                aspectRatio: { ideal: 1.77 }, // 16:9 비율 (가로 명함에 최적화)
+                frameRate: { ideal: 30 },
+                focusMode: { ideal: 'continuous' },
+                exposureMode: { ideal: 'continuous' },
+                whiteBalanceMode: { ideal: 'continuous' }
+            }
+        };
+        
+        console.log('고급 카메라 접근 요청 중...');
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('고급 카메라 접근 성공!', stream);
+            setupCameraStream(stream);
+            
+            // 명함 방향 자동 감지 시작
+            setTimeout(() => {
+                detectCardOrientation();
+            }, 1000);
+            
+        } catch (advancedError) {
+            console.warn('고급 카메라 기능 접근 실패, 기본 모드로 시도합니다.', advancedError);
+            
+            // 기본 옵션으로 다시 시도 (가로 명함 비율 유지)
+            const basicConstraints = {
+                audio: false,
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    aspectRatio: { ideal: 1.77 } // 가로 명함 비율 유지
+                }
+            };
+            
+            const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+            console.log('기본 카메라 접근 성공', basicStream);
+            setupCameraStream(basicStream);
+        }
+        
+    } catch (error) {
+        console.error('카메라 접근 오류:', error);
+        showStatus(`카메라 접근 오류: ${error.name} - ${error.message}. 파일 업로드를 사용해보세요.`, 'error');
+    }
+});
+        
+// 명함 방향 감지 함수 (추가)
+function detectCardOrientation() {
+    if (!video.srcObject || !isOpencvReady) return;
+    
+    try {
+        // 비디오 프레임을 캔버스에 그리기
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // OpenCV로 이미지 분석
+        const src = cv.imread(canvas);
+        const gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        
+        // 경계 감지
+        const edges = new cv.Mat();
+        cv.Canny(gray, edges, 50, 150, 3);
+        
+        // 외곽선 찾기
+        const contours = new cv.MatVector();
+        const hierarchy = new cv.Mat();
+        cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        // 가장 큰 외곽선 찾기 (명함 후보)
+        let maxArea = 0;
+        let maxContourIndex = -1;
+        
+        for (let i = 0; i < contours.size(); ++i) {
+            const contour = contours.get(i);
+            const area = cv.contourArea(contour);
+            
+            if (area > 5000 && area > maxArea) {
+                maxArea = area;
+                maxContourIndex = i;
+            }
+        }
+        
+        // 명함 방향 확인
+        if (maxContourIndex >= 0) {
+            const contour = contours.get(maxContourIndex);
+            const rotatedRect = cv.minAreaRect(contour);
+            
+            // 명함의 가로/세로 확인
+            const width = rotatedRect.size.width;
+            const height = rotatedRect.size.height;
+            const isLandscape = width > height;
+            
+            // 가이드 프레임 업데이트
+            updateCardGuideFrame(isLandscape);
+        }
+        
+        // 메모리 정리
+        src.delete();
+        gray.delete();
+        edges.delete();
+        contours.delete();
+        hierarchy.delete();
+        
+    } catch (error) {
+        console.error('명함 방향 감지 오류:', error);
+    }
+    
+    // 1초마다 방향 감지 반복
+    setTimeout(detectCardOrientation, 1000);
+}
+
+// 명함 가이드 프레임 업데이트 함수 (추가)
+function updateCardGuideFrame(isLandscape) {
+    const guideFrame = document.querySelector('.guide-frame');
+    
+    if (isLandscape) {
+        // 가로 명함 가이드
+        guideFrame.style.width = '85%';
+        guideFrame.style.height = '50%';
+        guideFrame.style.aspectRatio = '1.7 / 1';
+    } else {
+        // 세로 명함 가이드
+        guideFrame.style.width = '50%';
+        guideFrame.style.height = '85%';
+        guideFrame.style.aspectRatio = '1 / 1.7';
+    }
+}
+
         // 카메라 스트림 설정 함수
         function setupCameraStream(stream) {
             // 비디오에 스트림 연결
@@ -3140,129 +3236,193 @@ try {
         }
         
         // 향상된 이미지 전처리 함수 (은행 OCR 품질)
-        async function enhanceBusinessCardImageBankLevel(imageUrl, options = {}) {
-            return new Promise((resolve, reject) => {
+// 개선된 이미지 전처리 함수
+async function enhanceBusinessCardImage(imageUrl, options = {}) {
+    return new Promise((resolve, reject) => {
+        try {
+            if (!isOpencvReady) {
+                reject(new Error('OpenCV.js가 아직 로드되지 않았습니다.'));
+                return;
+            }
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = function() {
                 try {
-                    if (!isOpencvReady) {
-                        // OpenCV가 없으면 기본 캔버스 처리 시도
-                        return enhanceWithCanvas(imageUrl)
-                            .then(enhanced => resolve(enhanced))
-                            .catch(err => {
-                                console.warn('캔버스 처리 실패, 원본 이미지 사용:', err);
-                                resolve(imageUrl);
-                            });
-                    }
+                    // 1. 이미지를 Mat으로 로드
+                    const src = cv.imread(img);
                     
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
+                    // 2. 작업용 Mat 생성
+                    let dst = new cv.Mat();
+                    let gray = new cv.Mat();
+                    let blur = new cv.Mat();
+                    let edges = new cv.Mat();
+                    let processed = new cv.Mat();
+                    let binary = new cv.Mat();
                     
-                    img.onload = function() {
-                        try {
-                            // 1. 이미지를 Mat으로 로드
-                            const src = cv.imread(img);
+                    try {
+                        // 3. 그레이스케일 변환 (항상 적용)
+                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                        
+                        // 4. 더 강력한 대비 향상 (추가)
+                        cv.convertScaleAbs(gray, gray, 1.5, 10);
+                        
+                        // 5. 노이즈 제거 (최적화)
+                        cv.GaussianBlur(gray, blur, new cv.Size(3, 3), 0);
+                        
+                        // 6. 적응형 명암 대비 향상 (CLAHE)
+                        let clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
+                        clahe.apply(blur, processed);
+                        clahe.delete();
+                        
+                        // 7. 적응형 이진화 적용 (최적화된 매개변수)
+                        if (options.adaptiveThreshold || options.threshold) {
+                            cv.adaptiveThreshold(
+                                processed, 
+                                binary, 
+                                255, 
+                                cv.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                cv.THRESH_BINARY, 
+                                15, // 블록 크기 최적화
+                                8   // 상수값 최적화
+                            );
                             
-                            // 2. 명함 외곽선 감지
-                            detectBusinessCardBoundaries(imageUrl)
-                                .then(async detectionResult => {
-                                    try {
-                                        let enhanced;
-                                        
-                                        if (detectionResult.success && detectionResult.corners) {
-                                            // 명함이 감지되면 투시 변환 적용
-                                            enhanced = await perspectiveTransformCard(imageUrl, detectionResult.corners);
-                                            
-                                            // 변환된 이미지를 다시 로드하여 추가 처리
-                                            const transformedImg = new Image();
-                                            transformedImg.onload = function() {
-                                                try {
-                                                    // 변환된 이미지 처리
-                                                    const transformedSrc = cv.imread(transformedImg);
-                                                    
-                                                    // 추가 처리 (그레이스케일, 필터 등)
-                                                    applyOcrOptimization(transformedSrc, options)
-                                                        .then(optimizedImage => {
-                                                            // 미리보기 추가
-                                                            addPreview('은행 수준 처리', optimizedImage);
-                                                            resolve(optimizedImage);
-                                                        })
-                                                        .catch(error => {
-                                                            console.error('이미지 최적화 오류:', error);
-                                                            resolve(enhanced); // 오류 시 투시 변환 이미지만 반환
-                                                        })
-                                                        .finally(() => {
-                                                            // 메모리 해제
-                                                            transformedSrc.delete();
-                                                        });
-                                                } catch (error) {
-                                                    console.error('변환 이미지 처리 오류:', error);
-                                                    resolve(enhanced);
-                                                }
-                                            };
-                                            
-                                            transformedImg.onerror = function() {
-                                                console.error('변환 이미지 로드 오류');
-                                                resolve(enhanced);
-                                            };
-                                            
-                                            transformedImg.src = enhanced;
-                                            
-                                        } else {
-                                            // 명함 감지 실패 시 기본 처리 적용
-                                            applyOcrOptimization(src, options)
-                                                .then(optimizedImage => {
-                                                    // 미리보기 추가
-                                                    addPreview('표준 OCR 최적화', optimizedImage);
-                                                    resolve(optimizedImage);
-                                                })
-                                                .catch(error => {
-                                                    console.error('이미지 최적화 오류:', error);
-                                                    resolve(imageUrl);
-                                                });
-                                        }
-                                    } catch (error) {
-                                        console.error('감지 후처리 오류:', error);
-                                        
-                                        // 오류 발생 시 기본 처리 시도
-                                        applyOcrOptimization(src, options)
-                                            .then(optimizedImage => resolve(optimizedImage))
-                                            .catch(() => resolve(imageUrl))
-                                            .finally(() => {
-                                                // 메모리 해제
-                                                src.delete();
-                                            });
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('명함 감지 오류:', error);
-                                    
-                                    // 감지 오류 시 기본 처리 적용
-                                    applyOcrOptimization(src, options)
-                                        .then(optimizedImage => resolve(optimizedImage))
-                                        .catch(() => resolve(imageUrl))
-                                        .finally(() => {
-                                            // 메모리 해제
-                                            src.delete();
-                                        });
-                                });
-                        } catch (error) {
-                            console.error('이미지 처리 초기화 오류:', error);
-                            resolve(imageUrl); // 오류 시 원본 반환
+                            // 추가 노이즈 제거
+                            let kernel = cv.Mat.ones(2, 2, cv.CV_8U);
+                            cv.morphologyEx(binary, binary, cv.MORPH_OPEN, kernel);
+                            kernel.delete();
+                            
+                            binary.copyTo(processed);
                         }
-                    };
-                    
-                    img.onerror = function() {
-                        reject(new Error('이미지 로딩에 실패했습니다.'));
-                    };
-                    
-                    img.src = imageUrl;
-                    
+                        
+                        // 8. 선명도 향상 (최적화)
+                        if (options.sharpen) {
+                            let sharpenKernel = new cv.Mat(3, 3, cv.CV_32F);
+                            // 언샤프 마스킹 커널 생성
+                            sharpenKernel.data32F[0] = -1; sharpenKernel.data32F[1] = -1; sharpenKernel.data32F[2] = -1;
+                            sharpenKernel.data32F[3] = -1; sharpenKernel.data32F[4] = 9;  sharpenKernel.data32F[5] = -1;
+                            sharpenKernel.data32F[6] = -1; sharpenKernel.data32F[7] = -1; sharpenKernel.data32F[8] = -1;
+                            
+                            cv.filter2D(processed, processed, -1, sharpenKernel);
+                            sharpenKernel.delete();
+                        }
+                        
+                        // 9. 결과 캔버스에 그리기
+                        cv.imshow(canvas, processed);
+                        
+                        // 10. 이미지 URL 생성 (높은 품질)
+                        const finalImageUrl = canvas.toDataURL('image/png', 0.95);
+                        
+                        // 11. 결과 반환
+                        resolve(finalImageUrl);
+                        
+                    } finally {
+                        // 메모리 정리
+                        src.delete();
+                        dst.delete();
+                        gray.delete();
+                        blur.delete();
+                        edges.delete();
+                        processed.delete();
+                        binary.delete();
+                    }
                 } catch (error) {
-                    console.error('이미지 처리 초기화 오류:', error);
-                    reject(error);
+                    console.error('OpenCV 처리 오류:', error);
+                    resolve(imageUrl);
                 }
-            });
+            };
+            
+            img.onerror = function(error) {
+                console.error('이미지 로딩 오류:', error);
+                reject(new Error('이미지 로딩에 실패했습니다.'));
+            };
+            
+            img.src = imageUrl;
+            
+        } catch (error) {
+            console.error('이미지 처리 초기화 오류:', error);
+            reject(error);
+        }
+    });
+}
+        // 명함 레이아웃 분석 함수 추가
+function analyzeCardLayout(ocrResult) {
+    try {
+        // OCR 결과에서 텍스트 블록 정보 가져오기
+        const words = ocrResult.words || [];
+        const text = ocrResult.text || '';
+        
+        if (!words.length) {
+            console.warn('레이아웃 분석을 위한 단어 정보가 부족합니다.');
+            return null;
         }
         
+        // 이미지 크기 계산 (단어 위치 기반)
+        let maxRight = 0;
+        let maxBottom = 0;
+        
+        words.forEach(word => {
+            if (word.bbox) {
+                maxRight = Math.max(maxRight, word.bbox.x1);
+                maxBottom = Math.max(maxBottom, word.bbox.y1);
+            }
+        });
+        
+        const width = maxRight;
+        const height = maxBottom;
+        
+        if (width <= 0 || height <= 0) {
+            console.warn('유효하지 않은 이미지 크기입니다.');
+            return null;
+        }
+        
+        // 영역별로 텍스트 블록 분류 (상단, 중간, 하단)
+        const topBlocks = words.filter(word => word.bbox && word.bbox.y0 < height * 0.3);
+        const middleBlocks = words.filter(word => word.bbox && word.bbox.y0 >= height * 0.3 && word.bbox.y0 < height * 0.7);
+        const bottomBlocks = words.filter(word => word.bbox && word.bbox.y0 >= height * 0.7);
+        
+        // 글꼴 크기별 분류
+        const largeTextBlocks = words.filter(word => {
+            if (!word.bbox) return false;
+            const textHeight = word.bbox.y1 - word.bbox.y0;
+            return textHeight > height * 0.05; // 큰 텍스트 (높이의 5% 이상)
+        });
+        
+        // 이름 후보 (상단 영역의 큰 텍스트)
+        const nameCandidates = topBlocks.filter(word => {
+            if (!word.bbox) return false;
+            const textHeight = word.bbox.y1 - word.bbox.y0;
+            return textHeight > height * 0.05 && word.text && word.text.length < 15;
+        });
+        
+        // 회사 후보 (상단 영역의 다른 텍스트)
+        const companyCandidates = topBlocks.filter(word => {
+            return !nameCandidates.includes(word) && word.text && word.text.length > 2;
+        });
+        
+        // 연락처 후보 (하단 영역에서 숫자와 특수문자가 많은 텍스트)
+        const contactCandidates = bottomBlocks.filter(word => {
+            if (!word.text) return false;
+            return /[0-9\-@.()]/.test(word.text);
+        });
+        
+        // 결과 객체
+        const layoutAnalysis = {
+            nameCandidates: nameCandidates.map(b => b.text),
+            companyCandidates: companyCandidates.map(b => b.text),
+            contactCandidates: contactCandidates.map(b => b.text),
+            topText: topBlocks.map(b => b.text).join(' '),
+            middleText: middleBlocks.map(b => b.text).join(' '),
+            bottomText: bottomBlocks.map(b => b.text).join(' ')
+        };
+        
+        return layoutAnalysis;
+    } catch (error) {
+        console.error('레이아웃 분석 오류:', error);
+        return null;
+    }
+}
         // OCR 최적화 이미지 처리 함수
         async function applyOcrOptimization(src, options = {}) {
             return new Promise((resolve, reject) => {
