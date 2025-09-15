@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S&SYS 고객지원팀 공지사항 관리</title>
+  
+  <!-- Firebase (Compat 버전) 스크립트 로드 -->
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.20.0/firebase-database-compat.js"></script>
+
+  <!-- XLSX 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+
+  <!-- 구글 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #315b8a;
+      --secondary-color: #1e3d59;
+      --background-color: #f5f7fa;
+      --text-color: #2d3e50;
+      --border-color: #d1d5db;
+      --highlight-color: #e0eaf3;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 240px;
+      background: linear-gradient(180deg, var(--secondary-color) 0%, #183046 100%);
+      padding: 20px;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    .sidebar h3 {
+      color: #ffffff;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-weight: 700;
+      font-size: 1.2em;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 10px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background-color: #315b8a;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      text-align: left;
+      font-size: 0.95em;
+    }
+    .sidebar button:hover {
+      background-color: #2b4f7a;
+      transform: translateY(-2px);
+    }
+    .sidebar button.active {
+      background-color: #4a7ba7;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.8em;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .header button {
+      background-color: #c0392b;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .filter-section {
+      background-color: white;
+      padding: 15px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group label {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    .filter-group select, .filter-group input {
+      padding: 6px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .search-box {
+      flex-grow: 1;
+      min-width: 200px;
+      max-width: 400px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .content {
+      flex-grow: 1;
+      padding: 20px;
+      padding-bottom: 60px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #connectionStatus {
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    #errorLog {
+      color: #e74c3c;
+      margin-top: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .table-container {
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .table-wrapper {
+      overflow: auto;
+      flex-grow: 1;
+    }
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      font-size: 0.9em;
+    }
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      text-align: left;
+      position: relative;
+      background-color: #ffffff;
+      transition: background-color 0.2s;
+    }
+    tr.important-row td {
+      background-color: #fff3cd !important;
+    }
+    tr.important-row:hover td {
+      background-color: #ffe69c !important;
+    }
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    tr:nth-child(even) td {
+      background-color: #f9fafb;
+    }
+    tr:hover td {
+      background-color: var(--highlight-color);
+    }
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .empty-message div {
+      margin-top: 10px;
+      color: #999;
+    }
+    input[type="text"], input[type="date"], select, textarea.large-input {
+      width: 90%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      transition: border-color 0.3s;
+      font-size: 0.85em;
+      font-family: inherit;
+      background-color: #fcfcfd;
+    }
+    input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea.large-input:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      background-color: #ffffff;
+    }
+    textarea.large-input {
+      height: 80px;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .button-group button {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      flex-grow: 1;
+      font-size: 0.95em;
+      font-weight: 500;
+    }
+    .button-group button:hover {
+      background-color: #2b4f7a;
+      transform: translateY(-2px);
+    }
+    .button-group button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-height: 90%;
+      overflow-y: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: -10px;
+      cursor: pointer;
+    }
+    .close:hover, .close:focus {
+      color: black;
+    }
+    #login-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      flex-direction: column;
+    }
+    #login-container h2 {
+      margin-bottom: 20px;
+      color: var(--primary-color);
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 300px;
+    }
+    .login-form input {
+      padding: 8px;
+      font-size: 1em;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .login-form button {
+      padding: 10px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    #userManagementModal .modal-content {
+      width: 80%;
+      max-width: 700px;
+    }
+    #userTabs {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    #userTabs button {
+      flex-grow: 1;
+      padding: 10px;
+      border: none;
+      background-color: #eee;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    #userTabs button.active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .user-tab-content {
+      display: none;
+    }
+    .user-tab-content.active {
+      display: block;
+    }
+    table.admin-user-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    table.admin-user-table th, table.admin-user-table td {
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      text-align: left;
+    }
+    .checkbox-cell {
+      text-align: center;
+      width: 50px;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+    @keyframes slideUp {
+      from {transform: translateY(20px); opacity: 0;}
+      to {transform: translateY(0); opacity: 1;}
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.8em;
+      color: #555;
+      background-color: white;
+      border-top: 1px solid var(--border-color);
+      z-index: 100;
+    }
+    .no-permission {
+      text-align: center;
+      padding: 50px;
+      font-size: 1.2em;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <!-- 로그인 화면 -->
+  <div id="login-container">
+    <h2>로그인</h2>
+    <div class="login-form">
+      <input type="text" id="loginEmail" placeholder="이메일">
+      <input type="password" id="loginPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter'){ login(); }">
+      <button onclick="login()">로그인</button>
+      <button onclick="resetPassword()">비밀번호 재설정</button>
+    </div>
+  </div>
+
+  <!-- 메인 앱 (로그인 후 표시) -->
+  <div id="main-app" style="display:none; width:100%; height:100%;">
+    <div class="sidebar">
+      <h3>공지사항 카테고리</h3>
+      <button id="btnCommon" onclick="changeCategory('공통')" class="active">공통</button>
+      <button id="btnBWMS" onclick="changeCategory('BWMS')">BWMS</button>
+      <button id="btnControl" onclick="changeCategory('제어')">제어</button>
+      <button id="btnSwitchboard" onclick="changeCategory('배전반')">배전반</button>
+      
+      <!-- 관리자 전용 유저 관리 버튼 -->
+      <div id="adminButtons" style="margin-top:20px; display:none;">
+        <button onclick="openUserManagementModal()">유저 관리</button>
+      </div>
+    </div>
+    
+    <div class="container">
+      <div class="header">
+        <h1>S&SYS 고객지원팀 공지사항 관리</h1>
+        <div class="header-buttons">
+          <span id="userInfo" style="color: white; margin-right: 10px;"></span>
+          <button onclick="logout()">로그아웃</button>
+        </div>
+      </div>
+      
+      <!-- 필터 섹션 -->
+      <div class="filter-section">
+        <div class="filter-group">
+          <label>구분:</label>
+          <select id="filterCategory" onchange="applyFilters()">
+            <option value="">전체</option>
+            <option value="공통">공통</option>
+            <option value="BWMS">BWMS</option>
+            <option value="제어">제어</option>
+            <option value="배전반">배전반</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>중요도:</label>
+          <select id="filterImportant" onchange="applyFilters()">
+            <option value="">전체</option>
+            <option value="important">중요만</option>
+            <option value="normal">일반만</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>기간:</label>
+          <input type="date" id="filterStartDate" onchange="applyFilters()">
+          <span>~</span>
+          <input type="date" id="filterEndDate" onchange="applyFilters()">
+        </div>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="공지내용 검색..." onkeyup="searchNotices()">
+        </div>
+      </div>
+      
+      <div class="content">
+        <div id="connectionStatus">연결 상태: 확인 중...</div>
+        <div id="errorLog"></div>
+        <div id="noPermissionMsg" class="no-permission" style="display:none;">
+          공지사항 조회 권한이 없습니다. 관리자에게 문의하세요.
+        </div>
+        <div id="mainContent">
+          <div class="table-container">
+            <div class="table-wrapper">
+              <table id="noticeTable">
+                <thead>
+                  <tr>
+                    <th style="width: 30px;"><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()"></th>
+                    <th style="width: 50px;">중요</th>
+                    <th style="width: 100px;">날짜</th>
+                    <th style="width: 100px;">구분</th>
+                    <th style="width: 100px;">공지자</th>
+                    <th style="width: 400px;">공지내용</th>
+                    <th style="width: 100px;">업데이트일자</th>
+                    <th style="width: 200px;">비고</th>
+                  </tr>
+                </thead>
+                <tbody id="noticeBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="button-group">
+            <button id="btnAdd" onclick="addRow()">행 추가</button>
+            <button id="btnDelete" onclick="deleteSelectedRows()">선택 행 삭제</button>
+            <button id="btnSave" onclick="saveToFirebase()">저장</button>
+            <button onclick="loadFromFirebase()">불러오기</button>
+            <button onclick="downloadExcel()">엑셀 다운로드</button>
+            <input type="file" id="uploadExcel" accept=".xlsx, .xls" style="display:none;" onchange="uploadExcel(event)">
+            <button onclick="document.getElementById('uploadExcel').click()">엑셀 업로드</button>
+            <button onclick="showHistory()">히스토리</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 변경 히스토리 모달 -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeHistory()">&times;</span>
+      <h2>변경 히스토리</h2>
+      <div id="historyContent"></div>
+    </div>
+  </div>
+
+  <!-- 관리자 유저 관리 모달 -->
+  <div id="userManagementModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUserManagementModal()">&times;</span>
+      <div id="userTabs">
+        <button id="tabUserList" class="active" onclick="showUserTab('list')">유저 목록</button>
+        <button id="tabUserRegister" onclick="showUserTab('register')">유저 등록</button>
+      </div>
+      <div id="userListContent" class="user-tab-content active">
+        <table class="admin-user-table">
+          <thead>
+            <tr>
+              <th class="checkbox-cell">공지권한</th>
+              <th>이름</th>
+              <th>이메일</th>
+              <th>권한</th>
+              <th>업체</th>
+              <th>수정</th>
+              <th>삭제</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserListBody"></tbody>
+        </table>
+      </div>
+      <div id="userRegisterContent" class="user-tab-content">
+        <div style="margin-bottom: 10px;">
+          <label>권한</label>
+          <select id="adminRegisterRole">
+            <option value="관리자">관리자</option>
+            <option value="일반">일반</option>
+            <option value="협력">협력</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>이름(표시용)</label>
+          <input type="text" id="adminRegisterName" placeholder="예: 홍길동">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>이메일</label>
+          <input type="email" id="adminRegisterEmail" placeholder="예: user@example.com">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>비밀번호</label>
+          <input type="password" id="adminRegisterPw" placeholder="********">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>업체명</label>
+          <input type="text" id="adminRegisterCompany" placeholder="예: 본사, ○○업체 등">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label>
+            <input type="checkbox" id="adminRegisterNoticePermission">
+            공지사항 권한 부여
+          </label>
+        </div>
+        <button onclick="createUser()">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase 설정 객체
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+      authDomain: "sanghoon-d8f1c.firebaseapp.com",
+      databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+      projectId: "sanghoon-d8f1c",
+      storageBucket: "sanghoon-d8f1c.appspot.com",
+      messagingSenderId: "495391900753",
+      appId: "1:495391900753:web:b0d708eeca64fafe562470",
+      measurementId: "G-J2E22BW61H"
+    };
+
+    // Firebase 초기화
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // 전역 변수
+    let currentUser = null;
+    let previousData = {};
+    let currentCategory = '공통';
+    let allNoticesData = [];
+    let hasNoticePermission = false;
+
+    // DOM 로드 완료 후 실행
+    document.addEventListener('DOMContentLoaded', function() {
+      // Firebase Auth 상태 변화 감지
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          const uid = user.uid;
+          database.ref("users/" + uid).once("value")
+            .then(snapshot => {
+              if (!snapshot.exists()) {
+                let role = "일반";
+                if (user.email && user.email.toLowerCase() === "sanghoon.seo@snsys.net") {
+                  role = "관리자";
+                }
+                const userData = {
+                  id: user.email ? user.email.split("@")[0] : "사용자",
+                  email: user.email || "",
+                  role: role,
+                  company: "",
+                  noticePermission: role === "관리자"
+                };
+                return database.ref("users/" + uid).set(userData).then(() => userData);
+              } else {
+                return snapshot.val();
+              }
+            })
+            .then(userData => {
+              if (!userData) {
+                throw new Error("사용자 데이터를 불러올 수 없습니다.");
+              }
+              
+              currentUser = userData;
+              hasNoticePermission = userData.noticePermission === true || userData.role === "관리자";
+              
+              // UI 업데이트
+              document.getElementById("login-container").style.display = "none";
+              document.getElementById("main-app").style.display = "flex";
+              
+              const userInfoElement = document.getElementById("userInfo");
+              if (userInfoElement) {
+                userInfoElement.textContent = userData.id || userData.email || "사용자";
+              }
+              
+              if (userData.role === "관리자") {
+                const adminButtonsElement = document.getElementById("adminButtons");
+                if (adminButtonsElement) {
+                  adminButtonsElement.style.display = "block";
+                }
+              }
+              
+              // 권한 체크
+              const noPermissionElement = document.getElementById("noPermissionMsg");
+              const mainContentElement = document.getElementById("mainContent");
+              
+              if (!hasNoticePermission) {
+                if (noPermissionElement) noPermissionElement.style.display = "block";
+                if (mainContentElement) mainContentElement.style.display = "none";
+              } else {
+                if (noPermissionElement) noPermissionElement.style.display = "none";
+                if (mainContentElement) mainContentElement.style.display = "block";
+                
+                // 데이터 로드
+                testConnection();
+                loadFromFirebase();
+                updateButtonPermissions();
+              }
+            })
+            .catch(err => {
+              console.error("사용자 데이터 로드 실패:", err);
+              alert("사용자 정보를 불러오는데 실패했습니다. 다시 로그인해주세요.");
+              logout();
+            });
+        } else {
+          // 로그아웃 상태
+          document.getElementById("login-container").style.display = "flex";
+          document.getElementById("main-app").style.display = "none";
+          currentUser = null;
+          hasNoticePermission = false;
+        }
+      });
+    });
+
+    // 버튼 권한 업데이트
+    function updateButtonPermissions() {
+      const canEdit = hasNoticePermission;
+      const btnAdd = document.getElementById("btnAdd");
+      const btnDelete = document.getElementById("btnDelete");
+      const btnSave = document.getElementById("btnSave");
+      
+      if (btnAdd) btnAdd.disabled = !canEdit;
+      if (btnDelete) btnDelete.disabled = !canEdit;
+      if (btnSave) btnSave.disabled = !canEdit;
+    }
+
+    // 로그인
+    function login() {
+      const emailVal = document.getElementById("loginEmail").value.trim();
+      const pwVal = document.getElementById("loginPw").value.trim();
+      
+      if (!emailVal || !pwVal) {
+        alert("이메일과 비밀번호를 입력하세요");
+        return;
+      }
+      
+      auth.signInWithEmailAndPassword(emailVal, pwVal)
+        .catch(err => {
+          alert("로그인 실패: " + err.message);
+        });
+    }
+
+    // 로그아웃
+    function logout() {
+      if (!confirm("로그아웃 하시겠습니까?")) return;
+      
+      auth.signOut()
+        .then(() => {
+          currentUser = null;
+          hasNoticePermission = false;
+          document.getElementById("loginEmail").value = "";
+          document.getElementById("loginPw").value = "";
+        })
+        .catch(err => {
+          console.error("로그아웃 오류:", err);
+        });
+    }
+
+    // 비밀번호 재설정
+    function resetPassword() {
+      const emailVal = document.getElementById("loginEmail").value.trim();
+      if (!emailVal) {
+        alert("비밀번호 재설정을 위해 이메일을 입력하세요.");
+        return;
+      }
+      
+      auth.sendPasswordResetEmail(emailVal)
+        .then(() => {
+          alert("비밀번호 재설정 이메일이 발송되었습니다.");
+        })
+        .catch(err => {
+          alert("비밀번호 재설정 실패: " + err.message);
+        });
+    }
+
+    // 연결 테스트
+    function testConnection() {
+      database.ref('test').set({ connectionTest: true })
+        .then(() => {
+          updateConnectionStatus(true);
+        })
+        .catch((error) => {
+          updateConnectionStatus(false, error.message);
+        });
+    }
+
+    function updateConnectionStatus(isConnected, errorMessage = '') {
+      const statusElement = document.getElementById('connectionStatus');
+      const errorLog = document.getElementById('errorLog');
+      
+      if (statusElement) {
+        if (isConnected) {
+          statusElement.textContent = "연결 상태: Firebase에 연결되었습니다.";
+          statusElement.style.color = "green";
+          if (errorLog) errorLog.textContent = "";
+        } else {
+          statusElement.textContent = "연결 상태: Firebase에 연결되지 않았습니다.";
+          statusElement.style.color = "red";
+          if (errorLog) errorLog.textContent = "연결 오류: " + errorMessage;
+        }
+      }
+    }
+
+    // 카테고리 변경
+    function changeCategory(category) {
+      currentCategory = category;
+      
+      // 사이드바 버튼 활성화 상태 업데이트
+      document.querySelectorAll('.sidebar button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      if (category === '공통') document.getElementById('btnCommon').classList.add('active');
+      if (category === 'BWMS') document.getElementById('btnBWMS').classList.add('active');
+      if (category === '제어') document.getElementById('btnControl').classList.add('active');
+      if (category === '배전반') document.getElementById('btnSwitchboard').classList.add('active');
+      
+      // 필터 카테고리도 동기화
+      document.getElementById('filterCategory').value = category;
+      loadFromFirebase();
+    }
+
+    // 행 추가 - 빈 행 추가
+    function addRow() {
+      if (!hasNoticePermission && (!currentUser || currentUser.role !== "관리자")) {
+        alert("공지사항 등록 권한이 없습니다.");
+        return;
+      }
+      
+      const tbody = document.getElementById('noticeBody');
+      if (!tbody) return;
+      
+      const rowCount = tbody.rows.length;
+      if (rowCount >= 1000) {
+        alert('최대 1000개의 항목만 입력할 수 있습니다.');
+        return;
+      }
+      
+      const newId = 'new_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const row = tbody.insertRow(0);
+      row.setAttribute('data-uid', newId);
+      
+      // 체크박스
+      const checkboxCell = row.insertCell(0);
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkboxCell.appendChild(checkbox);
+      
+      // 중요 체크박스
+      const importantCell = row.insertCell(1);
+      const importantCheckbox = document.createElement('input');
+      importantCheckbox.type = 'checkbox';
+      importantCheckbox.onchange = function() {
+        if (this.checked) {
+          row.classList.add('important-row');
+        } else {
+          row.classList.remove('important-row');
+        }
+      };
+      importantCell.appendChild(importantCheckbox);
+      
+      // 날짜
+      const dateCell = row.insertCell(2);
+      const dateInput = document.createElement('input');
+      dateInput.type = 'date';
+      dateInput.value = new Date().toISOString().split('T')[0];
+      dateCell.appendChild(dateInput);
+      
+      // 구분
+      const categoryCell = row.insertCell(3);
+      const categorySelect = document.createElement('select');
+      ['공통', 'BWMS', '제어', '배전반'].forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.text = cat;
+        if (cat === currentCategory) option.selected = true;
+        categorySelect.appendChild(option);
+      });
+      categoryCell.appendChild(categorySelect);
+      
+      // 공지자
+      const notifierCell = row.insertCell(4);
+      const notifierInput = document.createElement('input');
+      notifierInput.type = 'text';
+      notifierInput.value = currentUser ? (currentUser.id || currentUser.email.split('@')[0]) : '';
+      notifierCell.appendChild(notifierInput);
+      
+      // 공지내용 - 빈 값
+      const contentCell = row.insertCell(5);
+      const contentTextarea = document.createElement('textarea');
+      contentTextarea.className = 'large-input';
+      contentTextarea.placeholder = '공지내용을 입력하세요...';
+      contentCell.appendChild(contentTextarea);
+      
+      // 업데이트일자
+      const updateDateCell = row.insertCell(6);
+      const updateDateInput = document.createElement('input');
+      updateDateInput.type = 'date';
+      updateDateInput.value = new Date().toISOString().split('T')[0];
+      updateDateInput.readOnly = true;
+      updateDateCell.appendChild(updateDateInput);
+      
+      // 비고
+      const noteCell = row.insertCell(7);
+      const noteInput = document.createElement('input');
+      noteInput.type = 'text';
+      noteInput.placeholder = '비고...';
+      noteCell.appendChild(noteInput);
+    }
+
+    // 선택 행 삭제
+    function deleteSelectedRows() {
+      if (!hasNoticePermission && (!currentUser || currentUser.role !== "관리자")) {
+        alert("공지사항 삭제 권한이 없습니다.");
+        return;
+      }
+      
+      const tbody = document.getElementById('noticeBody');
+      if (!tbody) return;
+      
+      const rows = tbody.querySelectorAll('tr');
+      let deletedCount = 0;
+      
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const checkbox = rows[i].querySelector('td:first-child input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+          tbody.removeChild(rows[i]);
+          deletedCount++;
+        }
+      }
+      
+      if (deletedCount > 0) {
+        alert(`${deletedCount}개의 행이 삭제되었습니다.`);
+      } else {
+        alert('선택된 행이 없습니다.');
+      }
+      
+      const selectAllCheckbox = document.getElementById('selectAll');
+      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    }
+
+    // 전체 선택
+    function toggleAllCheckboxes() {
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const checkboxes = document.querySelectorAll('#noticeBody tr td:first-child input[type="checkbox"]');
+      
+      if (selectAllCheckbox) {
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = selectAllCheckbox.checked;
+        });
+      }
+    }
+
+    // 테이블 데이터를 객체로 변환
+    function convertTableToObject() {
+      const rows = document.querySelectorAll('#noticeBody tr');
+      const result = {};
+      
+      rows.forEach((tr) => {
+        const uid = tr.getAttribute('data-uid');
+        if (!uid) return;
+        
+        try {
+          const cells = tr.querySelectorAll('td');
+          if (cells.length < 8) return;
+          
+          const importantCheckbox = cells[1] ? cells[1].querySelector('input[type="checkbox"]') : null;
+          const dateInput = cells[2] ? cells[2].querySelector('input') : null;
+          const categoryElement = cells[3] ? (cells[3].querySelector('select') || cells[3]) : null;
+          const notifierInput = cells[4] ? cells[4].querySelector('input') : null;
+          const contentTextarea = cells[5] ? cells[5].querySelector('textarea') : null;
+          const updateDateInput = cells[6] ? cells[6].querySelector('input') : null;
+          const noteInput = cells[7] ? cells[7].querySelector('input') : null;
+          
+          result[uid] = {
+            id: uid,
+            important: importantCheckbox ? importantCheckbox.checked : false,
+            date: dateInput ? dateInput.value : '',
+            category: categoryElement ? (categoryElement.tagName === 'SELECT' ? categoryElement.value : categoryElement.textContent) : '',
+            notifier: notifierInput ? notifierInput.value : '',
+            content: contentTextarea ? contentTextarea.value : '',
+            updateDate: updateDateInput ? updateDateInput.value : '',
+            note: noteInput ? noteInput.value : ''
+          };
+        } catch (err) {
+          console.error('Error processing row:', err);
+        }
+      });
+      
+      return result;
+    }
+
+    // 변경 내역 추적
+    function getChanges(oldDataObj, newDataObj) {
+      const changes = [];
+      
+      // 삭제
+      for (let oldId in oldDataObj) {
+        if (!newDataObj.hasOwnProperty(oldId)) {
+          const content = oldDataObj[oldId].content || '내용 없음';
+          const important = oldDataObj[oldId].important ? '[중요] ' : '';
+          changes.push(`삭제: ${important}${content.substring(0, 30)}...`);
+        }
+      }
+      
+      // 신규
+      for (let newId in newDataObj) {
+        if (!oldDataObj.hasOwnProperty(newId)) {
+          const content = newDataObj[newId].content || '내용 없음';
+          const important = newDataObj[newId].important ? '[중요] ' : '';
+          changes.push(`신규: ${important}${content.substring(0, 30)}...`);
+        }
+      }
+      
+      // 수정
+      const fields = ["important", "date", "category", "notifier", "content", "updateDate", "note"];
+      for (let newId in newDataObj) {
+        if (oldDataObj.hasOwnProperty(newId)) {
+          const oldRow = oldDataObj[newId];
+          const newRow = newDataObj[newId];
+          let isChanged = false;
+          
+          for (let f of fields) {
+            if ((oldRow[f] || '') !== (newRow[f] || '')) {
+              isChanged = true;
+              break;
+            }
+          }
+          
+          if (isChanged) {
+            const content = newRow.content || '내용 없음';
+            const important = newRow.important ? '[중요] ' : '';
+            changes.push(`수정: ${important}${content.substring(0, 30)}...`);
+          }
+        }
+      }
+      
+      return changes;
+    }
+
+    // 저장 - 빈 행은 저장하지 않음
+    function saveToFirebase() {
+      if (!currentUser) {
+        alert("로그인 후 저장할 수 있습니다.");
+        return;
+      }
+      
+      if (!hasNoticePermission && currentUser.role !== "관리자") {
+        alert("공지사항 저장 권한이 없습니다.");
+        return;
+      }
+      
+      const newDataObj = convertTableToObject();
+      
+      // 빈 행 필터링 - 공지내용이 있는 행만 저장
+      const filteredData = {};
+      for (let uid in newDataObj) {
+        const row = newDataObj[uid];
+        if (row.content && row.content.trim() !== '') {
+          filteredData[uid] = row;
+          filteredData[uid].updateDate = new Date().toISOString().split('T')[0];
+        }
+      }
+      
+      if (Object.keys(filteredData).length === 0) {
+        alert("저장할 데이터가 없습니다. 공지내용을 입력해주세요.");
+        return;
+      }
+      
+      // 기존 데이터와 병합
+      database.ref('notices').once('value')
+        .then(snapshot => {
+          const existingData = snapshot.val() || {};
+          const mergedData = { ...existingData };
+          
+          // 새로운/수정된 데이터 추가
+          for (let uid in filteredData) {
+            mergedData[uid] = filteredData[uid];
+          }
+          
+          // 현재 테이블에서 삭제된 항목 처리
+          const currentUids = Object.keys(newDataObj);
+          for (let uid in previousData) {
+            if (!currentUids.includes(uid) && !uid.startsWith('new_')) {
+              delete mergedData[uid];
+            }
+          }
+          
+          const changes = getChanges(previousData, mergedData);
+          
+          if (changes.length === 0) {
+            alert("변경 사항이 없습니다.");
+            return;
+          }
+          
+          const historyEntry = {
+            name: currentUser.id || currentUser.email,
+            timestamp: new Date().toISOString(),
+            action: "데이터 저장",
+            changes: changes
+          };
+          
+          return database.ref('notices').set(mergedData)
+            .then(() => database.ref('noticeHistory').push(historyEntry))
+            .then(() => {
+              alert("데이터가 성공적으로 저장되었습니다.");
+              loadFromFirebase();
+            });
+        })
+        .catch(err => {
+          console.error("저장 중 오류:", err);
+          alert("저장 중 오류가 발생했습니다: " + err.message);
+        });
+    }
+
+    // DB에서 불러오기
+    function loadFromFirebase() {
+      database.ref('notices').once('value')
+        .then((snapshot) => {
+          const dataObj = snapshot.val() || {};
+          previousData = dataObj;
+          allNoticesData = [];
+          
+          // 유효한 데이터만 필터링
+          for (let uid in dataObj) {
+            const item = dataObj[uid];
+            if (item && item.content && item.content.trim() !== '') {
+              allNoticesData.push(item);
+            }
+          }
+          
+          // 날짜 기준 정렬
+          allNoticesData.sort((a, b) => {
+            const da = a.date ? new Date(a.date) : new Date(0);
+            const db = b.date ? new Date(b.date) : new Date(0);
+            return db - da;
+          });
+          
+          applyFilters();
+        })
+        .catch((error) => {
+          console.error("데이터 로드 중 오류 발생:", error);
+          const errorLog = document.getElementById('errorLog');
+          if (errorLog) {
+            errorLog.textContent = '데이터 로드 중 오류가 발생했습니다: ' + error.message;
+          }
+          allNoticesData = [];
+          displayNotices([]);
+        });
+    }
+
+    // 필터 적용
+    function applyFilters() {
+      const filterCategory = document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : '';
+      const filterImportant = document.getElementById('filterImportant') ? document.getElementById('filterImportant').value : '';
+      const filterStartDate = document.getElementById('filterStartDate') ? document.getElementById('filterStartDate').value : '';
+      const filterEndDate = document.getElementById('filterEndDate') ? document.getElementById('filterEndDate').value : '';
+      const searchInput = document.getElementById('searchInput');
+      const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+      
+      let filteredData = [...allNoticesData];
+      
+      // 카테고리 필터
+      if (currentCategory && currentCategory !== '전체') {
+        filteredData = filteredData.filter(item => item.category === currentCategory);
+      } else if (filterCategory) {
+        filteredData = filteredData.filter(item => item.category === filterCategory);
+      }
+      
+      // 중요도 필터
+      if (filterImportant === 'important') {
+        filteredData = filteredData.filter(item => item.important === true);
+      } else if (filterImportant === 'normal') {
+        filteredData = filteredData.filter(item => !item.important);
+      }
+      
+      // 날짜 필터
+      if (filterStartDate) {
+        filteredData = filteredData.filter(item => item.date >= filterStartDate);
+      }
+      if (filterEndDate) {
+        filteredData = filteredData.filter(item => item.date <= filterEndDate);
+      }
+      
+      // 검색 필터
+      if (searchText) {
+        filteredData = filteredData.filter(item =>
+          (item.content && item.content.toLowerCase().includes(searchText)) ||
+          (item.notifier && item.notifier.toLowerCase().includes(searchText)) ||
+          (item.note && item.note.toLowerCase().includes(searchText))
+        );
+      }
+      
+      displayNotices(filteredData);
+    }
+
+    // 공지사항 표시 - 빈 데이터일 때 빈 행 추가하지 않음
+    function displayNotices(data) {
+      const tbody = document.getElementById('noticeBody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      const canEdit = hasNoticePermission || (currentUser && currentUser.role === "관리자");
+      
+      if (data && data.length > 0) {
+        data.forEach(obj => {
+          const newRow = tbody.insertRow();
+          newRow.setAttribute('data-uid', obj.id);
+          
+          if (obj.important) {
+            newRow.classList.add('important-row');
+          }
+          
+          // 체크박스
+          const checkboxCell = newRow.insertCell(0);
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.disabled = !canEdit;
+          checkboxCell.appendChild(checkbox);
+          
+          // 중요 체크박스
+          const importantCell = newRow.insertCell(1);
+          const importantCheckbox = document.createElement('input');
+          importantCheckbox.type = 'checkbox';
+          importantCheckbox.checked = obj.important || false;
+          importantCheckbox.disabled = !canEdit;
+          importantCheckbox.onchange = function() {
+            if (this.checked) {
+              newRow.classList.add('important-row');
+            } else {
+              newRow.classList.remove('important-row');
+            }
+          };
+          importantCell.appendChild(importantCheckbox);
+          
+          // 날짜
+          const dateCell = newRow.insertCell(2);
+          const dateInput = document.createElement('input');
+          dateInput.type = 'date';
+          dateInput.value = obj.date || '';
+          dateInput.readOnly = !canEdit;
+          dateCell.appendChild(dateInput);
+          
+          // 구분
+          const categoryCell = newRow.insertCell(3);
+          if (canEdit) {
+            const categorySelect = document.createElement('select');
+            ['공통', 'BWMS', '제어', '배전반'].forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat;
+              option.text = cat;
+              if (cat === obj.category) option.selected = true;
+              categorySelect.appendChild(option);
+            });
+            categoryCell.appendChild(categorySelect);
+          } else {
+            categoryCell.textContent = obj.category || '';
+          }
+          
+          // 공지자
+          const notifierCell = newRow.insertCell(4);
+          const notifierInput = document.createElement('input');
+          notifierInput.type = 'text';
+          notifierInput.value = obj.notifier || '';
+          notifierInput.readOnly = !canEdit;
+          notifierCell.appendChild(notifierInput);
+          
+          // 공지내용
+          const contentCell = newRow.insertCell(5);
+          const contentTextarea = document.createElement('textarea');
+          contentTextarea.className = 'large-input';
+          contentTextarea.value = obj.content || '';
+          contentTextarea.readOnly = !canEdit;
+          contentCell.appendChild(contentTextarea);
+          
+          // 업데이트일자
+          const updateDateCell = newRow.insertCell(6);
+          const updateDateInput = document.createElement('input');
+          updateDateInput.type = 'date';
+          updateDateInput.value = obj.updateDate || '';
+          updateDateInput.readOnly = true;
+          updateDateCell.appendChild(updateDateInput);
+          
+          // 비고
+          const noteCell = newRow.insertCell(7);
+          const noteInput = document.createElement('input');
+          noteInput.type = 'text';
+          noteInput.value = obj.note || '';
+          noteInput.readOnly = !canEdit;
+          noteCell.appendChild(noteInput);
+        });
+      } else {
+        // 데이터가 없을 때 안내 메시지 표시
+        const emptyRow = tbody.insertRow();
+        const emptyCell = emptyRow.insertCell(0);
+        emptyCell.colSpan = 8;
+        emptyCell.className = 'empty-message';
+        emptyCell.innerHTML = '등록된 공지사항이 없습니다.';
+        
+        if (canEdit) {
+          const helpText = document.createElement('div');
+          helpText.textContent = '상단의 "행 추가" 버튼을 클릭하여 새 공지사항을 작성하세요.';
+          emptyCell.appendChild(helpText);
+        }
+      }
+    }
+
+    // 검색 기능
+    function searchNotices() {
+      applyFilters();
+    }
+
+    // 엑셀 다운로드
+    function downloadExcel() {
+      const dataObj = convertTableToObject();
+      let rowsArray = Object.values(dataObj);
+      
+      // 빈 데이터 필터링
+      rowsArray = rowsArray.filter(r => r.content && r.content.trim() !== '');
+      
+      rowsArray.sort((a, b) => {
+        const da = a.date ? new Date(a.date) : null;
+        const db = b.date ? new Date(b.date) : null;
+        if (!da) return 1;
+        if (!db) return -1;
+        return db - da;
+      });
+      
+      const header = ['중요', '날짜', '구분', '공지자', '공지내용', '업데이트일자', '비고'];
+      const sheetData = [header];
+      
+      rowsArray.forEach(r => {
+        sheetData.push([
+          r.important ? 'O' : '',
+          r.date || '',
+          r.category || '',
+          r.notifier || '',
+          r.content || '',
+          r.updateDate || '',
+          r.note || ''
+        ]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "공지사항");
+      
+      const fileName = `공지사항_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+
+    // 엑셀 업로드
+    function uploadExcel(e) {
+      if (!hasNoticePermission && (!currentUser || currentUser.role !== "관리자")) {
+        alert("공지사항 업로드 권한이 없습니다.");
+        return;
+      }
+      
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          
+          const tbody = document.getElementById('noticeBody');
+          if (!tbody) return;
+          
+          tbody.innerHTML = '';
+          
+          const rows = json.slice(1, 1001);
+          rows.forEach(row => {
+            // 빈 행은 건너뛰기
+            if (!row[4] || row[4].toString().trim() === '') return;
+            
+            const newId = 'upload_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const newRow = tbody.insertRow();
+            newRow.setAttribute('data-uid', newId);
+            
+            const isImportant = row[0] === 'O' || row[0] === true;
+            if (isImportant) {
+              newRow.classList.add('important-row');
+            }
+            
+            // 체크박스
+            const checkboxCell = newRow.insertCell(0);
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkboxCell.appendChild(checkbox);
+            
+            // 중요 체크박스
+            const importantCell = newRow.insertCell(1);
+            const importantCheckbox = document.createElement('input');
+            importantCheckbox.type = 'checkbox';
+            importantCheckbox.checked = isImportant;
+            importantCheckbox.onchange = function() {
+              if (this.checked) {
+                newRow.classList.add('important-row');
+              } else {
+                newRow.classList.remove('important-row');
+              }
+            };
+            importantCell.appendChild(importantCheckbox);
+            
+            // 날짜
+            const dateCell = newRow.insertCell(2);
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = row[1] || '';
+            dateCell.appendChild(dateInput);
+            
+            // 구분
+            const categoryCell = newRow.insertCell(3);
+            const categorySelect = document.createElement('select');
+            ['공통', 'BWMS', '제어', '배전반'].forEach(cat => {
+              const option = document.createElement('option');
+              option.value = cat;
+              option.text = cat;
+              if (cat === row[2]) option.selected = true;
+              categorySelect.appendChild(option);
+            });
+            categoryCell.appendChild(categorySelect);
+            
+            // 나머지 필드
+            for (let i = 3; i < 7; i++) {
+              const cell = newRow.insertCell(i + 1);
+              if (i === 4) {
+                const textarea = document.createElement('textarea');
+                textarea.className = 'large-input';
+                textarea.value = row[i] || '';
+                cell.appendChild(textarea);
+              } else {
+                const input = document.createElement('input');
+                input.type = i === 5 ? 'date' : 'text';
+                input.value = row[i] || '';
+                if (i === 5) input.readOnly = true;
+                cell.appendChild(input);
+              }
+            }
+          });
+          
+          const uploadedCount = tbody.rows.length;
+          if (uploadedCount > 0) {
+            alert(`총 ${uploadedCount}개의 행이 업로드되었습니다.`);
+          } else {
+            alert('업로드할 데이터가 없습니다. 공지내용이 있는 행만 업로드됩니다.');
+          }
+        } catch (err) {
+          console.error("엑셀 업로드 오류:", err);
+          alert("엑셀 파일을 읽는 중 오류가 발생했습니다.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      
+      // 파일 선택 초기화
+      e.target.value = '';
+    }
+
+    // 히스토리 보기
+    function showHistory() {
+      database.ref('noticeHistory').once('value')
+        .then((snapshot) => {
+          const historyData = snapshot.val();
+          const historyContent = document.getElementById('historyContent');
+          
+          if (!historyContent) return;
+          
+          historyContent.innerHTML = '';
+          
+          if (historyData) {
+            let historyEntries = Object.entries(historyData).map(([key, value]) => ({ key, ...value }));
+            
+            // 30일 지난 히스토리는 자동 삭제
+            const now = new Date();
+            const cutoff = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            let entriesToDelete = [];
+            
+            historyEntries = historyEntries.filter(entry => {
+              const entryDate = new Date(entry.timestamp);
+              const isOld = entryDate < cutoff;
+              if (isOld) {
+                entriesToDelete.push(entry.key);
+              }
+              return !isOld;
+            });
+            
+            entriesToDelete.forEach(keyToDelete => {
+              database.ref(`noticeHistory/${keyToDelete}`).remove();
+            });
+            
+            historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (historyEntries.length === 0) {
+              historyContent.innerHTML = '<p>최근 30일 이내 변경 히스토리가 없습니다.</p>';
+            } else {
+              historyEntries.forEach(entry => {
+                const entryDiv = document.createElement('div');
+                entryDiv.innerHTML = `
+                  <p><strong>${entry.name}</strong> - ${new Date(entry.timestamp).toLocaleString()}</p>
+                  <p>${entry.action}</p>
+                  <ul>${
+                    entry.changes && Array.isArray(entry.changes)
+                      ? entry.changes.map(change => `<li>${change}</li>`).join('')
+                      : '<li>변경 사항 없음</li>'
+                  }</ul>
+                  <hr>`;
+                historyContent.appendChild(entryDiv);
+              });
+            }
+          } else {
+            historyContent.innerHTML = '<p>변경 히스토리가 없습니다.</p>';
+          }
+          
+          const historyModal = document.getElementById('historyModal');
+          if (historyModal) {
+            historyModal.style.display = 'block';
+          }
+        })
+        .catch((error) => {
+          console.error("히스토리 로드 중 오류 발생:", error);
+        });
+    }
+
+    function closeHistory() {
+      const historyModal = document.getElementById('historyModal');
+      if (historyModal) {
+        historyModal.style.display = 'none';
+      }
+    }
+
+    // 관리자 유저 관리 모달
+    function openUserManagementModal() {
+      loadUserList();
+      const modal = document.getElementById("userManagementModal");
+      if (modal) {
+        modal.style.display = "block";
+      }
+    }
+
+    function closeUserManagementModal() {
+      const modal = document.getElementById("userManagementModal");
+      if (modal) {
+        modal.style.display = "none";
+      }
+    }
+
+    function showUserTab(tab) {
+      const tabUserList = document.getElementById("tabUserList");
+      const tabUserRegister = document.getElementById("tabUserRegister");
+      const userListContent = document.getElementById("userListContent");
+      const userRegisterContent = document.getElementById("userRegisterContent");
+      
+      if (tab === "list") {
+        if (tabUserList) tabUserList.classList.add("active");
+        if (tabUserRegister) tabUserRegister.classList.remove("active");
+        if (userListContent) userListContent.classList.add("active");
+        if (userRegisterContent) userRegisterContent.classList.remove("active");
+        loadUserList();
+      } else {
+        if (tabUserRegister) tabUserRegister.classList.add("active");
+        if (tabUserList) tabUserList.classList.remove("active");
+        if (userRegisterContent) userRegisterContent.classList.add("active");
+        if (userListContent) userListContent.classList.remove("active");
+      }
+    }
+
+    function loadUserList() {
+      database.ref("users").once("value").then(snapshot => {
+        const usersData = snapshot.val() || {};
+        const tbody = document.getElementById("adminUserListBody");
+        
+        if (!tbody) return;
+        
+        tbody.innerHTML = "";
+        
+        for (const uid in usersData) {
+          const u = usersData[uid];
+          const tr = document.createElement("tr");
+          
+          // 공지권한 체크박스
+          const tdCheck = document.createElement("td");
+          tdCheck.className = "checkbox-cell";
+          const checkPermission = document.createElement("input");
+          checkPermission.type = "checkbox";
+          checkPermission.checked = u.noticePermission || false;
+          checkPermission.onchange = () => toggleNoticePermission(uid, checkPermission.checked);
+          tdCheck.appendChild(checkPermission);
+          
+          const tdName = document.createElement("td");
+          tdName.textContent = u.id || "(no name)";
+          
+          const tdEmail = document.createElement("td");
+          tdEmail.textContent = u.email || "";
+          
+          const tdRole = document.createElement("td");
+          tdRole.textContent = u.role || "";
+          
+          const tdComp = document.createElement("td");
+          tdComp.textContent = u.company || "";
+          
+          const tdEdit = document.createElement("td");
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "수정";
+          editBtn.onclick = () => { openUserEditModal(uid); };
+          tdEdit.appendChild(editBtn);
+          
+          const tdDel = document.createElement("td");
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "삭제";
+          delBtn.onclick = () => { deleteUser(uid); };
+          tdDel.appendChild(delBtn);
+          
+          tr.appendChild(tdCheck);
+          tr.appendChild(tdName);
+          tr.appendChild(tdEmail);
+          tr.appendChild(tdRole);
+          tr.appendChild(tdComp);
+          tr.appendChild(tdEdit);
+          tr.appendChild(tdDel);
+          tbody.appendChild(tr);
+        }
+      });
+    }
+
+    function toggleNoticePermission(uid, hasPermission) {
+      database.ref("users/" + uid + "/noticePermission").set(hasPermission)
+        .then(() => {
+          alert(hasPermission ? "공지 권한이 부여되었습니다." : "공지 권한이 제거되었습니다.");
+        })
+        .catch(err => {
+          alert("권한 변경 실패: " + err.message);
+        });
+    }
+
+    function openUserEditModal(uid) {
+      database.ref("users/" + uid).once("value").then(snapshot => {
+        const userData = snapshot.val();
+        if (userData) {
+          const newName = prompt("이름 수정", userData.id);
+          const newRole = prompt("권한 수정 (관리자/일반/협력)", userData.role);
+          const newCompany = prompt("업체명 수정", userData.company);
+          
+          if (newName != null && newRole != null) {
+            const updated = {
+              ...userData,
+              id: newName,
+              role: newRole,
+              company: newCompany
+            };
+            database.ref("users/" + uid).set(updated).then(() => {
+              alert("유저 정보 수정 완료");
+              loadUserList();
+            });
+          }
+        }
+      });
+    }
+
+    function deleteUser(uid) {
+      if (confirm("해당 유저를 삭제하시겠습니까?")) {
+        database.ref("users/" + uid).remove().then(() => {
+          alert("유저 삭제 완료");
+          loadUserList();
+        });
+      }
+    }
+
+    function createUser() {
+      const role = document.getElementById("adminRegisterRole").value;
+      const userName = document.getElementById("adminRegisterName").value.trim();
+      const newEmail = document.getElementById("adminRegisterEmail").value.trim();
+      const newPw = document.getElementById("adminRegisterPw").value.trim();
+      const newComp = document.getElementById("adminRegisterCompany").value.trim() || "";
+      const noticePermissionCheckbox = document.getElementById("adminRegisterNoticePermission");
+      const noticePermission = noticePermissionCheckbox ? noticePermissionCheckbox.checked : false;
+      
+      if (!userName || !newEmail || !newPw) {
+        alert("이름, 이메일, 비밀번호는 필수입니다.");
+        return;
+      }
+      
+      auth.createUserWithEmailAndPassword(newEmail, newPw)
+        .then(cred => {
+          const uid = cred.user.uid;
+          const userData = {
+            id: userName,
+            email: newEmail,
+            role: role,
+            company: newComp,
+            noticePermission: noticePermission
+          };
+          return database.ref("users/" + uid).set(userData);
+        })
+        .then(() => {
+          alert("유저 등록 완료");
+          document.getElementById("adminRegisterName").value = "";
+          document.getElementById("adminRegisterEmail").value = "";
+          document.getElementById("adminRegisterPw").value = "";
+          document.getElementById("adminRegisterCompany").value = "";
+          if (noticePermissionCheckbox) noticePermissionCheckbox.checked = false;
+          showUserTab("list");
+        })
+        .catch(err => {
+          alert("유저 등록 실패: " + err.message);
+        });
+    }
+  </script>
+
+  <!-- 하단 문구 -->
+  <footer>
+    문의 및 개선 : 서상훈 차장(1432)
+  </footer>
+</body>
+</html>
