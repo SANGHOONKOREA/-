@@ -1,651 +1,1060 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>S&amp;SYS 고객지원팀 AI챗봇</title>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 계정 가입 관리 시스템</title>
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  
+  <!-- SheetJS for Excel import/export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     body {
-        font-family: 'Noto Sans KR', sans-serif;
-        background-image: url('https://sanghoonkorea.github.io/-/snsys%20image.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        min-height: 100vh;
-        margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
     }
-    .overlay {
-        background-color: rgba(0, 0, 0, 0.5);
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     }
-    .btn-gradient {
-        background: linear-gradient(45deg, #3498db, #5dade2);
-        transition: all 0.3s ease;
-        aspect-ratio: 1 / 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        line-height: 1.3;
-        font-size: 1.1rem;
-        word-break: keep-all;
-        width: 90%;
-        height: 0;
-        padding-bottom: 90%;
-        position: relative;
-        margin: 0 auto;
-        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-    .btn-content {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-    }
-    .btn-gradient:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
-    }
-    .title {
-        font-weight: 700;
-        letter-spacing: -0.05em;
-        background: linear-gradient(45deg, #3494E6, #EC6EAD);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        font-size: 3rem;
-        padding: 0.5rem 0;
-    }
+    
     .header {
-        font-size: 3.5rem;
-        font-weight: 700;
-        text-align: center;
-        margin-top: 20px;
-        color: white;
-        text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-        line-height: 1.2;
-        padding: 0.5rem 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
     }
-    .footer {
-        margin-top: 20px;
-        text-align: center;
-        color: white;
-        font-size: 0.84rem;
+    
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
     }
-    .section-title {
-        font-family: 'Noto Sans KR', sans-serif;
-        font-size: 1.5rem;
-        font-weight: 700;
-        background: linear-gradient(45deg, #3494E6, #EC6EAD);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 1.5rem;
-        text-align: left;
-        letter-spacing: -0.05em;
-        padding-left: 15px;
-        position: relative;
-        display: inline-block;
+    
+    .header-stats {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-top: 20px;
     }
-    .section-title::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        transform: translateY(-50%);
-        width: 5px;
-        height: 70%;
-        background: linear-gradient(to bottom, #3494E6, #EC6EAD);
-        border-radius: 2px;
+    
+    .header-stat {
+      text-align: center;
     }
-    .section-container {
-        background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    .header-stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
-    .btn-content i {
-        font-size: 24px;
-        margin-bottom: 8px;
+    
+    .header-stat-label {
+      font-size: 14px;
+      opacity: 0.95;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 5px;
     }
-    /* AI TOOL 그룹 컨테이너 스타일 */
-    .ai-tool-container {
-        position: fixed;
-        z-index: 20;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 0.75rem;
-        padding: 0.75rem;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+    
+    .content {
+      padding: 30px;
     }
-
-    /* AI TOOL 그룹 제목 스타일 */
-    .ai-tool-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #fff;
-        text-align: center;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    .upload-section {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 10px;
+      padding: 30px;
+      margin-bottom: 30px;
+      text-align: center;
     }
-
-    /* 수정된 AI 도구 링크 버튼 스타일 */
-    .ai-tool-links {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-        max-height: calc(100vh - 8rem);
-        overflow-y: auto;
-        padding-right: 0.5rem;
+    
+    .upload-area {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
     }
-    .ai-tool-link {
-        background: linear-gradient(45deg, #3498db, #5dade2);
-        color: #fff;
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        font-size: 0.72rem;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    .file-upload {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      min-width: 250px;
+      cursor: pointer;
+      transition: transform 0.3s;
     }
-    .ai-tool-link:hover {
-        transform: translateX(-5px);
-        box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1),
-                    0 3px 6px rgba(0, 0, 0, 0.08);
-        background: linear-gradient(45deg, #5dade2, #3498db);
+    
+    .file-upload:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
     }
-
-    /* 데스크톱 뷰 */
-    .ai-tool-container {
-        bottom: 1rem;
-        right: 1rem;
-        max-width: 200px; /* 최대 너비 축소 */
-        font-size: 0.8rem; /* 폰트 크기 축소 */
+    
+    .file-upload input[type="file"] {
+      display: none;
     }
-    .ai-tool-title {
-        font-size: 0.9rem; /* 제목 크기 축소 */
-        margin-bottom: 0.5rem;
+    
+    .file-upload-label {
+      display: block;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.3s;
     }
-    .ai-tool-link {
-        padding: 0.3rem 0.6rem; /* 패딩 축소 */
-        font-size: 0.7rem; /* 링크 폰트 크기 축소 */
+    
+    .file-upload-label:hover {
+      opacity: 0.9;
     }
-    .ai-tool-links {
-        max-height: 30vh; /* 최대 높이 설정 */
-        overflow-y: auto;
+    
+    .file-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6c757d;
+      min-height: 20px;
     }
-
-    /* 태블릿 및 모바일 뷰 (1200px 이하) */
-    @media (max-width: 1200px) {
-        .ai-tool-container {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-            padding: 0.5rem;
-        }
-        .ai-tool-title {
-            font-size: 0.8rem;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.3rem;
-        }
-        .ai-tool-links {
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-height: 20vh;
-            overflow-x: auto;
-            gap: 0.3rem;
-        }
-        .ai-tool-link {
-            font-size: 0.6rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.3rem;
-        }
-        .footer {
-            margin-bottom: calc(20vh + 2rem);
-        }
+    
+    .file-status.success {
+      color: #28a745;
+      font-weight: 600;
     }
-    /* 데스크톱 뷰 */
-    @media (min-width: 768px) {
-        .flex-grow {
-            padding-bottom: 10vh; /* AI TOOL 컨테이너 높이에 맞춰 조정 */
-        }
+    
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
-    /* 모바일 뷰 */
-    @media (max-width: 767px) {
-        .ai-tool-container {
-            bottom: 0;
-            left: 0;
-            right: 0;
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-            padding: 0.5rem;
-        }
-        .ai-tool-title {
-            font-size: 0.8rem;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.3rem;
-        }
-        .ai-tool-links {
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-height: 20vh;
-            overflow-x: auto;
-            gap: 0.3rem;
-        }
-        .ai-tool-link {
-            font-size: 0.6rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.3rem;
-        }
-        .ai-tool-link:hover {
-            transform: translateY(-2px);
-        }
-        .btn-gradient {
-            font-size: 0.9rem;
-        }
-        .btn-content {
-            padding: 5px;
-        }
-        .btn-content i {
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
     }
-    /* 태블릿 및 모바일 뷰 (1200px 이하) */
-    @media (max-width: 1200px) {
-        .ai-tool-container {
-            padding: 0.5rem 0.5rem 1rem; /* 하단 패딩 증가 */
-        }
-        .ai-tool-links {
-            max-height: 25vh; /* 최대 높이 증가 */
-            overflow-y: auto;
-            padding-bottom: env(safe-area-inset-bottom); /* iOS 안전 영역 고려 */
-        }
-        .footer {
-            margin-bottom: calc(25vh + 2rem); /* 여백 조정 */
-        }
+    
+    .btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
     }
-
-    .flex-grow {
-        padding-bottom: calc(25vh + 2rem);
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
-
-    @media (max-width: 480px) {
-        .btn-gradient {
-            font-size: 0.8rem;
-        }
-        .btn-content i {
-            font-size: 18px;
-        }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
-    @media (max-width: 767px) {
-        .header {
-            font-size: 2rem; 
-        }
+    
+    .btn-process {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
-    @media (max-width: 480px) {
-        .header {
-            font-size: 1.5rem;
-        }
+    
+    .btn-excel {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
-    @media (max-width: 767px) {
-        .title {
-             font-size: 2.1rem; 
-        }
+    
+    .btn-reset {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     }
-    .title-break {
-        display: none;
+    
+    .filter-section {
+      display: flex;
+      gap: 15px;
+      align-items: center;
     }
-    @media (max-width: 767px) {
-        .title {
-            font-size: 2.5rem;
-        }
-        .title-break {
-            display: block;
-        }
+    
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+      cursor: pointer;
     }
-</style>
+    
+    .checkbox-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .search-box {
+      padding: 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      width: 250px;
+      font-size: 14px;
+    }
+    
+    .managers-table {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+    }
+    
+    .table-header {
+      padding: 20px;
+      background: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+      font-size: 18px;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    thead {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    th {
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #dee2e6;
+    }
+    
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #e9ecef;
+      font-size: 14px;
+    }
+    
+    tbody tr {
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .manager-name {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .total-ships {
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .matched-accounts {
+      color: #28a745;
+      font-weight: 600;
+    }
+    
+    .join-rate {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .rate-high {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .rate-medium {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .rate-low {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .detail-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 2% auto;
+      padding: 30px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #dee2e6;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .close {
+      color: #adb5bd;
+      font-size: 32px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    
+    .close:hover {
+      color: #495057;
+    }
+    
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+    
+    .modal-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .ships-table {
+      width: 100%;
+      margin-top: 20px;
+    }
+    
+    .joined-ship {
+      background: #d4edda;
+    }
+    
+    .not-joined-ship {
+      background: #f8d7da;
+    }
+    
+    .email-cell {
+      color: #007bff;
+      text-decoration: none;
+    }
+    
+    .email-cell:hover {
+      text-decoration: underline;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-joined {
+      background: #28a745;
+      color: white;
+    }
+    
+    .status-not-joined {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #6c757d;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .stats-summary {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .stat-card {
+      flex: 1;
+      min-width: 200px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .stat-card-value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #495057;
+    }
+    
+    .stat-card-label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 60px;
+      color: #6c757d;
+    }
+    
+    .no-data-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-4">
-<div class="overlay"></div>
-<div class="ai-tool-container">
-    <div class="ai-tool-title">AI TOOL</div>
-    <div class="ai-tool-links">
-        <a class="ai-tool-link" href="https://chat.openai.com" target="_blank">ChatGPT(대표AI)</a>
-        <a class="ai-tool-link" href="https://claude.ai" target="_blank">Claude(코딩,글쓰기)</a>
-        <a class="ai-tool-link" href="https://gemini.google.com" target="_blank">Gemini(다양한정보)</a>
-        <a class="ai-tool-link" href="https://www.perplexity.ai" target="_blank">Perplexity(최신검색)</a>
-        <a class="ai-tool-link" href="https://copilot.microsoft.com/" target="_blank">코파일럿(소스제공)</a>
-        <a class="ai-tool-link" href="https://chatgpt.com/g/g-NDMXJfqHq-gpt-peurompeuteu-saengseonggi" target="_blank">프롬프트생성도우미</a>
-        <a class="ai-tool-link" href="https://glif.app/glifs" target="_blank">고품질이미지(GLIFS)</a>
-        <a class="ai-tool-link" href="https://ideogram.ai/" target="_blank">고품질이미지(IDEOGRAM)</a>
-        <a class="ai-tool-link" href="https://lumalabs.ai/dream-machine" target="_blank">영상제작(LUMA)</a>
-        <a class="ai-tool-link" href="https://hourone.ai/" target="_blank">AI아나운서(HOUR ONE)</a>
-        <a class="ai-tool-link" href="https://lilys.ai/" target="_blank">영상요약(LILYS)</a>
-        <a class="ai-tool-link" href="https://gamma.app/" target="_blank">PPT제작(GAMMA)</a>
-        <a class="ai-tool-link" href="https://www.ilovepdf.com/ko/ocr-pdf" target="_blank">PDF 인식 변환</a>
-        <a class="ai-tool-link" href="https://tableconvert.com/ko/excel-to-json" target="_blank">EXCEL TO JSON</a>
-    </div>
-</div>
-<h2 class="header mt-5 z-10">비상[非常]하게 비상[飛上]하라!</h2>
-<div class="flex-grow flex flex-col items-center justify-center z-10 w-full max-w-7xl">
-    <div class="bg-white bg-opacity-90 rounded-lg shadow-xl p-8 w-full">
-        <h1 class="title text-center mb-8">
-            S&amp;SYS<span class="title-break"></span> 고객지원팀 AI챗봇
-        </h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-            <!-- AS 업무 자동화 섹션 -->
-            <div class="section-container">
-                <h3 class="section-title">AS 업무 자동화</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(1)">
-                        <div class="btn-content">
-                            <i class="fas fa-envelope-open-text"></i>
-                            영문 이메일회신 자동 작성기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(2)">
-                        <div class="btn-content">
-                            <i class="fas fa-keyboard"></i>
-                            ERP 조치결과입력 도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(3)">
-                        <div class="btn-content">
-                            <i class="fas fa-ship"></i>
-                            BWMS ERP접수 도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(14)">
-                        <div class="btn-content">
-                            <i class="fas fa-sliders-h"></i>
-                            제어 ERP접수 도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(15)">
-                        <div class="btn-content">
-                            <i class="fas fa-bolt"></i>
-                            배전 ERP접수 도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(19)">
-                        <div class="btn-content">
-                            <i class="fas fa-briefcase"></i>
-                            영문 비즈니스이메일 작성기
-                        </div>
-                    </button>
-                    <!-- [신규추가] 번역기 버튼 -->
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(26)">
-                        <div class="btn-content">
-                            <i class="fas fa-language"></i>
-                            번역기
-                        </div>
-                    </button>
-                    <!-- [신규추가] RMS 요청 메일 작성기 버튼 -->
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(27)">
-                        <div class="btn-content">
-                            <i class="fas fa-envelope"></i>
-                            RMS 요청 메일 작성기
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 업무 지식 섹션 -->
-            <div class="section-container">
-                <h3 class="section-title">업무 지식</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(5)">
-                        <div class="btn-content">
-                            <i class="fas fa-ship"></i>
-                            호선 AS 업무전문가
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(7)">
-                        <div class="btn-content">
-                            <i class="fas fa-tools"></i>
-                            BWMS 기술전문가
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(8)">
-                        <div class="btn-content">
-                            <i class="fas fa-cogs"></i>
-                            SSAS-PRO전문가
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(9)">
-                        <div class="btn-content">
-                            <i class="fas fa-brain"></i>
-                            SSAS-MASTER전문가
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(4)">
-                        <div class="btn-content">
-                            <i class="fas fa-calculator"></i>
-                            정산 업무전문가
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 정보 조회 섹션 -->
-            <div class="section-container">
-                <h3 class="section-title">정보 조회</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(6)">
-                        <div class="btn-content">
-                            <i class="fas fa-info-circle"></i>
-                            BWMS 호선정보 제공
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(10)">
-                        <div class="btn-content">
-                            <i class="fas fa-search"></i>
-                            선박 정보검색기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(25)">
-                        <div class="btn-content">
-                            <i class="fas fa-barcode"></i>
-                            BWMS 자재코드검색기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://www.perplexity.ai/', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-search-plus"></i>
-                            자재 사양검색
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(16)">
-                        <div class="btn-content">
-                            <i class="fas fa-gavel"></i>
-                            선급 규정전문가
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(17)">
-                        <div class="btn-content">
-                            <i class="fas fa-newspaper"></i>
-                            최신 조선정보 제공
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <!-- AS 관리 섹션 -->
-            <div class="section-container">
-                <h3 class="section-title">AS 관리</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(11)">
-                        <div class="btn-content">
-                            <i class="fas fa-percentage"></i>
-                            AS 처리율계산기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(12)">
-                        <div class="btn-content">
-                            <i class="fas fa-chart-line"></i>
-                            채권 분석마스터
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(18)">
-                        <div class="btn-content">
-                            <i class="fas fa-chart-bar"></i>
-                            BWMS AS현황 분석기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/%EC%9E%AC%EA%B3%A0%EA%B4%80%EB%A6%AC%20%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EC%B4%88%EC%95%88.html', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-globe"></i>
-                            해외 재고관리 시스템
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/RMS%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC_SSH%20241018%20.html', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-database"></i>
-                            RMS 현황관리 시스템
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/ASP%20%ED%98%84%ED%99%A9%20%EA%B4%80%EB%A6%AC%20%EC%B5%9C%EC%A2%85%20241127.html', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-calendar-alt"></i>
-                            연간서비스관리 시스템
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/Feedback/', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-comment-dots"></i>
-                            AI 피드백 관리
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 기타 참고용 섹션 -->
-            <div class="section-container">
-                <h3 class="section-title">기타 참고용</h3>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(20)">
-                        <div class="btn-content">
-                            <i class="fas fa-building"></i>
-                            기업분석보고서
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(21)">
-                        <div class="btn-content">
-                            <i class="fas fa-file-excel"></i>
-                            엑셀문서취합
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(22)">
-                        <div class="btn-content">
-                            <i class="fas fa-file-alt"></i>
-                            보고서제작기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(23)">
-                        <div class="btn-content">
-                            <i class="fas fa-clipboard-list"></i>
-                            기업 진단보고서 작성기
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(24)">
-                        <div class="btn-content">
-                            <i class="fas fa-hard-hat"></i>
-                            중대재해처벌법도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="startChatbot(13)">
-                        <div class="btn-content">
-                            <i class="fas fa-users"></i>
-                            인사 정보도우미
-                        </div>
-                    </button>
-                    <button class="btn-gradient text-white font-semibold rounded-lg" onclick="window.open('https://sanghoonkorea.github.io/-/SNSYS%20AI%20TF%20MAIN.HTML', '_blank')">
-                        <div class="btn-content">
-                            <i class="fas fa-project-diagram"></i>
-                            AI T/F 플랫폼
-                        </div>
-                    </button>
-                </div>
-            </div>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚢 AI 계정 가입 관리 시스템</h1>
+      <div class="header-stats">
+        <div class="header-stat">
+          <div class="header-stat-value" id="totalMatched">0</div>
+          <div class="header-stat-label">전체 일치 계정</div>
         </div>
+        <div class="header-stat">
+          <div class="header-stat-value" id="totalShips">0</div>
+          <div class="header-stat-label">전체 선박</div>
+        </div>
+        <div class="header-stat">
+          <div class="header-stat-value" id="avgJoinRate">0%</div>
+          <div class="header-stat-label">평균 가입률</div>
+        </div>
+      </div>
     </div>
-</div>
-<div class="footer z-10">
-    <p>문의 사항 및 개선 제안</p>
-    <p>본 AI챗봇 서비스에 대한 문의 사항이나 개선 제안은 아래로 연락 주시기 바랍니다:</p>
-    <p>서상훈 차장 (내선번호: 1432)</p>
-</div>
 
-<script>
-    function startChatbot(number) {
-        const urls = [
-            'https://chatgpt.com/g/g-BNlXenY65-gogaegjiweon-yeongmun-meil-jagseonggi', 
-            'https://chatgpt.com/g/g-SUGRFtRj5-jocigyeolgwa-ibryeog-doumi', 
-            'https://chatgpt.com/g/g-LTRKbnMHd-erp-as-jeobsu-doumi',
-            'https://chatgpt.com/g/g-r0NH3Lj64-jeongsan-damdangja-doumi',
-            'https://chatgpt.com/g/g-8N7fFj0Q5-as-damdangja-eobmu-doumi',
-            'https://chatgpt.com/g/g-7euadfbOI-bwms-damdangja',
-            'https://snsys-qa.neoali.com/',
-            'https://chatgpt.com/g/g-H0VpozoKd-ssas-pro-jeonmunga',
-            'https://chatgpt.com/g/g-nHEYKW3EB-ssas-master-jeonmunga',
-            'https://chatgpt.com/g/g-5UZhQS9f5-seonbag-jeongbo-geomsaeg',
-            'https://chatgpt.com/g/g-yjHRgZCgP-as-ceoriyul-gyesangi',
-            'https://chatgpt.com/g/g-ZN7RDwaty-caegweon-bunseog-maseuteo',
-            'https://chatgpt.com/g/g-6FZ9Tf0RX-eseuensiseu-insa-doumi',
-            'https://chatgpt.com/g/g-vDHZI6j0c-jeeo-erp-as-jeobsu-doumi',
-            'https://chatgpt.com/g/g-hBaPLzaid-baejeon-erp-as-jeobsu-doumi',
-            'https://chatgpt.com/g/g-8hErnt9Ns-seongeub-gyujeong-jeonmunga',
-            'https://chatgpt.com/g/g-RNuBKFzoW-coesin-joseon-nyuseu-yoyag-jegong',
-            'https://chatgpt.com/g/g-ELYNFNuH4',
-            'https://chatgpt.com/g/g-qB0orNUXu-bijiniseu-imeil-jagseonggi',
-            'https://chatgpt.com/g/g-vNcqmCi2l-gieob-bunseog-bogoseo',
-            'https://chatgpt.com/g/g-7V7pHu1Zm-egsel-munseo-cwihab',
-            'https://chatgpt.com/g/g-VO3SyHjli-bogoseo-jejaggi',
-            'https://chatgpt.com/g/g-08jUXjUfJ-jaemujepyo-giban-gieob-jindan-bogoseo-jagseong',
-            'https://chatgpt.com/g/g-vWyVaZ26Q-jungdaejaehaeceobeolbeob-daeeung-maenyueol',
-            'https://chatgpt.com/g/g-30h6ekxqi-bwms-jajaekodeu-geomsaeggi',
+    <div class="content">
+      <!-- 파일 업로드 섹션 -->
+      <div class="upload-section">
+        <h3 style="margin-bottom: 20px; color: #495057;">데이터 파일 업로드</h3>
+        <div class="upload-area">
+          <div class="file-upload">
+            <label class="file-upload-label" for="aiFile">
+              📊 AI 가입 현황 엑셀
+              <input type="file" id="aiFile" accept=".xlsx,.xls" onchange="handleAIFileUpload(event)">
+            </label>
+            <div class="file-status" id="aiFileStatus">파일을 선택해주세요</div>
+          </div>
+          <div class="file-upload">
+            <label class="file-upload-label" for="asFile">
+              📋 AS 현황 엑셀
+              <input type="file" id="asFile" accept=".xlsx,.xls" onchange="handleASFileUpload(event)">
+            </label>
+            <div class="file-status" id="asFileStatus">파일을 선택해주세요</div>
+          </div>
+        </div>
+      </div>
 
-            // [신규추가] 번역기 링크(배열의 26번째)
-            'https://chatgpt.com/g/g-67736cad49e88191955e6df083376d6e-beonyeoggi',
+      <!-- 컨트롤 섹션 -->
+      <div class="controls">
+        <div class="btn-group">
+          <button class="btn btn-process" onclick="processData()" id="processBtn" disabled>
+            📈 데이터 처리
+          </button>
+          <button class="btn btn-excel" onclick="exportToExcel()" id="exportBtn" disabled>
+            📥 엑셀 다운로드
+          </button>
+          <button class="btn btn-reset" onclick="resetData()">
+            🔄 초기화
+          </button>
+        </div>
+        <div class="filter-section">
+          <input type="text" class="search-box" id="managerSearch" placeholder="담당자 검색..." onkeyup="filterManagers()">
+        </div>
+      </div>
 
-            // [신규추가] RMS 요청 메일 작성기 (배열의 27번째)
-            'https://chatgpt.com/g/g-67a19701706c81919d123271dff78971-rms-yoceong-meil-jadong-jagseonggi'
-        ];
+      <!-- 담당자별 통계 테이블 -->
+      <div class="managers-table" id="managersSection" style="display: none;">
+        <div class="table-header">담당자별 가입 현황</div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 5%;">순위</th>
+              <th style="width: 20%;">담당자</th>
+              <th style="width: 20%;">전체 담당 선박</th>
+              <th style="width: 20%;">가입 계정 수</th>
+              <th style="width: 20%;">가입률</th>
+              <th style="width: 15%;">상세보기</th>
+            </tr>
+          </thead>
+          <tbody id="managersTableBody">
+            <!-- 동적으로 생성됨 -->
+          </tbody>
+        </table>
+      </div>
 
-        if (number >= 1 && number <= urls.length) {
-            window.open(urls[number - 1], '_blank');
-        } else {
-            alert('잘못된 챗봇 번호입니다.');
-        }
+      <!-- 처리 전 안내 -->
+      <div id="emptyState" class="no-data">
+        <div class="no-data-icon">📂</div>
+        <h3>데이터를 업로드해주세요</h3>
+        <p style="margin-top: 10px; color: #6c757d;">
+          AI 가입 현황과 AS 현황 엑셀 파일을 업로드한 후<br>
+          '데이터 처리' 버튼을 클릭해주세요.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 정보 모달 -->
+  <div id="detailModal" class="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">담당자 상세 정보</div>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="modal-controls">
+          <div class="stats-summary">
+            <div class="stat-card">
+              <div class="stat-card-value" id="modalTotalShips">0</div>
+              <div class="stat-card-label">전체 선박</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-value" id="modalJoinedShips">0</div>
+              <div class="stat-card-label">가입 선박</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-value" id="modalJoinRate">0%</div>
+              <div class="stat-card-label">가입률</div>
+            </div>
+          </div>
+          <div class="filter-section">
+            <label class="checkbox-label">
+              <input type="checkbox" id="notJoinedFilter" onchange="filterShips()">
+              미가입 선박만 보기
+            </label>
+            <input type="text" class="search-box" id="shipSearch" placeholder="선박 검색..." onkeyup="filterShips()">
+          </div>
+        </div>
+        <table class="ships-table">
+          <thead>
+            <tr>
+              <th>IMO</th>
+              <th>HULL</th>
+              <th>선박명</th>
+              <th>호선 대표메일</th>
+              <th>가입 여부</th>
+              <th>가입 이메일</th>
+            </tr>
+          </thead>
+          <tbody id="shipsTableBody">
+            <!-- 동적으로 생성됨 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase 설정 (샘플과 동일한 설정 사용)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCoOg2HPjk-oEhtVrLv3hH-3VLCwa2MAfE",
+      authDomain: "sanghoon-d8f1c.firebaseapp.com",
+      databaseURL: "https://sanghoon-d8f1c-default-rtdb.firebaseio.com",
+      projectId: "sanghoon-d8f1c",
+      storageBucket: "sanghoon-d8f1c.appspot.com",
+      messagingSenderId: "495391900753",
+      appId: "1:495391900753:web:b0d708eeca64fafe562470"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 전역 변수
+    let aiData = [];
+    let asData = [];
+    let processedData = {};
+    let currentManagerData = null;
+
+    // AI 가입 현황 파일 업로드 처리
+    function handleAIFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            aiData = XLSX.utils.sheet_to_json(sheet);
+            
+            document.getElementById('aiFileStatus').textContent = 
+              `✅ ${file.name} (${aiData.length}개 데이터)`;
+            document.getElementById('aiFileStatus').className = 'file-status success';
+            
+            checkEnableProcess();
+          } catch (error) {
+            console.error('AI 파일 읽기 오류:', error);
+            alert('AI 가입 현황 파일을 읽는 중 오류가 발생했습니다.');
+          }
+        };
+        reader.readAsBinaryString(file);
+      }
     }
-</script>
+
+    // AS 현황 파일 업로드 처리
+    function handleASFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            asData = XLSX.utils.sheet_to_json(sheet);
+            
+            document.getElementById('asFileStatus').textContent = 
+              `✅ ${file.name} (${asData.length}개 데이터)`;
+            document.getElementById('asFileStatus').className = 'file-status success';
+            
+            checkEnableProcess();
+          } catch (error) {
+            console.error('AS 파일 읽기 오류:', error);
+            alert('AS 현황 파일을 읽는 중 오류가 발생했습니다.');
+          }
+        };
+        reader.readAsBinaryString(file);
+      }
+    }
+
+    // 데이터 처리 버튼 활성화 체크
+    function checkEnableProcess() {
+      const processBtn = document.getElementById('processBtn');
+      if (aiData.length > 0 && asData.length > 0) {
+        processBtn.disabled = false;
+      }
+    }
+
+    // 데이터 처리
+    function processData() {
+      if (aiData.length === 0 || asData.length === 0) {
+        alert('두 파일을 모두 업로드해주세요.');
+        return;
+      }
+
+      // AI 데이터를 IMO 기준으로 맵 생성
+      const aiMap = {};
+      aiData.forEach(item => {
+        const imo = String(item.IMO_NO || '').trim();
+        if (imo && imo !== 'admin' && !isNaN(parseInt(imo))) {
+          aiMap[imo] = item;
+        }
+      });
+
+      // 담당자별 데이터 처리
+      const managersData = {};
+      let totalMatched = 0;
+      const processedIMOs = new Set();
+
+      asData.forEach(ship => {
+        const manager = ship['현 담당'] || '미지정';
+        const imo = String(ship.IMO || '').trim();
+        
+        if (!managersData[manager]) {
+          managersData[manager] = {
+            name: manager,
+            totalShips: 0,
+            joinedShips: 0,
+            ships: []
+          };
+        }
+
+        managersData[manager].totalShips++;
+
+        // IMO 일치 여부 확인
+        const aiAccount = aiMap[imo];
+        const isJoined = !!aiAccount;
+        
+        if (isJoined) {
+          managersData[manager].joinedShips++;
+          if (!processedIMOs.has(imo)) {
+            totalMatched++;
+            processedIMOs.add(imo);
+          }
+        }
+
+        managersData[manager].ships.push({
+          imo: imo || '-',
+          hull: ship.HULL || '-',
+          shipName: ship.SHIPNAME || '-',
+          email: ship['호선 대표메일'] || '-',
+          joined: isJoined,
+          joinedEmail: isJoined ? (aiAccount.EMAIL || '-') : '-',
+          joinedName: isJoined ? (aiAccount.NAME || '-') : '-',
+          companyName: isJoined ? (aiAccount.COMPANY_NAME || '-') : '-'
+        });
+      });
+
+      // 가입률 계산 및 정렬
+      const managersArray = Object.values(managersData);
+      managersArray.forEach(manager => {
+        manager.joinRate = manager.totalShips > 0 ? 
+          ((manager.joinedShips / manager.totalShips) * 100).toFixed(1) : 0;
+      });
+      managersArray.sort((a, b) => parseFloat(b.joinRate) - parseFloat(a.joinRate));
+
+      processedData = { managers: managersArray, totalMatched };
+      
+      // Firebase에 저장 (선택사항)
+      saveToFirebase();
+      
+      // UI 업데이트
+      updateUI();
+    }
+
+    // Firebase에 저장
+    function saveToFirebase() {
+      const timestamp = new Date().toISOString();
+      db.ref('ai_account_management').set({
+        data: processedData,
+        updatedAt: timestamp
+      });
+    }
+
+    // UI 업데이트
+    function updateUI() {
+      // 헤더 통계 업데이트
+      document.getElementById('totalMatched').textContent = processedData.totalMatched || 0;
+      
+      const totalShips = processedData.managers.reduce((sum, m) => sum + m.totalShips, 0);
+      document.getElementById('totalShips').textContent = totalShips;
+      
+      const totalJoined = processedData.managers.reduce((sum, m) => sum + m.joinedShips, 0);
+      const avgRate = totalShips > 0 ? ((totalJoined / totalShips) * 100).toFixed(1) : 0;
+      document.getElementById('avgJoinRate').textContent = avgRate + '%';
+
+      // 테이블 업데이트
+      updateManagersTable(processedData.managers);
+
+      // UI 요소 표시/숨김
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('managersSection').style.display = 'block';
+      document.getElementById('exportBtn').disabled = false;
+    }
+
+    // 담당자 테이블 업데이트
+    function updateManagersTable(managers) {
+      const tbody = document.getElementById('managersTableBody');
+      tbody.innerHTML = '';
+
+      managers.forEach((manager, index) => {
+        const tr = document.createElement('tr');
+        
+        const rateClass = manager.joinRate >= 70 ? 'rate-high' : 
+                         manager.joinRate >= 40 ? 'rate-medium' : 'rate-low';
+        
+        tr.innerHTML = `
+          <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+          <td class="manager-name">${manager.name}</td>
+          <td class="total-ships">${manager.totalShips}척</td>
+          <td class="matched-accounts">${manager.joinedShips}척</td>
+          <td>
+            <span class="join-rate ${rateClass}">${manager.joinRate}%</span>
+          </td>
+          <td style="text-align: center;">
+            <button class="btn" onclick="showDetail('${manager.name}')" 
+                    style="padding: 5px 15px; font-size: 12px;">
+              상세보기
+            </button>
+          </td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 담당자 상세 정보 표시
+    function showDetail(managerName) {
+      const manager = processedData.managers.find(m => m.name === managerName);
+      if (!manager) return;
+
+      currentManagerData = manager;
+
+      // 모달 제목 및 통계 업데이트
+      document.getElementById('modalTitle').textContent = `${managerName} 담당 선박 상세`;
+      document.getElementById('modalTotalShips').textContent = manager.totalShips;
+      document.getElementById('modalJoinedShips').textContent = manager.joinedShips;
+      document.getElementById('modalJoinRate').textContent = manager.joinRate + '%';
+
+      // 선박 테이블 업데이트
+      updateShipsTable(manager.ships);
+
+      // 모달 표시
+      document.getElementById('detailModal').style.display = 'block';
+      
+      // 필터 초기화
+      document.getElementById('notJoinedFilter').checked = false;
+      document.getElementById('shipSearch').value = '';
+    }
+
+    // 선박 테이블 업데이트
+    function updateShipsTable(ships) {
+      const tbody = document.getElementById('shipsTableBody');
+      tbody.innerHTML = '';
+
+      ships.forEach(ship => {
+        const tr = document.createElement('tr');
+        tr.className = ship.joined ? 'joined-ship' : 'not-joined-ship';
+        
+        const statusBadge = ship.joined ? 
+          '<span class="status-badge status-joined">가입</span>' : 
+          '<span class="status-badge status-not-joined">미가입</span>';
+        
+        const emailLink = ship.joinedEmail !== '-' ? 
+          `<a href="mailto:${ship.joinedEmail}" class="email-cell">${ship.joinedEmail}</a>` : 
+          '-';
+        
+        tr.innerHTML = `
+          <td>${ship.imo}</td>
+          <td>${ship.hull}</td>
+          <td>${ship.shipName}</td>
+          <td>${ship.email}</td>
+          <td>${statusBadge}</td>
+          <td>${emailLink}</td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 선박 필터링
+    function filterShips() {
+      if (!currentManagerData) return;
+
+      const notJoinedOnly = document.getElementById('notJoinedFilter').checked;
+      const searchTerm = document.getElementById('shipSearch').value.toLowerCase();
+
+      let filteredShips = currentManagerData.ships;
+
+      // 미가입 필터
+      if (notJoinedOnly) {
+        filteredShips = filteredShips.filter(ship => !ship.joined);
+      }
+
+      // 검색 필터
+      if (searchTerm) {
+        filteredShips = filteredShips.filter(ship => 
+          ship.imo.toLowerCase().includes(searchTerm) ||
+          ship.hull.toLowerCase().includes(searchTerm) ||
+          ship.shipName.toLowerCase().includes(searchTerm) ||
+          ship.email.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      updateShipsTable(filteredShips);
+    }
+
+    // 담당자 필터링
+    function filterManagers() {
+      const searchTerm = document.getElementById('managerSearch').value.toLowerCase();
+      
+      let filteredManagers = processedData.managers;
+      
+      if (searchTerm) {
+        filteredManagers = filteredManagers.filter(manager => 
+          manager.name.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      updateManagersTable(filteredManagers);
+    }
+
+    // 모달 닫기
+    function closeModal() {
+      document.getElementById('detailModal').style.display = 'none';
+      currentManagerData = null;
+    }
+
+    // 엑셀 다운로드
+    function exportToExcel() {
+      if (!processedData.managers || processedData.managers.length === 0) {
+        alert('처리된 데이터가 없습니다.');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 1. 담당자별 요약 시트
+      const summaryData = processedData.managers.map((manager, index) => ({
+        '순위': index + 1,
+        '담당자': manager.name,
+        '전체 담당 선박': manager.totalShips,
+        '가입 선박': manager.joinedShips,
+        '미가입 선박': manager.totalShips - manager.joinedShips,
+        '가입률(%)': parseFloat(manager.joinRate)
+      }));
+      
+      const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, summarySheet, '담당자별 요약');
+
+      // 2. 전체 선박 상세 시트
+      const allShipsData = [];
+      processedData.managers.forEach(manager => {
+        manager.ships.forEach(ship => {
+          allShipsData.push({
+            '담당자': manager.name,
+            'IMO': ship.imo,
+            'HULL': ship.hull,
+            '선박명': ship.shipName,
+            '호선 대표메일': ship.email,
+            '가입 여부': ship.joined ? '가입' : '미가입',
+            '가입 이메일': ship.joinedEmail,
+            '가입자명': ship.joinedName || '-',
+            '회사명': ship.companyName || '-'
+          });
+        });
+      });
+      
+      const detailSheet = XLSX.utils.json_to_sheet(allShipsData);
+      XLSX.utils.book_append_sheet(wb, detailSheet, '전체 선박 상세');
+
+      // 3. 미가입 선박만 추출한 시트
+      const notJoinedData = allShipsData.filter(ship => ship['가입 여부'] === '미가입');
+      const notJoinedSheet = XLSX.utils.json_to_sheet(notJoinedData);
+      XLSX.utils.book_append_sheet(wb, notJoinedSheet, '미가입 선박');
+
+      // 파일명 생성
+      const now = new Date();
+      const dateStr = now.getFullYear() + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getDate()).padStart(2, '0') + '_' +
+                     String(now.getHours()).padStart(2, '0') + 
+                     String(now.getMinutes()).padStart(2, '0');
+      
+      const fileName = `AI계정_가입현황_${dateStr}.xlsx`;
+      
+      // 다운로드
+      XLSX.writeFile(wb, fileName);
+    }
+
+    // 데이터 초기화
+    function resetData() {
+      if (confirm('모든 데이터를 초기화하시겠습니까?')) {
+        aiData = [];
+        asData = [];
+        processedData = {};
+        currentManagerData = null;
+
+        document.getElementById('aiFile').value = '';
+        document.getElementById('asFile').value = '';
+        document.getElementById('aiFileStatus').textContent = '파일을 선택해주세요';
+        document.getElementById('aiFileStatus').className = 'file-status';
+        document.getElementById('asFileStatus').textContent = '파일을 선택해주세요';
+        document.getElementById('asFileStatus').className = 'file-status';
+
+        document.getElementById('totalMatched').textContent = '0';
+        document.getElementById('totalShips').textContent = '0';
+        document.getElementById('avgJoinRate').textContent = '0%';
+
+        document.getElementById('processBtn').disabled = true;
+        document.getElementById('exportBtn').disabled = true;
+
+        document.getElementById('managersSection').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+
+        document.getElementById('managerSearch').value = '';
+      }
+    }
+
+    // 모달 외부 클릭 시 닫기
+    window.onclick = function(event) {
+      const modal = document.getElementById('detailModal');
+      if (event.target == modal) {
+        closeModal();
+      }
+    }
+
+    // 페이지 로드 시 초기화
+    window.onload = function() {
+      // Firebase에서 이전 데이터 로드 (옵션)
+      loadFromFirebase();
+    };
+
+    // Firebase에서 데이터 로드
+    function loadFromFirebase() {
+      db.ref('ai_account_management').once('value').then(snapshot => {
+        const data = snapshot.val();
+        if (data && data.data) {
+          processedData = data.data;
+          if (processedData.managers && processedData.managers.length > 0) {
+            updateUI();
+            console.log('이전 데이터를 불러왔습니다.');
+          }
+        }
+      }).catch(error => {
+        console.error('Firebase 로드 오류:', error);
+      });
+    }
+  </script>
 </body>
 </html>
