@@ -69,7 +69,56 @@
       letter-spacing: 1px;
       margin-top: 5px;
     }
-    
+
+    .insight-section {
+      margin: 30px 0;
+      background: #f8f9ff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: inset 0 0 0 1px rgba(102, 126, 234, 0.1);
+    }
+
+    .insight-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      color: #4c51bf;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .insight-icon {
+      font-size: 26px;
+    }
+
+    .insight-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      color: #374151;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .insight-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 14px 18px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.12);
+      border: 1px solid rgba(118, 75, 162, 0.08);
+    }
+
+    .insight-bullet {
+      color: #667eea;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
     .content {
       padding: 30px;
     }
@@ -561,6 +610,15 @@
           '데이터 처리' 버튼을 클릭해주세요.
         </p>
       </div>
+
+      <!-- AI 인사이트 -->
+      <div class="insight-section" id="insightSection" style="display: none;">
+        <div class="insight-header">
+          <span class="insight-icon">🤖</span>
+          <span>AI 인사이트</span>
+        </div>
+        <ul class="insight-list" id="insightList"></ul>
+      </div>
     </div>
   </div>
 
@@ -793,6 +851,14 @@
       const avgRate = totalShips > 0 ? ((totalJoined / totalShips) * 100).toFixed(1) : 0;
       document.getElementById('avgJoinRate').textContent = avgRate + '%';
 
+      // 인사이트 생성
+      const insights = generateInsights(processedData, {
+        totalShips,
+        totalJoined,
+        avgRate
+      });
+      renderInsights(insights);
+
       // 테이블 업데이트
       updateManagersTable(processedData.managers);
 
@@ -800,6 +866,81 @@
       document.getElementById('emptyState').style.display = 'none';
       document.getElementById('managersSection').style.display = 'block';
       document.getElementById('exportBtn').disabled = false;
+    }
+
+    // AI 인사이트 생성
+    function generateInsights(data, summary) {
+      if (!data || !data.managers || data.managers.length === 0) {
+        return [];
+      }
+
+      const insights = [];
+      const { totalShips, totalJoined, avgRate } = summary;
+      const notJoined = totalShips - totalJoined;
+
+      if (totalShips > 0) {
+        const avgRateNumber = parseFloat(avgRate) || 0;
+        insights.push(`현재 전체 ${totalShips}척 중 ${totalJoined}척이 가입 완료되어 가입률은 ${avgRateNumber.toFixed(1)}%입니다.`);
+
+        if (notJoined > 0) {
+          insights.push(`미가입 선박은 총 ${notJoined}척으로, 집중 관리가 필요한 담당자 파악이 요구됩니다.`);
+        } else {
+          insights.push('모든 선박이 가입을 완료했습니다. 훌륭한 진행 상황을 유지하세요!');
+        }
+      }
+
+      const sortedByRate = [...data.managers].sort((a, b) => parseFloat(b.joinRate) - parseFloat(a.joinRate));
+      const topManager = sortedByRate[0];
+      if (topManager && topManager.totalShips > 0) {
+        const topNotJoined = topManager.totalShips - topManager.joinedShips;
+        insights.push(`가입률이 가장 높은 담당자는 ${topManager.name}님으로 ${topManager.joinRate}% (${topManager.joinedShips}/${topManager.totalShips}척)를 달성했습니다${topNotJoined > 0 ? ` (미가입 ${topNotJoined}척)` : ''}.`);
+      }
+
+      const bottomManager = sortedByRate[sortedByRate.length - 1];
+      if (
+        bottomManager &&
+        bottomManager.totalShips > 0 &&
+        parseFloat(bottomManager.joinRate) < parseFloat(topManager.joinRate)
+      ) {
+        const bottomNotJoined = bottomManager.totalShips - bottomManager.joinedShips;
+        insights.push(`${bottomManager.name}님의 가입률은 ${bottomManager.joinRate}%로 가장 낮으며 미가입 선박 ${bottomNotJoined}척에 대한 후속 조치가 필요합니다.`);
+      }
+
+      const criticalManagers = data.managers
+        .filter(manager => manager.totalShips > 0 && parseFloat(manager.joinRate) < 50)
+        .sort((a, b) => parseFloat(a.joinRate) - parseFloat(b.joinRate));
+
+      if (criticalManagers.length > 0) {
+        const names = criticalManagers.slice(0, 3).map(manager => `${manager.name}(${manager.joinRate}%)`);
+        insights.push(`가입률 50% 미만 담당자: ${names.join(', ')}. 우선적인 지원이 권장됩니다.`);
+      }
+
+      return insights;
+    }
+
+    // AI 인사이트 렌더링
+    function renderInsights(insights) {
+      const section = document.getElementById('insightSection');
+      const list = document.getElementById('insightList');
+
+      if (!insights || insights.length === 0) {
+        section.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+
+      section.style.display = 'block';
+      list.innerHTML = '';
+
+      insights.forEach(text => {
+        const item = document.createElement('li');
+        item.className = 'insight-item';
+        item.innerHTML = `
+          <span class="insight-bullet">•</span>
+          <span>${text}</span>
+        `;
+        list.appendChild(item);
+      });
     }
 
     // 담당자 테이블 업데이트
@@ -1021,6 +1162,8 @@
 
         document.getElementById('managersSection').style.display = 'none';
         document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('insightSection').style.display = 'none';
+        document.getElementById('insightList').innerHTML = '';
 
         document.getElementById('managerSearch').value = '';
       }
