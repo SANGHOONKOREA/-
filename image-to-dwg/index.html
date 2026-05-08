@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SHI 18K BV — Electric SLD Viewer</title>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --ink: #1f2937;
+    --ink-2: #4b5563;
+    --line: #e5e7eb;
+    --accent: #1f4ed8;
+    --accent-soft: #eaf0ff;
+    --ok: #10b981;
+    --warn: #f59e0b;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Apple SD Gothic Neo",
+                 "Malgun Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #0f1f4d 0%, #1f4ed8 100%);
+    color: #fff;
+    padding: 28px 32px;
+    box-shadow: var(--shadow);
+  }
+  header h1 {
+    margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.2px;
+  }
+  header p {
+    margin: 6px 0 0; font-size: 14px; opacity: .85;
+  }
+  .container {
+    max-width: 1400px; margin: 24px auto; padding: 0 24px;
+    display: grid; grid-template-columns: 1fr 360px; gap: 24px;
+  }
+  @media (max-width: 980px) {
+    .container { grid-template-columns: 1fr; }
+    .side { order: 2; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card h2 {
+    margin: 0; padding: 14px 18px;
+    font-size: 14px; font-weight: 600; letter-spacing: .3px;
+    text-transform: uppercase; color: var(--ink-2);
+    border-bottom: 1px solid var(--line);
+    background: #fafbfc;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card .body { padding: 16px 18px; }
+
+  /* Viewer */
+  .viewer {
+    position: relative; background: #fff;
+    height: 70vh; min-height: 520px;
+    overflow: hidden; touch-action: none;
+  }
+  .viewer .canvas {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: grab;
+  }
+  .viewer .canvas.dragging { cursor: grabbing; }
+  .viewer .canvas img {
+    max-width: 100%; max-height: 100%;
+    transform-origin: center center;
+    transition: transform .08s ease-out;
+    user-select: none; -webkit-user-drag: none;
+  }
+  .viewer .toolbar {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; gap: 6px; background: rgba(255,255,255,.95);
+    padding: 6px; border-radius: 8px;
+    border: 1px solid var(--line); box-shadow: var(--shadow);
+  }
+  .viewer .toolbar button {
+    appearance: none; border: none; background: transparent;
+    width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+    color: var(--ink); font-size: 16px; font-weight: 600;
+  }
+  .viewer .toolbar button:hover { background: var(--accent-soft); color: var(--accent); }
+  .viewer .badge {
+    position: absolute; bottom: 12px; left: 12px;
+    background: rgba(31,78,216,.92); color: #fff;
+    font-size: 11px; padding: 4px 10px; border-radius: 999px;
+    letter-spacing: .3px;
+  }
+
+  /* Download list */
+  .dl-list { list-style: none; margin: 0; padding: 0; }
+  .dl-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px;
+    margin-bottom: 8px; transition: border-color .15s, background .15s;
+  }
+  .dl-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .dl-item .meta { font-size: 13px; }
+  .dl-item .meta .name { font-weight: 600; color: var(--ink); }
+  .dl-item .meta .sub { color: var(--ink-2); font-size: 11px; margin-top: 2px; }
+  .dl-item a {
+    background: var(--accent); color: #fff; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px;
+    font-weight: 600;
+  }
+  .dl-item a:hover { background: #1d3fb8; }
+
+  /* Spec tables */
+  .kv { display: grid; grid-template-columns: 110px 1fr; row-gap: 6px; font-size: 13px; }
+  .kv dt { color: var(--ink-2); }
+  .kv dd { margin: 0; color: var(--ink); font-weight: 500; }
+
+  table.spec { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.spec th, table.spec td {
+    border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left;
+  }
+  table.spec th { background: #fafbfc; font-weight: 600; color: var(--ink-2); }
+  table.spec td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px;
+         font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+  .tag.az { background: #dbeafe; color: #1e3a8a; }
+  .tag.tn { background: #fef3c7; color: #92400e; }
+
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+  .legend .sw { display: inline-block; width: 14px; height: 4px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+
+  footer {
+    text-align: center; padding: 20px; font-size: 12px; color: var(--ink-2);
+  }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; background: var(--accent-soft);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SHI 18K Bunkering Vessel — Electric Single Line Diagram</h1>
+  <p>이미지 → DWG 변환 결과 뷰어 · IEC 60617 · AutoCAD 2018 (R32) 호환</p>
+</header>
+
+<div class="container">
+
+  <main>
+    <div class="card">
+      <h2>
+        Drawing Preview
+        <span class="pill" id="zoomLevel">100%</span>
+      </h2>
+      <div class="viewer">
+        <div class="canvas" id="canvas">
+          <img id="previewImg" src="output/preview.svg"
+               alt="SHI 18K BV Electric Single Line Diagram preview" />
+        </div>
+        <div class="toolbar" role="toolbar" aria-label="Viewer tools">
+          <button id="zoomIn"  title="확대 (Ctrl + +)">+</button>
+          <button id="zoomOut" title="축소 (Ctrl + −)">−</button>
+          <button id="zoomFit" title="화면에 맞춤">⤢</button>
+          <button id="zoom100" title="원본 크기 100%">1:1</button>
+        </div>
+        <div class="badge">A3 · NTS · IEC 60617</div>
+      </div>
+      <div class="body" style="font-size: 12px; color: var(--ink-2);">
+        💡 마우스 휠로 확대/축소, 드래그로 이동. 모바일은 핀치-줌.
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h2>Layer Legend</h2>
+      <div class="body">
+        <div class="legend" id="legend"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="side">
+    <div class="card">
+      <h2>Downloads</h2>
+      <div class="body">
+        <ul class="dl-list">
+          <li class="dl-item">
+            <div class="meta">
+              <div class="name">DWG-ready DXF</div>
+              <div class="sub">AutoCAD 2018 (R32) · 약 95 KB</div>
+            </div>
+            <a href="output/SHI_18K_BV_SLD.dxf" download>DXF</a>
+          </li>
+          <li class="dl-item">
+            <div class="meta">
+              <div class="name">Vector preview</div>
+              <div class="sub">SVG · 모든 화질에서 선명</div>
+            </div>
+            <a href="output/preview.svg" download>SVG</a>
+          </li>
+          <li class="dl-item">
+            <div class="meta">
+              <div class="name">Raster preview</div>
+              <div class="sub">PNG · 150 DPI</div>
+            </div>
+            <a href="output/preview.png" download>PNG</a>
+          </li>
+          <li class="dl-item">
+            <div class="meta">
+              <div class="name">Source spec</div>
+              <div class="sub">JSON · 도면 단일 진실 원본</div>
+            </div>
+            <a href="sld_spec.json" download>JSON</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <h2>Drawing Info</h2>
+      <div class="body">
+        <dl class="kv" id="drawingInfo"></dl>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <h2>Generators (DG)</h2>
+      <div class="body">
+        <table class="spec" id="genTable">
+          <thead><tr><th>Tag</th><th class="num">kVA</th><th class="num">V</th><th class="num">Hz</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <h2>Feeders</h2>
+      <div class="body">
+        <table class="spec" id="feederTable">
+          <thead>
+            <tr>
+              <th>ID</th><th>Type</th><th>TX (kVA)</th>
+              <th>Motor</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 16px;">
+      <h2>Conversion Notes</h2>
+      <div class="body" style="font-size: 12px; color: var(--ink-2); line-height: 1.6;">
+        <p style="margin: 0 0 8px;">
+          <strong>DXF → DWG 변환 방법</strong>
+        </p>
+        <p style="margin: 0 0 8px;">
+          ① <a href="https://www.opendesign.org/guestfiles/oda_file_converter"
+                target="_blank" rel="noopener">ODA File Converter</a>
+          (무료) 에서 입력 DXF → 출력 DWG · ACAD2018 선택
+        </p>
+        <p style="margin: 0 0 8px;">
+          ② 또는 AutoCAD 에서 DXF 열고 <code>SAVEAS</code> → DWG R2018
+        </p>
+        <p style="margin: 0;">
+          전기 심볼은 IEC 60617 표준을 따랐으며, 모든 블록은 attribute 가
+          정의되어 있어 기업 ERP/PDM 시스템 연동이 가능합니다.
+        </p>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<footer>
+  © S&amp;SYS · 자동 생성 도면 · 최종 빌드 <span id="buildDate">2026-05-08</span>
+</footer>
+
+<script>
+(async function () {
+  // ----- Load spec --------------------------------------------------------
+  let spec;
+  try {
+    spec = await (await fetch("sld_spec.json")).json();
+  } catch (e) {
+    console.error("Failed to load sld_spec.json", e);
+    return;
+  }
+
+  // ----- Drawing info -----------------------------------------------------
+  const d = spec.drawing;
+  document.getElementById("drawingInfo").innerHTML = `
+    <dt>Title</dt><dd>${d.title}</dd>
+    <dt>Drawing No.</dt><dd>${d.drawing_no || "-"}</dd>
+    <dt>Revision</dt><dd>${d.revision || "0"}</dd>
+    <dt>Date</dt><dd>${d.date || "-"}</dd>
+    <dt>Drawn by</dt><dd>${d.drawn_by || "-"}</dd>
+    <dt>Sheet</dt><dd>${d.sheet_size_mm.join(" × ")} mm (A3)</dd>
+    <dt>Scale</dt><dd>${d.scale}</dd>
+  `;
+  document.getElementById("buildDate").textContent = d.date || "";
+
+  // ----- Generators -------------------------------------------------------
+  const gtb = document.querySelector("#genTable tbody");
+  spec.generators.forEach(g => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><strong>${g.tag}</strong></td>
+                    <td class="num">${g.kva}</td>
+                    <td class="num">${g.v}</td>
+                    <td class="num">${g.hz}</td>`;
+    gtb.appendChild(tr);
+  });
+
+  // ----- Feeders ----------------------------------------------------------
+  const ftb = document.querySelector("#feederTable tbody");
+  spec.feeders.forEach(f => {
+    const tx = f.transformer;
+    const m = f.motor;
+    const tag = f.thruster.type === "AZIMUTH"
+      ? '<span class="tag az">AZIMUTH</span>'
+      : '<span class="tag tn">TUNNEL</span>';
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${f.id}</strong></td>
+      <td>${tag}</td>
+      <td>${tx.kva_primary}/${tx.kva_sec1}/${tx.kva_sec2}</td>
+      <td>${m.kw} kW · ${m.rpm} rpm</td>`;
+    ftb.appendChild(tr);
+  });
+
+  // ----- Layer legend -----------------------------------------------------
+  const legend = [
+    ["#ff0000", "1-BUSBAR_440V", "주 모선 (Main 440 V busbar)"],
+    ["#ffff00", "2-CABLE_440V",  "440 V 피더 케이블"],
+    ["#00aa00", "2-CABLE_690V",  "690 V VFD 출력 케이블"],
+    ["#000000", "3-SYMBOL",      "IEC 60617 심볼 도형"],
+    ["#000000", "4-TEXT",        "태그·정격·라벨"],
+    ["#888888", "7-HIDDEN",      "Drawout 차단기 표시 (점선)"],
+    ["#0066cc", "6-ANNO",        "주석 번호 ①②③④"],
+    ["#666666", "0-FRAME",       "도곽·타이틀 블록"],
+  ];
+  const lg = document.getElementById("legend");
+  legend.forEach(([color, name, desc]) => {
+    const div = document.createElement("div");
+    div.innerHTML = `<span class="sw" style="background:${color}"></span>
+                     <strong>${name}</strong> · ${desc}`;
+    lg.appendChild(div);
+  });
+
+  // ----- Pan & zoom -------------------------------------------------------
+  const canvas = document.getElementById("canvas");
+  const img = document.getElementById("previewImg");
+  const zoomLabel = document.getElementById("zoomLevel");
+  let scale = 1, tx = 0, ty = 0;
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+
+  function apply() {
+    img.style.transform =
+      `translate(${tx}px, ${ty}px) scale(${scale})`;
+    zoomLabel.textContent = Math.round(scale * 100) + "%";
+  }
+  function setZoom(s, cx, cy) {
+    const rect = canvas.getBoundingClientRect();
+    cx = cx ?? rect.width / 2;
+    cy = cy ?? rect.height / 2;
+    const ratio = s / scale;
+    tx = cx - (cx - tx) * ratio;
+    ty = cy - (cy - ty) * ratio;
+    scale = s;
+    apply();
+  }
+  function fit() { scale = 1; tx = 0; ty = 0; apply(); }
+
+  document.getElementById("zoomIn").onclick  = () => setZoom(Math.min(scale * 1.2, 8));
+  document.getElementById("zoomOut").onclick = () => setZoom(Math.max(scale / 1.2, 0.2));
+  document.getElementById("zoom100").onclick = () => setZoom(1);
+  document.getElementById("zoomFit").onclick = fit;
+
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    const rect = canvas.getBoundingClientRect();
+    setZoom(
+      Math.min(Math.max(scale * factor, 0.2), 8),
+      e.clientX - rect.left, e.clientY - rect.top,
+    );
+  }, { passive: false });
+
+  canvas.addEventListener("pointerdown", (e) => {
+    dragging = true; canvas.classList.add("dragging");
+    sx = e.clientX; sy = e.clientY; ox = tx; oy = ty;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    tx = ox + (e.clientX - sx);
+    ty = oy + (e.clientY - sy);
+    apply();
+  });
+  canvas.addEventListener("pointerup",  () => { dragging = false; canvas.classList.remove("dragging"); });
+  canvas.addEventListener("pointercancel", () => { dragging = false; canvas.classList.remove("dragging"); });
+
+  // Keyboard
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === "+" || e.key === "=") { e.preventDefault(); setZoom(Math.min(scale * 1.2, 8)); }
+      if (e.key === "-")                  { e.preventDefault(); setZoom(Math.max(scale / 1.2, 0.2)); }
+      if (e.key === "0")                  { e.preventDefault(); fit(); }
+    }
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>

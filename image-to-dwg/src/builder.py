@@ -1,9 +1,12 @@
 """Assembles the SHI 18K Bunkering Vessel SLD into a DXF document.
 
-Reads `sld_spec.json` (the structured spec that captures everything visible in
-the source PowerPoint screenshot) and emits an AutoCAD 2018 (R32) compatible
-DXF on disk.  Convert the DXF to DWG with the ODA File Converter (free) or by
-opening it in AutoCAD and using SAVEAS DWG 2018.
+Reads `sld_spec.json` (the structured spec captured from the source PowerPoint
+screenshot) and emits an AutoCAD 2018 (R32) compatible DXF.
+
+Key design rule: every cable is drawn from one block's named port to the
+adjacent block's named port via `blocks.port(...)`.  This guarantees that no
+line ever overshoots a symbol, falls short, or sits askew - the connection
+geometry is implied by the block library, not duplicated in the builder.
 """
 from __future__ import annotations
 
@@ -24,6 +27,9 @@ TEXT = "4-TEXT"
 ANNO = "6-ANNO"
 
 
+# ---------------------------------------------------------------------------
+# Drawing primitives
+# ---------------------------------------------------------------------------
 def _text(msp, text: str, x: float, y: float, height: float = 2.5,
           layer: str = TEXT, align=TextEntityAlignment.LEFT,
           style: str = "ISO"):
@@ -35,12 +41,44 @@ def _text(msp, text: str, x: float, y: float, height: float = 2.5,
 
 
 def _circle_marker(msp, x: float, y: float, no: int):
-    """Draw the encircled remark number used in the original drawing."""
     msp.add_circle(center=(x, y), radius=2.0, dxfattribs={"layer": ANNO})
     _text(msp, str(no), x, y, height=2.5, layer=ANNO,
           align=TextEntityAlignment.MIDDLE_CENTER, style="ISO_BOLD")
 
 
+def _insert(msp, name: str, xy: tuple[float, float],
+            layer: str = SYMBOL):
+    msp.add_blockref(name=name, insert=xy, dxfattribs={"layer": layer})
+    return xy
+
+
+def _connect(msp, top_block: str, top_xy: tuple[float, float],
+             bottom_block: str, bottom_xy: tuple[float, float],
+             layer: str) -> None:
+    """Draw a straight cable from top_block's bottom port to
+    bottom_block's top port.  Both ports must exist in BLOCK_PORTS."""
+    p_top = blocks.port(top_block, "bottom", top_xy)
+    p_bot = blocks.port(bottom_block, "top", bottom_xy)
+    msp.add_line(p_top, p_bot, dxfattribs={"layer": layer})
+
+
+def _connect_to_busbar(msp, top_block: str, top_xy: tuple[float, float],
+                       busbar_y: float, layer: str) -> None:
+    p_top = blocks.port(top_block, "bottom", top_xy)
+    msp.add_line(p_top, (top_xy[0], busbar_y), dxfattribs={"layer": layer})
+
+
+def _connect_from_busbar(msp, busbar_y: float,
+                         bottom_block: str, bottom_xy: tuple[float, float],
+                         layer: str) -> None:
+    p_bot = blocks.port(bottom_block, "top", bottom_xy)
+    msp.add_line((bottom_xy[0], busbar_y), p_bot,
+                 dxfattribs={"layer": layer})
+
+
+# ---------------------------------------------------------------------------
+# Top-level build
+# ---------------------------------------------------------------------------
 def build(spec_path: Path, out_dxf_path: Path) -> Drawing:
     spec = json.loads(spec_path.read_text(encoding="utf-8"))
 
@@ -53,7 +91,7 @@ def build(spec_path: Path, out_dxf_path: Path) -> Drawing:
     sheet_w, sheet_h = spec["drawing"]["sheet_size_mm"]
     template.draw_sheet_frame(msp, sheet_w, sheet_h)
 
-    # ---- Title bar (top of sheet) ---------------------------------------
+    # --- Title bar ------------------------------------------------------
     _text(
         msp, spec["drawing"]["title"],
         sheet_w / 2, spec["level_y"]["title"],
@@ -61,9 +99,9 @@ def build(spec_path: Path, out_dxf_path: Path) -> Drawing:
         align=TextEntityAlignment.MIDDLE_CENTER, style="ISO_BOLD",
     )
 
-    # ---- Title block (bottom-right) -------------------------------------
-    tb_w, tb_h = 180.0, 40.0
-    tb_x = sheet_w - 15.0 - tb_w   # 15 mm inner margin
+    # --- Title block (bottom-right) -------------------------------------
+    tb_w = 180.0
+    tb_x = sheet_w - 15.0 - tb_w
     tb_y = 15.0
     title_attribs = {
         "PROJECT":  "SHI 18K BUNKERING VESSEL",
@@ -81,171 +119,121 @@ def build(spec_path: Path, out_dxf_path: Path) -> Drawing:
         dxfattribs={"layer": "0-FRAME"},
     ).add_auto_attribs(title_attribs)
 
-    # ---- Main 440 V busbar ----------------------------------------------
+    # --- Main 440 V busbar ---------------------------------------------
     bus = spec["main_busbar"]
-    y_bus = bus["y"]
-    msp.add_line((bus["x_start"], y_bus), (bus["x_end"], y_bus),
+    L = spec["level_y"]
+    y_bus = L["busbar"]
+
+    # The busbar is drawn as two segments around the bus tie so that the
+    # bus tie's own horizontal stubs (which extend from x +/- 2.5 to x +/- 6)
+    # plug exactly into the busbar gap.
+    tie_x = bus["tie"]["x"]
+    bustie_left = blocks.port("IEC_BUSTIE", "left", (tie_x, y_bus))
+    bustie_right = blocks.port("IEC_BUSTIE", "right", (tie_x, y_bus))
+    msp.add_line((bus["x_start"], y_bus), bustie_left,
                  dxfattribs={"layer": BUS_LAYER, "lineweight": 70})
+    msp.add_line(bustie_right, (bus["x_end"], y_bus),
+                 dxfattribs={"layer": BUS_LAYER, "lineweight": 70})
+    _insert(msp, "IEC_BUSTIE", (tie_x, y_bus))
+
     _text(msp, bus["label"], bus["label_xy"][0], bus["label_xy"][1],
           height=3.0, layer=TEXT, style="ISO_BOLD")
 
-    # Bus tie
-    tie = bus["tie"]
-    msp.add_blockref(
-        name="IEC_BUSTIE", insert=(tie["x"], y_bus),
-        dxfattribs={"layer": SYMBOL},
-    )
-
-    # ---- Generators and their drop-down feeders to the busbar ----------
-    y_gen = spec["level_y"]["gen_symbol"]
-    y_acb_top = spec["level_y"]["gen_acb"]
+    # --- Generators and gen-side ACBs ----------------------------------
     for g in spec["generators"]:
         x = g["x"]
-        # Generator symbol
-        msp.add_blockref(
-            name="IEC_GEN", insert=(x, y_gen),
-            dxfattribs={"layer": SYMBOL},
-        )
-        # Cable from generator down to its ACB
-        msp.add_line((x, y_gen - 5), (x, y_acb_top + 5),
-                     dxfattribs={"layer": CABLE_440})
-        # ACB between gen and busbar
-        msp.add_blockref(
-            name="IEC_ACB_DRAWOUT", insert=(x, y_acb_top),
-            dxfattribs={"layer": SYMBOL},
-        )
-        # Cable from ACB down to busbar
-        msp.add_line((x, y_acb_top - 5), (x, y_bus),
-                     dxfattribs={"layer": CABLE_440})
-        # Generator tag and rating
-        _text(msp, g["tag"], x + 7, y_gen + 2,
-              height=2.5, style="ISO_BOLD")
-        _text(msp, f"{g['kva']} kVA", x + 7, y_gen - 1,
-              height=2.0)
-        _text(msp, f"{g['v']}V {g['hz']}Hz", x + 7, y_gen - 4,
-              height=2.0)
+        gen_xy     = _insert(msp, "IEC_GEN",         (x, L["gen"]))
+        gen_acb_xy = _insert(msp, "IEC_ACB_DRAWOUT", (x, L["gen_acb"]))
+        # gen -> gen_acb (440V)
+        _connect(msp, "IEC_GEN", gen_xy,
+                 "IEC_ACB_DRAWOUT", gen_acb_xy, layer=CABLE_440)
+        # gen_acb -> busbar
+        _connect_to_busbar(msp, "IEC_ACB_DRAWOUT", gen_acb_xy,
+                           y_bus, layer=CABLE_440)
+        # Tag and ratings to the right of the generator
+        _text(msp, g["tag"],            x + 7, L["gen"] + 3, 2.5,
+              style="ISO_BOLD")
+        _text(msp, f"{g['kva']} kVA",   x + 7, L["gen"] - 0.5, 2.0)
+        _text(msp, f"{g['v']}V {g['hz']}Hz", x + 7, L["gen"] - 3.5, 2.0)
 
-    # ---- Feeders --------------------------------------------------------
-    L = spec["level_y"]
+    # --- Feeders --------------------------------------------------------
     for f in spec["feeders"]:
         x = f["x"]
 
-        # Feeder takeoff from busbar -> ACB -> Disconnector
-        # Busbar to feeder ACB
-        msp.add_line((x, y_bus), (x, L["feeder_acb"] + 5),
-                     dxfattribs={"layer": CABLE_440})
-        msp.add_blockref(
-            name="IEC_ACB_DRAWOUT", insert=(x, L["feeder_acb"]),
-            dxfattribs={"layer": SYMBOL},
-        )
-        msp.add_line((x, L["feeder_acb"] - 5), (x, L["feeder_disc"] + 5),
-                     dxfattribs={"layer": CABLE_440})
-        msp.add_blockref(
-            name="IEC_DISC", insert=(x, L["feeder_disc"]),
-            dxfattribs={"layer": SYMBOL},
-        )
+        fdr_acb_xy  = _insert(msp, "IEC_ACB_DRAWOUT", (x, L["feeder_acb"]))
+        fdr_disc_xy = _insert(msp, "IEC_DISC",        (x, L["feeder_disc"]))
+        tx_xy       = _insert(msp, "IEC_TX_3WND",     (x, L["tx"]))
+        vfd_xy      = _insert(msp, "IEC_VFD",         (x, L["vfd"]))
+        motor_xy    = _insert(msp, "IEC_MOTOR",       (x, L["motor"]))
 
-        # Disconnector down to transformer top stub
-        msp.add_line(
-            (x, L["feeder_disc"] - 5), (x, L["tx_symbol"] + 12),
-            dxfattribs={"layer": CABLE_440},
-        )
-
-        # 3-winding transformer
-        msp.add_blockref(
-            name="IEC_TX_3WND", insert=(x, L["tx_symbol"]),
-            dxfattribs={"layer": SYMBOL},
-        )
-        # TX rating label (left of transformer)
-        tx = f["transformer"]
-        _circle_marker(msp, x - 30, L["tx_label"], f["remark_no_tx"])
-        _text(msp, f"{tx['kva_primary']}kVA/{tx['kva_sec1']}kVA/{tx['kva_sec2']}kVA",
-              x - 26, L["tx_label"] + 1, height=2.2)
-        _text(msp, f"{tx['v_primary']}V / {tx['v_sec1']}V / {tx['v_sec2']}V",
-              x - 26, L["tx_label"] - 2.5, height=2.2)
-        _text(msp, tx["tag"], x + 6, L["tx_symbol"], height=2.2,
-              style="ISO_BOLD")
-
-        # Transformer secondary stub down to VFD top
-        msp.add_line(
-            (x, L["tx_symbol"] - 12), (x, L["vfd_top"] + 14),
-            dxfattribs={"layer": CABLE_690},
-        )
-
-        # VFD (rectifier on top, inverter on bottom)
-        vfd_center_y = (L["vfd_top"] + L["vfd_bottom"]) / 2
-        msp.add_blockref(
-            name="IEC_VFD", insert=(x, vfd_center_y),
-            dxfattribs={"layer": SYMBOL},
-        )
-        _circle_marker(msp, x - 18, vfd_center_y, f["remark_no_vfd"])
-        _text(msp, f["vfd"]["tag"], x + 9, vfd_center_y, height=2.2,
-              style="ISO_BOLD")
-
-        # VFD bottom to motor symbol
-        msp.add_line(
-            (x, vfd_center_y - 14), (x, L["motor_symbol"] + 5),
-            dxfattribs={"layer": CABLE_690},
-        )
-
-        # Motor
-        msp.add_blockref(
-            name="IEC_MOTOR", insert=(x, L["motor_symbol"]),
-            dxfattribs={"layer": SYMBOL},
-        )
-        # Motor rating label (left)
-        m = f["motor"]
-        _circle_marker(msp, x - 30, L["motor_label"], f["remark_no_motor"])
-        _text(msp, f"AC{m['v']}V", x - 26, L["motor_label"] + 1.5, height=2.2)
-        _text(msp, f"{m['kw']}KW", x - 26, L["motor_label"] - 1.5, height=2.2)
-        _text(msp, f"{m['hz']}HZ", x - 26, L["motor_label"] - 4.5, height=2.2)
-        _text(msp, f"{m['rpm']}RPM", x - 26, L["motor_label"] - 7.5, height=2.2)
-        _text(msp, m["tag"], x + 7, L["motor_symbol"], height=2.2,
-              style="ISO_BOLD")
-
-        # Motor shaft to thruster
-        msp.add_line(
-            (x, L["motor_symbol"] - 5), (x, L["thruster"] + 8),
-            dxfattribs={"layer": SYMBOL, "lineweight": 50},
-        )
-
-        # Thruster
         if f["thruster"]["type"] == "AZIMUTH":
-            msp.add_blockref(
-                name="IEC_AZIMUTH_THR", insert=(x, L["thruster"]),
-                dxfattribs={"layer": SYMBOL},
-            )
+            thruster_block = "IEC_AZIMUTH_THR"
             label = "AZIMUTH\\PTHRUSTER"
         else:
-            msp.add_blockref(
-                name="IEC_TUNNEL_THR", insert=(x, L["thruster"]),
-                dxfattribs={"layer": SYMBOL},
-            )
+            thruster_block = "IEC_TUNNEL_THR"
             label = "TUNNEL\\PTHRUSTER"
+        thr_xy = _insert(msp, thruster_block, (x, L["thruster"]))
 
-        # Two-line thruster label (uses MText to support line break)
+        # Wiring (top to bottom)
+        _connect_from_busbar(msp, y_bus,
+                             "IEC_ACB_DRAWOUT", fdr_acb_xy, CABLE_440)
+        _connect(msp, "IEC_ACB_DRAWOUT", fdr_acb_xy,
+                 "IEC_DISC", fdr_disc_xy, CABLE_440)
+        _connect(msp, "IEC_DISC", fdr_disc_xy,
+                 "IEC_TX_3WND", tx_xy, CABLE_440)
+        _connect(msp, "IEC_TX_3WND", tx_xy,
+                 "IEC_VFD", vfd_xy, CABLE_690)
+        _connect(msp, "IEC_VFD", vfd_xy,
+                 "IEC_MOTOR", motor_xy, CABLE_690)
+        _connect(msp, "IEC_MOTOR", motor_xy,
+                 thruster_block, thr_xy, SYMBOL)
+
+        # Transformer label and rating (left of TX)
+        tx = f["transformer"]
+        _circle_marker(msp, x - 32, L["tx_label"], f["remark_no_tx"])
+        _text(msp, f"{tx['kva_primary']}kVA/{tx['kva_sec1']}kVA/{tx['kva_sec2']}kVA",
+              x - 28, L["tx_label"] + 1.5, 2.2)
+        _text(msp, f"{tx['v_primary']}V / {tx['v_sec1']}V / {tx['v_sec2']}V",
+              x - 28, L["tx_label"] - 1.5, 2.2)
+        _text(msp, tx["tag"], x + 7, L["tx"] + 0.5, 2.2, style="ISO_BOLD")
+
+        # VFD label
+        _circle_marker(msp, x - 18, L["vfd"], f["remark_no_vfd"])
+        _text(msp, f["vfd"]["tag"], x + 9, L["vfd"] + 0.5, 2.2,
+              style="ISO_BOLD")
+
+        # Motor label (left)
+        m = f["motor"]
+        _circle_marker(msp, x - 32, L["motor_label"], f["remark_no_motor"])
+        _text(msp, f"AC{m['v']}V",   x - 28, L["motor_label"] + 3.0, 2.0)
+        _text(msp, f"{m['kw']}KW",   x - 28, L["motor_label"] + 0.5, 2.0)
+        _text(msp, f"{m['hz']}HZ",   x - 28, L["motor_label"] - 2.0, 2.0)
+        _text(msp, f"{m['rpm']}RPM", x - 28, L["motor_label"] - 4.5, 2.0)
+        _text(msp, m["tag"], x + 7, L["motor"] + 0.5, 2.2, style="ISO_BOLD")
+
+        # Thruster label (below symbol)
         msp.add_mtext(
             label,
             dxfattribs={
                 "layer": TEXT, "char_height": 2.5, "style": "ISO_BOLD",
-                "attachment_point": 2,  # 2 = top center
+                "attachment_point": 2,
                 "insert": (x, L["thruster_label"]),
             },
         )
-        _text(msp, f["thruster"]["tag"], x + 11, L["thruster"],
-              height=2.2, style="ISO_BOLD")
+        _text(msp, f["thruster"]["tag"], x + 11, L["thruster"], 2.2,
+              style="ISO_BOLD")
 
-    # ---- Remark table (lower-left, above the title block area) ---------
+    # --- Remarks panel (lower-left, mirrors title block) ---------------
     rem = spec["annotations"]["remark_table"]
-    rx, ry = 25, 70
-    _text(msp, "REMARKS", rx, ry, height=3.5, style="ISO_BOLD", layer=ANNO)
+    rx, ry = 22, 50
+    _text(msp, "REMARKS", rx, ry, 3.5, style="ISO_BOLD", layer=ANNO)
     for i, item in enumerate(rem):
-        y = ry - 6 - i * 5
-        _circle_marker(msp, rx + 3, y, item["no"])
-        _text(msp, item["text"], rx + 8, y - 1.2, height=2.0,
+        y = ry - 8 - i * 6
+        _circle_marker(msp, rx + 3, y + 1, item["no"])
+        _text(msp, item["text"], rx + 8, y, 2.2,
               align=TextEntityAlignment.LEFT)
 
-    # ---- Save -----------------------------------------------------------
+    # --- Save ----------------------------------------------------------
     out_dxf_path.parent.mkdir(parents=True, exist_ok=True)
     doc.saveas(out_dxf_path)
     return doc

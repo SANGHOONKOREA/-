@@ -17,8 +17,8 @@
     "phases": 3,
     "frequency_hz": 60,
     "label": "AC440V, 3PH, 60HZ",
-    "label_xy": [55, 220],
-    "y": 215,
+    "label_xy": [55, 227],
+    "y": 222,
     "x_start": 50,
     "x_end": 400,
     "tie": { "x": 225, "tag": "BT-01" }
@@ -113,21 +113,20 @@
     }
   ],
   "level_y": {
-    "_comment": "Y-coordinates of each horizontal layer of the diagram, top to bottom",
-    "title": 282,
-    "gen_symbol": 265,
-    "gen_acb": 240,
-    "busbar": 215,
-    "feeder_acb": 200,
-    "feeder_disc": 188,
-    "tx_label": 178,
-    "tx_symbol": 165,
-    "vfd_top": 140,
-    "vfd_bottom": 125,
-    "motor_label": 102,
-    "motor_symbol": 95,
-    "thruster": 78,
-    "thruster_label": 65
+    "_comment": "Insertion-point Y-coordinate (mm) for each horizontal stratum. Each value is the geometric centre of the symbol on that line, so cables can be drawn between named ports of adjacent blocks without computing offsets here.",
+    "title":          282,
+    "gen":            270,
+    "gen_acb":        248,
+    "busbar":         222,
+    "feeder_acb":     205,
+    "feeder_disc":    192,
+    "tx":             172,
+    "tx_label":       182,
+    "vfd":            140,
+    "motor":          108,
+    "motor_label":    112,
+    "thruster":       88,
+    "thruster_label": 73
   },
   "annotations": {
     "remark_table": [

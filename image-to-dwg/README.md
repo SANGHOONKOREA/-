@@ -13,28 +13,35 @@ block) — not a raster trace.
 ```
 image-to-dwg/
 ├── README.md              ← this file
+├── index.html             ← user-friendly viewer (zoom/pan, downloads)
 ├── requirements.txt
 ├── sld_spec.json          ← single source of truth (Step 1: image read-out)
 ├── src/
 │   ├── template.py        ← Step 2: layers / styles / title block
-│   ├── blocks.py          ← Step 3: IEC 60617 symbol library
+│   ├── blocks.py          ← Step 3: IEC 60617 symbol library + PORTS table
 │   ├── builder.py         ← Step 4: assembles entities from sld_spec.json
+│   ├── render.py          ← matplotlib renderer (PNG + SVG)
 │   └── main.py            ← CLI entry point
 └── output/
     ├── SHI_18K_BV_SLD.dxf ← generated drawing (R2018 DXF)
-    └── preview.png        ← matplotlib render for visual QA
+    ├── preview.png        ← raster preview (150 DPI)
+    └── preview.svg        ← vector preview (used by viewer)
 ```
 
-## Build
+## Viewer
+
+Open `index.html` in a browser (or via the deployed Netlify site) to get a
+zoomable / pannable preview, all download links, the spec data in tables, and
+the layer legend.  No build step needed — everything is static.
+
+## Build (regenerate from spec)
 
 ```bash
 pip install -r requirements.txt
-python -m src.main \
-  --spec sld_spec.json \
-  --out  output/SHI_18K_BV_SLD.dxf
+python -m src.main
 ```
 
-Output: a R2018 DXF.  Convert to DWG using either of:
+Output: R2018 DXF + PNG + SVG.  Convert DXF to DWG using either of:
 
 ### Option A — ODA File Converter (free)
 
