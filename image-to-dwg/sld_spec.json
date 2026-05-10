@@ -1,0 +1,139 @@
+{
+  "_comment": "Single source of truth for the SHI 18K Bunkering Vessel Electric Single Line Diagram. Coordinates are in millimetres on an A3 landscape sheet (420 x 297). Origin (0,0) is bottom-left.",
+  "drawing": {
+    "title": "SHI 18K Bunkering Vessel - Electric Single Line Diagram",
+    "drawing_no": "SHI-18K-BV-ELE-SLD-001",
+    "revision": "0",
+    "date": "2026-05-08",
+    "drawn_by": "S&SYS",
+    "checked_by": "",
+    "approved_by": "",
+    "scale": "NTS",
+    "sheet_size_mm": [420, 297]
+  },
+  "main_busbar": {
+    "tag": "MSB-440V",
+    "voltage_v": 440,
+    "phases": 3,
+    "frequency_hz": 60,
+    "label": "AC440V, 3PH, 60HZ",
+    "label_xy": [55, 227],
+    "y": 222,
+    "x_start": 50,
+    "x_end": 400,
+    "tie": { "x": 225, "tag": "BT-01" }
+  },
+  "generators": [
+    { "tag": "DG1", "x": 95,  "y": 265, "kva": 1500, "v": 440, "hz": 60 },
+    { "tag": "DG2", "x": 175, "y": 265, "kva": 1500, "v": 440, "hz": 60 },
+    { "tag": "DG3", "x": 275, "y": 265, "kva": 1500, "v": 440, "hz": 60 },
+    { "tag": "DG4", "x": 365, "y": 265, "kva": 1500, "v": 440, "hz": 60 }
+  ],
+  "feeders": [
+    {
+      "id": "F1",
+      "x": 175,
+      "remark_no_tx": 4,
+      "remark_no_vfd": 3,
+      "remark_no_motor": 1,
+      "transformer": {
+        "tag": "TX-01",
+        "kva_primary": 2000,
+        "kva_sec1": 1000,
+        "kva_sec2": 1000,
+        "v_primary": 440,
+        "v_sec1": 690,
+        "v_sec2": 690,
+        "label": "2000kVA/1000kVA/1000kVA  440V / 690V / 690V"
+      },
+      "vfd": { "tag": "VFD-01" },
+      "motor": {
+        "tag": "M-01",
+        "kw": 1500,
+        "v": 690,
+        "hz": 60,
+        "rpm": 1200,
+        "label": "AC690V 1500KW 60HZ 1200RPM"
+      },
+      "thruster": { "type": "AZIMUTH", "tag": "AZ-01" }
+    },
+    {
+      "id": "F2",
+      "x": 275,
+      "remark_no_tx": 4,
+      "remark_no_vfd": 3,
+      "remark_no_motor": 1,
+      "transformer": {
+        "tag": "TX-02",
+        "kva_primary": 2000,
+        "kva_sec1": 1000,
+        "kva_sec2": 1000,
+        "v_primary": 440,
+        "v_sec1": 690,
+        "v_sec2": 690,
+        "label": "2000kVA/1000kVA/1000kVA  440V / 690V / 690V"
+      },
+      "vfd": { "tag": "VFD-02" },
+      "motor": {
+        "tag": "M-02",
+        "kw": 1500,
+        "v": 690,
+        "hz": 60,
+        "rpm": 1200,
+        "label": "AC690V 1500KW 60HZ 1200RPM"
+      },
+      "thruster": { "type": "AZIMUTH", "tag": "AZ-02" }
+    },
+    {
+      "id": "F3",
+      "x": 365,
+      "remark_no_tx": 4,
+      "remark_no_vfd": 3,
+      "remark_no_motor": 2,
+      "transformer": {
+        "tag": "TX-03",
+        "kva_primary": 1200,
+        "kva_sec1": 600,
+        "kva_sec2": 600,
+        "v_primary": 440,
+        "v_sec1": 690,
+        "v_sec2": 690,
+        "label": "1200kVA/600kVA/600kVA  440V / 690V / 690V"
+      },
+      "vfd": { "tag": "VFD-03" },
+      "motor": {
+        "tag": "M-03",
+        "kw": 800,
+        "v": 690,
+        "hz": 60,
+        "rpm": 1800,
+        "label": "AC690V 800KW 60HZ 1800RPM"
+      },
+      "thruster": { "type": "TUNNEL", "tag": "TT-01" }
+    }
+  ],
+  "level_y": {
+    "_comment": "Insertion-point Y-coordinate (mm) for each horizontal stratum. Each value is the geometric centre of the symbol on that line, so cables can be drawn between named ports of adjacent blocks without computing offsets here.",
+    "title":          282,
+    "gen":            270,
+    "gen_acb":        248,
+    "busbar":         222,
+    "feeder_acb":     205,
+    "feeder_disc":    192,
+    "tx":             172,
+    "tx_label":       182,
+    "vfd":            140,
+    "motor":          108,
+    "motor_label":    112,
+    "thruster":       88,
+    "thruster_label": 73
+  },
+  "annotations": {
+    "remark_table": [
+      { "no": 1, "text": "AZIMUTH THRUSTER MOTOR (AC690V/1500kW/60Hz/1200rpm)" },
+      { "no": 2, "text": "TUNNEL THRUSTER MOTOR (AC690V/800kW/60Hz/1800rpm)" },
+      { "no": 3, "text": "VARIABLE FREQUENCY DRIVE (RECTIFIER + INVERTER)" },
+      { "no": 4, "text": "3-WINDING TRANSFORMER (12-PULSE, PRIMARY/SEC.1/SEC.2)" }
+    ]
+  }
+}
